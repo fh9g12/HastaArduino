@@ -5,12 +5,20 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="HastaDAQ/HastaDAQ.vcxproj">
+  <Project Path="HastaDAQ/HastaDAQ.vcxproj" Id="518880ae-1033-45ed-bee0-d8f11584addb">
     <Platform Solution="*|x86" Project="x86" />
     <Deploy />
   </Project>
-  <Project Path="HastaDrivers/HastaDrivers.vcxitems" />
-  <Project Path="ServoTest/ServoTest.vcxproj">
+  <Project Path="HastaDrivers/HastaDrivers.vcxitems" Id="f36634eb-77eb-4a7f-8751-8a76fe60215d" />
+  <Project Path="Servoscpi/Servoscpi.vcxproj" Id="ae3bc988-d160-452a-8570-6494355ef087">
+    <Platform Solution="*|x86" Project="x86" />
+    <Deploy />
+  </Project>
+  <Project Path="ServoTest/ServoTest.vcxproj" Id="56baf53b-0f18-41e6-8e64-bd872489fb0d">
+    <Platform Solution="*|x86" Project="x86" />
+    <Deploy />
+  </Project>
+  <Project Path="WifiTest/WifiTest.vcxproj" Id="345fae70-2a92-4015-be5b-78cc6c37b194">
     <Platform Solution="*|x86" Project="x86" />
     <Deploy />
   </Project>

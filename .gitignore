@@ -361,3 +361,39 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Arduino build output directories
+build/
+*.hex
+*.elf
+*.eep
+*.bin
+*.map
+
+# Arduino IDE temporary files
+*.tmp
+*.bak
+*.swp
+*.d
+*.o
+
+# macOS system files
+.DS_Store
+
+# Windows system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# VS Code / PlatformIO
+.vscode/
+.pio/
+
+# Arduino CLI cache
+.arduino/
+
+# JetBrains IDEs (CLion, etc.)
+.idea/
+
+# Logs
+*.log
