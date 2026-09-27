@@ -10,7 +10,7 @@ This file is for a future agent (human or Claude) picking this repo up cold. It 
 HastaDrivers/         Shared driver library (Visual Micro "shared items" project — see below)
 <ProjectName>/         One folder per Arduino sketch, folder name == .ino name (hard Arduino requirement)
 matlab/common/        Shared MATLAB helpers (TCP connect, binary parsers, FFT/Bode plotting)
-matlab/<rig>/          Per-rig MATLAB test scripts (pwm, sbus, stepper, straingauge)
+matlab/<rig>/          Per-rig MATLAB test scripts (sbus, stepper, straingauge)
 wiring/                WireViz-generated wiring diagrams (.yml source + rendered .png/.svg/.html/.bom.tsv)
 arduino-deps.txt       Pinned board core + library versions (source of truth, not Library Manager's idea of "latest")
 setup-arduino-deps.ps1 Installs exactly what arduino-deps.txt pins, via arduino-cli
@@ -19,16 +19,11 @@ HastaArduino.slnx      Visual Studio solution (Visual Micro extension) referenci
 
 ### Active rigs (current pattern, read these for style)
 
-- **ServoCalibration**, **SbusServoCalibration** — PWM and SBUS servo characterisation (pulse/channel range, dynamic response) against an MT6835 encoder on the servo's own output shaft.
+Servo actuation in this repo is **SBUS-only** — an earlier PWM path (`ServoCalibration`, backed by a `ServoBank` driver) and a batch of early prototypes/bringup sketches (`HastaDAQ`, `Servoscpi`, `ServoTest`, `WifiTest`, `EncoderBringup`, `GpioInvertBringup`, `StrainGaugeBringup`) were removed once the real rigs below existed and worked — see git history before this point if you need that story.
+
+- **SbusServoCalibration** — SBUS servo characterisation (channel range, dynamic response) against an MT6835 encoder on the servo's own output shaft.
 - **EncoderCalibration** — NEMA17 (via A4988) + MT6835 rig: linearity characterisation, frequency response (sine/chirp with real direction reversals), and (dead-on-this-hardware but implemented/correct) MT6835 User Auto-Calibration support.
 - **StrainGaugeCalibration** — Adafruit ADS122C04 24-bit ADC + half-bridge strain gauge, ratiometric external-reference wiring.
-- **StrainGaugeBringup**, **EncoderBringup**, **GpioInvertBringup** — standalone bring-up sketches (no WiFi/SCPI), each isolating one hardware question before it got folded into a real rig. Not registered in the `.slnx` — plain folder + `.ino`, nothing else needed to build them.
-
-### Legacy / superseded (don't build on these without checking first)
-
-- **HastaDAQ** — empty stub, dead scaffold.
-- **Servoscpi** — an earlier full SCPI+WiFi 6-servo controller (WiFi + `ControlState` + `ServoBank`, no encoder feedback). Superseded by the per-axis Calibration sketches' RUN/DATA? convention, but it's the thing `ControlState`/multi-channel `ServoBank` were built for — read it if you need that history.
-- **ServoTest**, **WifiTest** — pre-networking bringup tests (open-loop servo chirp; bare CYW43/WiFi connectivity). Their findings (pin mappings, etc.) are already folded into every later sketch's header comments.
 
 ## HastaDrivers (shared library)
 
@@ -36,12 +31,11 @@ A Visual Micro **shared items** project (`HastaDrivers.vcxitems`), imported by e
 
 Header-only, dependency-light drivers, deliberately kept minimal rather than pulling in a heavy vendor framework for one register read (see `Mt6835Encoder.h`'s header comment for the concrete story — an earlier SimpleFOC-based version made IntelliSense/compiles painfully slow):
 
-- **ServoBank.h/.cpp** — multi-channel hobby-servo driver using RP2040/2350's native hardware PWM (`analogWriteFreq`/`analogWrite`), not the PIO-based `Servo` library — chosen specifically so the PWM carrier can run above the usual 50Hz (confirmed working to 600Hz+), runtime-tunable (`setPwmFreqHz`/`setPulseRangeUs`).
 - **Mt6835Encoder.h** — raw-SPI MT6835 magnetic encoder driver: continuous/unwrapped multi-turn angle, software zero, and (datasheet-confirmed, not guessed) calibration-status/User-Auto-Calibration register access.
 - **StepperDriver.h** — STEP/DIR stepper driver with two modes: constant-speed free-run (`setSpeedDegPerS`/`update`) and position-tracking (`trackTo`, paced to a hard speed ceiling) for driving an arbitrary trajectory (sine/chirp) with real direction reversals.
 - **SbusServo.h** — SBUS servo output (wraps bolderflight/sbus) with the RP2040 UART-inversion workaround this project had to reverse-engineer (see git history / SbusServoCalibration.ino).
 - **SweepWave.h**, **LinearChirp.h** — shared trajectory generators (triangle sweep; chirp, with sine as chirp's f0==f1 special case) used by every rig's SWEEP/SINE/CHIRP commands.
-- **Controlstate.h/.cpp** — mutex-guarded shared state scaffold for a *future* dual-core control loop; currently single-core so the mutex isn't load-bearing yet. Used by the legacy `Servoscpi`, not by the active Calibration sketches.
+- **Controlstate.h/.cpp** — mutex-guarded shared state scaffold for a *future* dual-core control loop; currently single-core so the mutex isn't load-bearing yet. Not used by any current active sketch (its original consumer, the SCPI 6-servo controller, was removed) — kept because the dual-core control loop it was built for hasn't happened yet; safe to delete too if that plan is dropped.
 - **secrets.h** / **secrets.h.example** — gitignored WiFi credentials (`WIFI_SSID`/`WIFI_PASS`), shared across every sketch from this one location. Copy the `.example` file and fill it in on a new machine.
 
 ## Library management
@@ -64,7 +58,7 @@ Every active WiFi rig follows the same shape — copy the newest one (`StrainGau
 ## Pico Plus 2 W / RP2350 gotchas
 
 - **WiFi requires the CYW43 pin fix** (`CYW43_PINS_SPCE`, above) before *any* other hardware touch in `setup()` — this board's WiFi doesn't come up on the earlephilhower core's defaults without it.
-- **`digitalWrite()` resets GPIO pad overrides.** It calls `gpio_set_function()` internally on every single call, which clobbers any `gpio_set_outover()`/invert override you set. Use `gpio_put()` instead when you need a bare-GPIO override to stick (see `GpioInvertBringup`).
+- **`digitalWrite()` resets GPIO pad overrides.** It calls `gpio_set_function()` internally on every single call, which clobbers any `gpio_set_outover()`/invert override you set. Use `gpio_put()` instead when you need a bare-GPIO override to stick. (In practice this repo ended up not needing manual overrides at all — `SbusServo.h` uses `SerialUART::setInvertTX()/setInvertRX()`, the officially-supported mechanism, instead — but the `digitalWrite()` gotcha is real and will bite any other bare-GPIO override work.)
 - **`SerialUART` numbering is non-intuitive**: `Serial1` = UART0, `Serial2` = UART1. Each UART instance also has its own valid-pin bitset (e.g. GPIO20/21 are UART1-only) — using the wrong `SerialX` object for a given pin pair fails silently/confusingly rather than erroring clearly.
 - **`Vrekrer_scpi_parser` defaults to an 8-bit command-matching hash** (`SCPI_HASH_TYPE`, default `uint8_t` — only 256 values), and it matches purely by hash, not by re-comparing the string. Register enough commands (this repo hit it around 13) and two commands can collide, silently routing to the *wrong* handler with no error. Always `#define SCPI_HASH_TYPE uint16_t` before `#include <Vrekrer_scpi_parser.h>` in every new sketch — it's free (this library's whole implementation lives in the header, no separately-compiled `.cpp` to go out of sync with).
 - **Visual Micro project files are machine-generated.** A `.vcxproj`'s `IncludePath`/`ForcedIncludeFiles` blob and the `__vm/` folder (`.vsarduino.h`, `Compile.vmps.xml`, ...) are IntelliSense/build-cache artifacts tied to this specific machine's toolchain paths and per-project hash-named temp dirs. Don't hand-copy them from another project into a new one — write a minimal `.vcxproj` (GUID, configs, the shared-items import, the `.ino` as `ClCompile`) and let Visual Micro populate the rest on a real **Build** the first time the project is opened (same fix that resolved an earlier SimpleFOC library-detection issue in this repo's history).
