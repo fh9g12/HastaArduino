@@ -362,6 +362,10 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
+# WiFi credentials -- copy secrets.h.example (HastaDrivers/src) to secrets.h
+# and fill in real values; never commit the real one.
+secrets.h
+
 # Arduino build output directories
 build/
 *.hex

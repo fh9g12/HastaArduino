@@ -1,0 +1,9 @@
+Id	Description	Qty	Unit	Designators
+1	Cable, 1 wires	0	m	W_COMMON_GND, W_SBUS_RX, W_SBUS_TX, W_SPCE
+2	Cable, 2 wires	0	m	W_ENC_PWR, W_SERVO_PWR
+3	Cable, 4 wires	0	m	W_ENC_SIG
+4	Connector, MT6835 magnetic encoder module, 6 pins	1		ENCODER
+5	Connector, Pimoroni Pico Plus 2 W, 9 pins	1		PICO
+6	Connector, Pimoroni RM2 Wireless and Bluetooth Breakout, 1 pins	1		RM2
+7	Connector, SBUS-native servo (Futaba S-AG300 or equivalent), 3 pins	1		SERVO
+8	Connector, Servo power supply (bench PSU or battery), 2 pins	1		PSU

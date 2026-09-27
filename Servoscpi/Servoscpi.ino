@@ -50,6 +50,11 @@
 // -- should define this macro before including the header, so it only
 // pulls in declarations rather than a second copy of the same functions.
 #define VREKRER_SCPI_PARSER_NO_IMPL
+// Widen the command-matching hash from the library's default 8 bits --
+// see EncoderCalibration.ino for the confirmed real bug this caused
+// there (DATA? silently routed to a different command's handler once
+// enough commands were registered for an 8-bit hash to collide).
+#define SCPI_HASH_TYPE uint16_t
 #include <Vrekrer_scpi_parser.h>
 #include <ArduinoJson.h>
 #include <ServoBank.h>

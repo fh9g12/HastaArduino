@@ -17,6 +17,7 @@
     <Text Include="$(MSBuildThisFileDirectory)readme.txt" />
     <Text Include="$(MSBuildThisFileDirectory)library.properties" />
     <Text Include="$(MSBuildThisFileDirectory)src\HastaDrivers.h" />
+    <Text Include="$(MSBuildThisFileDirectory)src\secrets.h.example" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)src\Controlstate.cpp" />
@@ -27,5 +28,10 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)src\Controlstate.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)src\LinearChirp.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)src\ServoBank.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\SweepWave.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\Mt6835Encoder.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\SbusServo.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\StepperDriver.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\secrets.h" />
   </ItemGroup>
 </Project>

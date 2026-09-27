@@ -1,0 +1,131 @@
+# sbus-rig.yml
+#
+# Wiring diagram for the SBUS test rig (SbusServoCalibration.ino) --
+# Pimoroni Pico Plus 2 W + MT6835 magnetic encoder + Futaba S-AG300 (or
+# any SBUS-native servo) + RM2 WiFi breakout.
+#
+# Generated with WireViz (https://github.com/formatc1702/WireViz),
+# open source, MIT licensed. To render:
+#   pip install wireviz
+#   (also needs Graphviz installed separately and on PATH -- graphviz.org,
+#    or `choco install graphviz` on Windows)
+#   wireviz sbus-rig.yml
+# Produces sbus-rig.png/.svg/.html/.bom.tsv in this folder.
+#
+# Not shown: Pico Plus 2 W's own USB power/programming connection -- that
+# part is generic and self-explanatory, this diagram is only for the
+# rig-specific wiring you'd otherwise have to remember.
+
+metadata:
+  title: SBUS rig wiring (SbusServoCalibration)
+  description: Pico Plus 2 W + MT6835 encoder + SBUS servo + RM2 WiFi breakout
+
+connectors:
+  PICO:
+    type: Pimoroni Pico Plus 2 W
+    pinlabels: [GPIO10, GPIO11, GPIO12, GPIO13, GPIO20, GPIO21, 3V3, GND, SP/CE]
+    notes: RP2350. SP/CE is a defined 8-pin JST-SH connector -- plugging in
+      the RM2 cable IS the wiring step, no discrete GPIO wiring needed for WiFi.
+
+  ENCODER:
+    type: MT6835 magnetic encoder module
+    pinlabels: [VCC, GND, SCK, MOSI, MISO, nCS]
+    notes: Mounted on the servo output shaft. SPI1 remapped -- see
+      HastaDrivers/src/Mt6835Encoder.h.
+
+  RM2:
+    type: Pimoroni RM2 Wireless and Bluetooth Breakout
+    pinlabels: [SP/CE]
+    notes: Plugs directly into the Pico's SP/CE connector via its own cable.
+
+  SERVO:
+    type: SBUS-native servo (Futaba S-AG300 or equivalent)
+    pinlabels: [SIGNAL, "V+", GND]
+    notes: |
+      Rated 4.8-7.4V, operating 3.8-8.4V (7.4V = nominal 2S LiPo, 8.4V =
+      freshly-charged 2S LiPo). SIGNAL: GPIO20(TX) and GPIO21(RX) both
+      land here -- SBUS is half-duplex single-wire; this project ties two
+      separate GPIOs together at the servo end rather than using a
+      single-wire half-duplex peripheral mode (same approach the
+      bolderflight/sbus library's other-platform examples use).
+      GPIO20/21 are the only pins matching UART1's valid alternate-
+      function set on this board that were also free -- see
+      HastaDrivers/src/SbusServo.h for why (Serial1=UART0/Serial2=UART1
+      numbering gotcha) before moving them.
+
+  PSU:
+    type: Servo power supply (bench PSU or battery)
+    pinlabels: ["V+ (4.8-7.4V)", GND]
+    notes: |
+      Separate from the Pico's own power -- servos need more current than
+      the Pico can source, and a different voltage than 3.3V logic. GND
+      MUST be tied to the Pico's GND (see W_COMMON_GND) even though
+      they're separate supplies -- SBUS needs a shared ground reference
+      between the logic board and the servo's power domain, or the
+      signal won't read correctly at the servo end.
+
+cables:
+  W_ENC_SIG:
+    wirecount: 4
+    colors: [YE, OG, GN, BU]
+    notes: encoder SPI1 (SCK/MOSI/MISO/nCS)
+
+  W_ENC_PWR:
+    wirecount: 2
+    colors: [RD, BK]
+    notes: encoder power
+
+  W_SBUS_TX:
+    wirecount: 1
+    colors: [WH]
+    notes: "GPIO20 (UART1 TX)"
+
+  W_SBUS_RX:
+    wirecount: 1
+    colors: [GY]
+    notes: "GPIO21 (UART1 RX) -- tied to TX at the servo end, see note below"
+
+  W_SERVO_PWR:
+    wirecount: 2
+    colors: [RD, BK]
+    notes: servo power
+
+  W_COMMON_GND:
+    wirecount: 1
+    colors: [BK]
+    notes: common ground reference, PSU to Pico
+
+  W_SPCE:
+    wirecount: 1
+    colors: [BK]
+    notes: SP/CE JST-SH cable (direct plug, comes with the RM2 breakout)
+
+connections:
+  -
+    - PICO: [1, 2, 3, 4]
+    - W_ENC_SIG: [1, 2, 3, 4]
+    - ENCODER: [3, 4, 5, 6]
+  -
+    - PICO: [7, 8]
+    - W_ENC_PWR: [1, 2]
+    - ENCODER: [1, 2]
+  -
+    - PICO: [5]
+    - W_SBUS_TX: [1]
+    - SERVO: [1]
+  -
+    - PICO: [6]
+    - W_SBUS_RX: [1]
+    - SERVO: [1]
+  -
+    - PSU: [1, 2]
+    - W_SERVO_PWR: [1, 2]
+    - SERVO: [2, 3]
+  -
+    - PSU: [2]
+    - W_COMMON_GND: [1]
+    - PICO: [8]
+  -
+    - PICO: [9]
+    - W_SPCE: [1]
+    - RM2: [1]

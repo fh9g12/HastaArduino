@@ -10,6 +10,22 @@
     <Deploy />
   </Project>
   <Project Path="HastaDrivers/HastaDrivers.vcxitems" Id="f36634eb-77eb-4a7f-8751-8a76fe60215d" />
+  <Project Path="EncoderCalibration/EncoderCalibration.vcxproj" Id="0164f3b4-c86c-45e8-acf2-7a84ff076d9e">
+    <Platform Solution="*|x86" Project="x86" />
+    <Deploy />
+  </Project>
+  <Project Path="StrainGaugeCalibration/StrainGaugeCalibration.vcxproj" Id="c3eb7d96-9c86-4865-ab4b-6ef0638b5f54">
+    <Platform Solution="*|x86" Project="x86" />
+    <Deploy />
+  </Project>
+  <Project Path="ServoCalibration/ServoCalibration.vcxproj" Id="17319120-1879-4e8c-a0cf-3e617940920d">
+    <Platform Solution="*|x86" Project="x86" />
+    <Deploy />
+  </Project>
+  <Project Path="SbusServoCalibration/SbusServoCalibration.vcxproj" Id="70016ad3-576d-4f77-9a1a-cd7141406cf2">
+    <Platform Solution="*|x86" Project="x86" />
+    <Deploy />
+  </Project>
   <Project Path="Servoscpi/Servoscpi.vcxproj" Id="ae3bc988-d160-452a-8570-6494355ef087">
     <Platform Solution="*|x86" Project="x86" />
     <Deploy />

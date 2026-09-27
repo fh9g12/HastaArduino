@@ -1,0 +1,28 @@
+# Pinned Arduino board core + library versions for this repo.
+#
+# This is what's actually installed and confirmed working on the current
+# dev machine (rp2040 core 6.1.0 + these library versions). Run
+# setup-arduino-deps.ps1 on a new machine to install exactly this set via
+# arduino-cli, instead of hoping Library Manager picks the same versions.
+#
+# To update after deliberately upgrading something: install/upgrade as
+# normal via Library Manager or arduino-cli, then re-run
+#   arduino-cli lib list
+#   arduino-cli core list
+# and bump the version here to match, so this file stays the source of
+# truth for what the project is actually built against.
+
+# Board core -- Earle Philhower's RP2040/RP2350 core (Pimoroni Pico Plus 2 / 2W).
+# Board manager URL (add via `arduino-cli config add board_manager.additional_urls <url>`,
+# or let setup-arduino-deps.ps1 do it):
+#   https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
+core: rp2040:rp2040@6.1.0
+
+# Libraries -- names match Arduino Library Manager / `arduino-cli lib search <name>`.
+lib: Simple FOC@2.4.0
+lib: SimpleFOCDrivers@1.0.9
+lib: Vrekrer SCPI parser@0.5.0
+lib: ArduinoJson@7.4.3
+lib: Bolder Flight Systems SBUS@8.1.4
+lib: Adafruit ADS122C04@1.0.0
+lib: Adafruit BusIO@1.17.4

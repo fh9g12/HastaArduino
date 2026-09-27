@@ -12,8 +12,8 @@
 //    ...even though the physical board in your hands is the plain (non-W)
 //    Pico Plus 2. This only changes GPIO25 (stops being a plain LED pin,
 //    becomes virtualized as LED_BUILTIN) -- every other pin you're using
-//    elsewhere (SPI0 2/3/4/5 for the encoder, I2C0 4/5 for the ADS122C04,
-//    servo pins 6/7/20/21/22/26) is untouched.
+//    elsewhere (SPI1 10/11/12/13 for the MT6835 encoder, I2C0 4/5 for the
+//    ADS122C04, servo pins 6/7/20/21/22/26) is untouched.
 //
 // 2. CONFIRMED BY TEST: selecting that board alone is not enough. The
 //    all-zero MAC readback proved the driver was never actually reaching

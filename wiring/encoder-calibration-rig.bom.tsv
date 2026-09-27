@@ -1,0 +1,10 @@
+Id	Description	Qty	Unit	Designators
+1	Cable, 1 wires	0	m	W_COMMON_GND, W_DIR, W_ENABLE, W_SPCE, W_STEP
+2	Cable, 2 wires	0	m	W_A4988_PWR, W_COIL_A, W_COIL_B, W_ENC_PWR, W_MOTOR_PWR
+3	Cable, 4 wires	0	m	W_ENC_SIG
+4	Connector, A4988 stepper driver breakout (Pololu-style), 11 pins	1		A4988
+5	Connector, MT6835 magnetic encoder module, 6 pins	1		ENCODER
+6	Connector, Motor power supply (bench PSU), 2 pins	1		MOTOR_PSU
+7	Connector, NEMA17 stepper motor (SY42STH47-1684B), 4 pins	1		NEMA17
+8	Connector, Pimoroni Pico Plus 2 W, 10 pins	1		PICO
+9	Connector, Pimoroni RM2 Wireless and Bluetooth Breakout, 1 pins	1		RM2

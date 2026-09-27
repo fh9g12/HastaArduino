@@ -1,0 +1,180 @@
+# strain-gauge-rig.yml
+#
+# Wiring diagram for the StrainGaugeBringup rig: Pimoroni Pico Plus 2 W +
+# Adafruit ADS122C04 24-bit ADC breakout + a half-bridge strain gauge
+# assembly (2x 350ohm gauges mounted on opposite faces of a bending
+# beam, factory-wired into one 3-wire module: V/SENSE/GND) + 2x 350ohm
+# fixed completion resistors R1/R2. See StrainGaugeBringup.ino's header
+# comment for the full rationale -- summarised here:
+#
+# The gauges being on opposite faces (one in tension, one in
+# compression) is what the standard "half bridge" configuration relies
+# on -- that's what makes them ADD at the bridge output rather than
+# cancelling. The module's internal G1/G2 midpoint is already brought
+# out as its SENSE wire, so this diagram treats it as one connector, not
+# two separate gauges.
+#
+# Power/I2C use the Qwiic/STEMMA QT connector (3V3/GND/SDA/SCL, powers
+# the ADS122C04's own AVDD at 3.3V) -- but bridge EXCITATION is a
+# SEPARATE 5V rail from the Pico's VBUS pin (only present when
+# USB-powered), kept off the Qwiic-supplied 3.3V node on purpose: Qwiic
+# is a 3.3V-only standard on this board (confirmed: Pimoroni's spec only
+# lists an on-board 3V3 regulator, no 5V rail on the Qwiic connector),
+# so tying a separate 5V source onto the same VIN pin the Qwiic cable
+# powers would short two different voltage sources together.
+#
+# That split (5V excitation, 3.3V AVDD) means the ADC's reference can't
+# just be AVDD anymore (that was fine when excitation and AVDD were the
+# same 3.3V node, but they no longer are). Also confirmed from the
+# datasheet's absolute maximum ratings: REFP/REFN and the analog inputs
+# must stay within AVSS-0.3V to AVDD+0.3V (~3.6V here), so REFP can't be
+# tied to the full 5V excitation rail either. The fix used here needs no
+# extra parts: the bridge's OUT- node (R1/R2 midpoint) is a precise,
+# FIXED V_ex/2 tap (R1/R2 are plain resistors, not gauges, so this node
+# only moves with V_ex, never with strain) -- safely under the voltage
+# limit and still genuinely proportional to the real excitation. Wiring
+# it to REFP (on top of its existing A1 connection), with REFN to GND,
+# restores true ratiometric behaviour. A2, A3, RST and DRDY are left
+# unconnected.
+#
+# Render with WireViz (pip install wireviz; needs Graphviz on PATH too):
+#   wireviz strain-gauge-rig.yml
+
+metadata:
+  title: Strain gauge rig wiring
+  description: Pico Plus 2 W + Adafruit ADS122C04 (Qwiic, VBUS excitation) + half-bridge strain gauge module + 2x 350 ohm completion resistors
+
+connectors:
+  PICO:
+    type: Pimoroni Pico Plus 2 W
+    pinlabels: [QWIIC, VBUS]
+    notes: |
+      QWIIC: Qwiic/STEMMA QT port -- carries 3V3/GND/SDA/SCL to the
+      ADS122C04 (powers its AVDD at 3.3V), one direct-plug cable.
+      VBUS: 5V, only present when USB-powered -- used ONLY for bridge
+      excitation, deliberately kept separate from the Qwiic-supplied
+      3.3V AVDD (see file header).
+
+  ADS122C04:
+    type: Adafruit ADS122C04 24-bit ADC breakout
+    pinlabels: [QWIIC, GND, A0, A1, REFP, REFN]
+    notes: |
+      QWIIC port supplies AVDD (3.3V) + I2C from the Pico (see PICO
+      notes) -- VIN is NOT wired externally here, it's powered
+      internally via the Qwiic connector. GND is the common ground
+      shared by the bridge and REFN. REFP taps the bridge's OUT- node
+      (see file header for why -- external reference, not VREF_SUPPLY).
+      A2, A3, RST and DRDY unused. Default I2C address 0x40 (A0/A1
+      address solder-jumpers on the back left open).
+
+  HALFBRIDGE:
+    type: Half-bridge strain gauge module (2x 350 ohm gauges, pre-wired 3-wire)
+    pinlabels: [V, SENSE, GND]
+    notes: |
+      Two 350ohm gauges mounted on opposite faces of the bending beam
+      (one in tension, one in compression) -- factory/pre-wired into a
+      single 3-wire assembly, so the gauges' own midpoint is already
+      brought out as SENSE, not wired separately here.
+
+  R1:
+    type: Fixed resistor (350 ohm, bridge completion)
+    pinlabels: ["1", "2"]
+    notes: Precision resistor matching the gauges' nominal resistance -- not a strain gauge.
+
+  R2:
+    type: Fixed resistor (350 ohm, bridge completion)
+    pinlabels: ["1", "2"]
+    notes: Precision resistor matching the gauges' nominal resistance -- not a strain gauge.
+
+cables:
+  W_QWIIC:
+    wirecount: 1
+    colors: [BK]
+    notes: Qwiic / STEMMA QT cable (direct plug, carries 3V3/GND/SDA/SCL)
+
+  W_VBUS_HB:
+    wirecount: 1
+    colors: [RD]
+    notes: "EXC+ (Pico VBUS, 5V) to half-bridge V"
+
+  W_VBUS_R1:
+    wirecount: 1
+    colors: [RD]
+    notes: "EXC+ (Pico VBUS, 5V) to R1 (bridge top rail)"
+
+  W_GND_HB:
+    wirecount: 1
+    colors: [BK]
+    notes: "EXC- (common ground, via ADS GND) to half-bridge GND"
+
+  W_GND_R2:
+    wirecount: 1
+    colors: [BK]
+    notes: "EXC- (common ground, via ADS GND) to R2 (bridge bottom rail)"
+
+  W_GND_REFN:
+    wirecount: 1
+    colors: [BK]
+    notes: "Common ground (via R2) to ADS REFN"
+
+  W_SENSE:
+    wirecount: 1
+    colors: [YE]
+    notes: "OUT+ (half-bridge SENSE) to ADS A0"
+
+  W_OUTN_MID:
+    wirecount: 1
+    colors: [GN]
+    notes: "OUT- node: R1/R2 midpoint"
+
+  W_OUTN_ADC:
+    wirecount: 1
+    colors: [GN]
+    notes: "OUT- to ADS A1"
+
+  W_OUTN_REFP:
+    wirecount: 1
+    colors: [OG]
+    notes: "OUT- (fixed V_ex/2 tap) to ADS REFP -- see file header"
+
+connections:
+  -
+    - PICO: [1]
+    - W_QWIIC: [1]
+    - ADS122C04: [1]
+  -
+    - PICO: [2]
+    - W_VBUS_HB: [1]
+    - HALFBRIDGE: [1]
+  -
+    - PICO: [2]
+    - W_VBUS_R1: [1]
+    - R1: [1]
+  -
+    - ADS122C04: [2]
+    - W_GND_HB: [1]
+    - HALFBRIDGE: [3]
+  -
+    - ADS122C04: [2]
+    - W_GND_R2: [1]
+    - R2: [2]
+  -
+    - R2: [2]
+    - W_GND_REFN: [1]
+    - ADS122C04: [6]
+  -
+    - HALFBRIDGE: [2]
+    - W_SENSE: [1]
+    - ADS122C04: [3]
+  -
+    - R1: [2]
+    - W_OUTN_MID: [1]
+    - R2: [1]
+  -
+    - R1: [2]
+    - W_OUTN_ADC: [1]
+    - ADS122C04: [4]
+  -
+    - R1: [2]
+    - W_OUTN_REFP: [1]
+    - ADS122C04: [5]

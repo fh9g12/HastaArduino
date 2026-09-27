@@ -26,8 +26,5 @@
     <ClInclude Include="__vm\.Servoscpi.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="secrets.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

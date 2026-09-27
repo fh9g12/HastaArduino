@@ -1,0 +1,204 @@
+# encoder-calibration-rig.yml
+#
+# Wiring diagram for the encoder calibration rig (EncoderCalibration
+# project): Pimoroni Pico Plus 2 W + MT6835 magnetic encoder + A4988
+# stepper driver + NEMA17 (SY42STH47-1684B) + RM2 WiFi breakout.
+#
+# Render with WireViz (pip install wireviz; needs Graphviz on PATH too --
+# both already installed on this machine as of writing this):
+#   wireviz encoder-calibration-rig.yml
+#
+# CAL_EN is MT6835's User Auto-Calibration trigger pin (pull high while
+# the shaft rotates at constant speed) -- confirmed to exist and work this
+# way from multiple sources, but this specific encoder breakout module
+# does NOT expose that pin on its header (confirmed on the bench), so
+# it's not wired here at all. Auto-calibration isn't available with this
+# module; use RUN's constant-rotation linearity capture instead, which
+# doesn't need CAL_EN.
+
+metadata:
+  title: Encoder calibration rig wiring
+  description: Pico Plus 2 W + MT6835 encoder + A4988 + NEMA17 + RM2 WiFi breakout
+
+connectors:
+  PICO:
+    type: Pimoroni Pico Plus 2 W
+    pinlabels: [GPIO10, GPIO11, GPIO12, GPIO13, GPIO20, GPIO21, 3V3, GND, SP/CE, GPIO19]
+    notes: |
+      RP2350. New project, so these pins were chosen freely -- no
+      conflict with ServoCalibration/SbusServoCalibration (different
+      firmware, only one runs on a chip at a time). SP/CE is a defined
+      8-pin JST-SH connector -- plugging in the RM2 cable IS the wiring
+      step, no discrete GPIO wiring needed for WiFi. GPIO19 drives
+      A4988 ENABLE in software -- see A4988 notes below for why this
+      isn't just a hardwired jumper.
+
+  ENCODER:
+    type: MT6835 magnetic encoder module
+    pinlabels: [GND, nCS, SCK, MOSI, MISO, VCC]
+    notes: |
+      Mounted on the stepper shaft. Pin ORDER confirmed on the bench to
+      match the physical module (GND, CS, CLK, MOSI, MISO, V) -- an
+      earlier version of this diagram used a different, made-up order
+      (VCC first), which is suspected to have caused a VCC/GND swap when
+      wired position-by-position against it. No CAL_EN pin on this
+      module -- MT6835 User Auto-Calibration isn't available with this
+      specific breakout; use RUN's constant-rotation linearity capture
+      instead, which doesn't need it. SPI1 remapped -- see
+      HastaDrivers/src/Mt6835Encoder.h.
+
+  A4988:
+    type: A4988 stepper driver breakout (Pololu-style)
+    pinlabels: [VDD, GND_LOGIC, STEP, DIR, VMOT, GND_MOTOR, "1A", "1B", "2A", "2B", ENABLE]
+    notes: |
+      ENABLE is wired to Pico GPIO19, NOT jumpered to GND_LOGIC --
+      confirmed on the bench that hardwiring it always-enabled prevented
+      the motor from stepping (even with STEP/DIR pulses verified
+      correct); holding it disabled through boot/WiFi connect and
+      enabling only afterward (see EncoderCalibration.ino setup()) fixed
+      it reliably. Remaining on-board jumpers (not drawn as wires --
+      adjacent-pin bridges on the A4988 module itself, not inter-module
+      wiring): RESET jumpered to SLEEP, that joined pair tied to VDD (out
+      of reset/not sleeping); MS1=HIGH, MS2=HIGH, MS3=LOW for 1/8
+      microstep (tie MS1/MS2 to VDD, MS3 to GND_LOGIC) -- a reasonable
+      default for smooth rotation; full step (all three to GND_LOGIC)
+      also works fine since the encoder, not the driver's own microstep
+      count, is the ground truth here.
+      REQUIRED: a low-ESR electrolytic capacitor (47uF or more, rated above
+      your motor PSU voltage) across VMOT/GND_MOTOR, close to the board --
+      Pololu's own A4988 boards do NOT include this on-board, and without
+      it, inductive voltage spikes from the stepper coils can damage the
+      driver.
+
+  NEMA17:
+    type: NEMA17 stepper motor (SY42STH47-1684B)
+    pinlabels: ["A+", "A-", "B+", "B-"]
+    notes: |
+      1.8deg/step, rated 1.68A/phase. Verify coil pairing with a
+      multimeter if your unit's wire colours aren't documented --
+      measure continuity between wire pairs, wires with continuity
+      between them are the same coil. Wrong pairing (mixing wires from
+      different coils) causes rough/skipped rotation, not damage.
+
+  MOTOR_PSU:
+    type: Motor power supply (bench PSU)
+    pinlabels: ["V+ (12V typ.)", GND]
+    notes: |
+      Separate from the Pico's own power, same reasoning as the SBUS
+      rig's servo PSU. Steppers are current-driven, not voltage-driven --
+      the A4988 regulates coil current via chopping regardless of supply
+      voltage, so 12V is a normal, safe choice even though the motor's
+      own voltage rating differs; what actually matters is setting the
+      A4988's current-limit trimpot correctly for this motor's 1.68A/phase
+      rating (see chat notes -- VREF = I_limit x 8 x R_sense, verify with
+      a multimeter BEFORE connecting the motor).
+
+  RM2:
+    type: Pimoroni RM2 Wireless and Bluetooth Breakout
+    pinlabels: [SP/CE]
+    notes: Plugs directly into the Pico's SP/CE connector via its own cable.
+
+cables:
+  W_ENC_SIG:
+    wirecount: 4
+    colors: [YE, OG, GN, BU]
+    notes: encoder SPI1 (SCK/MOSI/MISO/nCS)
+
+  W_ENC_PWR:
+    wirecount: 2
+    colors: [RD, BK]
+    notes: encoder power
+
+  W_A4988_PWR:
+    wirecount: 2
+    colors: [RD, BK]
+    notes: A4988 logic power (VDD/GND_LOGIC)
+
+  W_STEP:
+    wirecount: 1
+    colors: [WH]
+    notes: "GPIO20 (STEP)"
+
+  W_DIR:
+    wirecount: 1
+    colors: [GY]
+    notes: "GPIO21 (DIR)"
+
+  W_ENABLE:
+    wirecount: 1
+    colors: [VT]
+    notes: "GPIO19 (ENABLE, software-controlled -- active low)"
+
+  W_MOTOR_PWR:
+    wirecount: 2
+    colors: [RD, BK]
+    notes: motor power (VMOT/GND_MOTOR) -- fit the decoupling capacitor here, see A4988 notes
+
+  W_COMMON_GND:
+    wirecount: 1
+    colors: [BK]
+    notes: common ground reference, motor PSU to Pico
+
+  W_COIL_A:
+    wirecount: 2
+    colors: [BN, RD]
+    notes: motor coil A (1A/1B to A+/A-)
+
+  W_COIL_B:
+    wirecount: 2
+    colors: [OG, BU]
+    notes: motor coil B (2A/2B to B+/B-)
+
+  W_SPCE:
+    wirecount: 1
+    colors: [BK]
+    notes: SP/CE JST-SH cable (direct plug, comes with the RM2 breakout)
+
+connections:
+  -
+    # PICO GPIO10/11/12/13 (SCK/MOSI/MISO/nCS) to ENCODER's real pin
+    # order (GND, nCS, SCK, MOSI, MISO, VCC) -- ENCODER indices below are
+    # 3,4,5,2 (SCK,MOSI,MISO,nCS), NOT sequential, to match that order.
+    - PICO: [1, 2, 3, 4]
+    - W_ENC_SIG: [1, 2, 3, 4]
+    - ENCODER: [3, 4, 5, 2]
+  -
+    - PICO: [7, 8]
+    - W_ENC_PWR: [1, 2]
+    - ENCODER: [6, 1]
+  -
+    - PICO: [7, 8]
+    - W_A4988_PWR: [1, 2]
+    - A4988: [1, 2]
+  -
+    - PICO: [5]
+    - W_STEP: [1]
+    - A4988: [3]
+  -
+    - PICO: [6]
+    - W_DIR: [1]
+    - A4988: [4]
+  -
+    - PICO: [10]
+    - W_ENABLE: [1]
+    - A4988: [11]
+  -
+    - MOTOR_PSU: [1, 2]
+    - W_MOTOR_PWR: [1, 2]
+    - A4988: [5, 6]
+  -
+    - MOTOR_PSU: [2]
+    - W_COMMON_GND: [1]
+    - PICO: [8]
+  -
+    - A4988: [7, 8]
+    - W_COIL_A: [1, 2]
+    - NEMA17: [1, 2]
+  -
+    - A4988: [9, 10]
+    - W_COIL_B: [1, 2]
+    - NEMA17: [3, 4]
+  -
+    - PICO: [9]
+    - W_SPCE: [1]
+    - RM2: [1]

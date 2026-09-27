@@ -1,0 +1,6 @@
+Id	Description	Qty	Unit	Designators
+1	Cable, 1 wires	0	m	W_GND_HB, W_GND_R2, W_GND_REFN, W_OUTN_ADC, W_OUTN_MID, W_OUTN_REFP, W_QWIIC, W_SENSE, W_VBUS_HB, W_VBUS_R1
+2	Connector, Adafruit ADS122C04 24-bit ADC breakout, 6 pins	1		ADS122C04
+3	Connector, Fixed resistor (350 ohm, bridge completion), 2 pins	2		R1, R2
+4	Connector, Half-bridge strain gauge module (2x 350 ohm gauges, pre-wired 3-wire), 3 pins	1		HALFBRIDGE
+5	Connector, Pimoroni Pico Plus 2 W, 2 pins	1		PICO
