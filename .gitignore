@@ -401,3 +401,11 @@ Desktop.ini
 
 # Logs
 *.log
+
+# KiCad per-user/cache files
+*-backups/
+*.kicad_prl
+fp-info-cache
+_autosave-*
+*.kicad_sch-bak
+*.lck

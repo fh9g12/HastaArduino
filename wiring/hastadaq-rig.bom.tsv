@@ -1,0 +1,21 @@
+Id	Description	Qty	Unit	Designators
+1	Cable, 1 wires	0	m	W_ADS1_EXC_HB, W_ADS1_EXC_R1, W_ADS1_GND_HB, W_ADS1_GND_R2, W_ADS1_OUTN_ADC, W_ADS1_OUTN_MID, W_ADS1_SENSE, W_ADS2_EXC_HB, W_ADS2_EXC_R1, W_ADS2_GND_HB, W_ADS2_GND_R2, W_ADS2_OUTN_ADC, W_ADS2_OUTN_MID, W_ADS2_SENSE, W_PSU_GND, W_PSU_V, W_QWIIC_ADS1, W_QWIIC_ADS2, W_QWIIC_IMU, W_SBUS_SIG
+2	Cable, 2 wires	0	m	W_ENC_PWR, W_TRIG_IN, W_TRIG_OUT
+3	Cable, 3 wires	0	m	W_AIL_L, W_AIL_R, W_ELEV_L, W_ELEV_R, W_RUDDER
+4	Cable, 4 wires	0	m	W_ENC_SIG
+5	Connector, Adafruit ADS122C04 24-bit ADC breakout (#1), 6 pins	1		ADS1
+6	Connector, Adafruit ADS122C04 24-bit ADC breakout (#2), 5 pins	1		ADS2
+7	Connector, Adafruit ICM20649 6-DoF IMU breakout, 2 pins	1		IMU
+8	Connector, Aileron servo (left), 3 pins	1		AIL_L
+9	Connector, Aileron servo (right), 3 pins	1		AIL_R
+10	Connector, Elevator servo (left), 3 pins	1		ELEV_L
+11	Connector, Elevator servo (right), 3 pins	1		ELEV_R
+12	Connector, External trigger sink (other equipment, if HastaDAQ is master), 2 pins	1		TRIGGER_OUT_EXT
+13	Connector, External trigger source (other equipment), 2 pins	1		TRIGGER_IN_EXT
+14	Connector, Fixed resistor (350 ohm, bridge, 2 pins	4		R1A, R1B, R2A, R2B
+15	Connector, Half-bridge strain gauge module, 3 pins	2		HALFBRIDGE1, HALFBRIDGE2
+16	Connector, MT6835 magnetic encoder module (elevator linkage), 6 pins	1		ENCODER
+17	Connector, Pimoroni Pico Plus 2 W, 10 pins	1		PICO
+18	Connector, Rudder servo, 3 pins	1		RUDDER
+19	Connector, Servo power supply (battery/BEC, separate from Pico), 2 pins	1		SERVO_PSU
+20	Connector, Shared SBUS bus (signal + servo power rail), 3 pins	1		SBUS_BUS

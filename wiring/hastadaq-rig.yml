@@ -1,0 +1,432 @@
+# hastadaq-rig.yml
+#
+# Wiring diagram for HastaDAQ: Pimoroni Pico Plus 2 + MT6835 encoder
+# (pitch encoder) + 2x Adafruit ADS122C04 24-bit ADCs + Adafruit
+# ICM20649 IMU, all on one Qwiic/I2C chain, driving 5 SBUS servos
+# (2 ailerons, 2 elevators, 1 rudder) with external trigger in/out for
+# synchronising with other test equipment. See HastaDAQ.ino's header
+# comment for the full command/signal-flow rationale -- summarised here:
+#
+# I2C/QWIIC CHAIN -- IMU and both ADCs share ONE I2C bus, daisy-chained
+# via their Qwiic connectors (Pico -> IMU -> ADS#1 -> ADS#2, order
+# doesn't matter electrically). ICM20649 default address 0x68. First
+# ADS122C04 default address 0x40. SECOND ADS122C04's address is
+# UNCONFIRMED here -- Adafruit's own guide documents address
+# solder-jumpers exist on the board but not the resulting address
+# values for each combination. Bridge ONE jumper pad on that board
+# (labelled near its Qwiic connectors) and confirm the actual resulting
+# address via HastaDAQ's boot-time I2C scan (Serial Monitor) BEFORE
+# trusting ADS2_I2C_ADDR in the .ino -- update that constant to match
+# whatever the scan reports if it isn't 0x41.
+#
+# ADS122C04 SENSOR INPUTS -- CONFIRMED half-bridge strain gauges, one
+# complete 4-arm Wheatstone bridge per ADC (2x 350ohm gauges + 2x 350ohm
+# fixed completion resistors each) -- same topology as
+# wiring/strain-gauge-rig.yml, just built twice. Unlike that rig, bridge
+# excitation here comes from each ADS122C04's OWN VIN/GND pins (same 3.3V
+# rail the Qwiic chain already powers everything from) rather than a
+# separate VBUS/5V rail -- there's no conflict to avoid here, so
+# Sensors.h uses the simpler VREF_SUPPLY (AVDD-referenced) reference
+# mode, no REFP/REFN tap-off-the-bridge wiring needed.
+#
+# SBUS BUS -- all 5 servos are on ONE shared SBUS signal wire (a real
+# SBUS bus, not point-to-point) -- they differ only by which SBUS
+# channel number they're bound to (set in HastaDAQ.ino's
+# sbusChannelMap[]), not by separate signal wires. Servo power (typically
+# 5-7.4V depending on your servos) comes from a separate battery/BEC, NOT
+# from the Pico -- steppers/servos under load can draw far more current
+# than the Pico's own regulator is rated for.
+#
+# TRIGGER IN/OUT -- simple 3.3V logic level, GND-referenced. TRIGGER IN's
+# edge polarity (default rising) and TRIGGER OUT's pulse width are both
+# configurable via SCPI (TRIGCONFIG) without rewiring.
+#
+# Render with WireViz (pip install wireviz; needs Graphviz on PATH too):
+#   wireviz hastadaq-rig.yml
+
+metadata:
+  title: HastaDAQ wiring
+  description: Pico Plus 2 + MT6835 encoder + 2x ADS122C04 + ICM20649 IMU + 5x SBUS servo + trigger I/O
+
+connectors:
+  PICO:
+    type: Pimoroni Pico Plus 2
+    pinlabels: [QWIIC, ENC_SCK, ENC_MOSI, ENC_MISO, ENC_CS, SBUS_SIG, TRIG_IN, TRIG_OUT, 3V3, GND]
+    notes: |
+      QWIIC carries I2C + 3V3/GND to the IMU/ADC chain. SBUS_SIG is
+      GPIO20 (TX) and GPIO21 (RX) tied together externally at the SBUS
+      connector (see SbusServoBank.h) -- shown here as one signal net.
+      TRIG_IN=GPIO14, TRIG_OUT=GPIO15.
+
+  IMU:
+    type: Adafruit ICM20649 6-DoF IMU breakout
+    pinlabels: [QWIIC_IN, QWIIC_OUT]
+    notes: Default I2C address 0x68. QWIIC_OUT continues the chain to ADS1.
+
+  ADS1:
+    type: Adafruit ADS122C04 24-bit ADC breakout (#1)
+    pinlabels: [QWIIC_IN, QWIIC_OUT, VIN, GND, A0, A1]
+    notes: |
+      Default I2C address 0x40 (unmodified). VIN/GND also power the
+      half-bridge assembly below (see file header). QWIIC_OUT continues
+      the chain to ADS2.
+
+  ADS2:
+    type: Adafruit ADS122C04 24-bit ADC breakout (#2)
+    pinlabels: [QWIIC_IN, VIN, GND, A0, A1]
+    notes: |
+      Address jumper bridged to move off the default 0x40 (collides with
+      ADS1 otherwise) -- resulting address UNCONFIRMED, see file header.
+      VIN/GND also power the half-bridge assembly below.
+
+  HALFBRIDGE1:
+    type: Half-bridge strain gauge module #1 (2x 350 ohm gauges, pre-wired 3-wire)
+    pinlabels: [V, SENSE, GND]
+    notes: Two 350ohm gauges mounted opposite-sign (e.g. opposite faces of a bending element) -- see wiring/strain-gauge-rig.yml for the full rationale.
+
+  R1A:
+    type: Fixed resistor (350 ohm, bridge #1 completion)
+    pinlabels: ["1", "2"]
+    notes: Precision resistor matching the gauges' nominal resistance -- not a strain gauge.
+
+  R2A:
+    type: Fixed resistor (350 ohm, bridge #1 completion)
+    pinlabels: ["1", "2"]
+    notes: Precision resistor matching the gauges' nominal resistance -- not a strain gauge.
+
+  HALFBRIDGE2:
+    type: Half-bridge strain gauge module #2 (2x 350 ohm gauges, pre-wired 3-wire)
+    pinlabels: [V, SENSE, GND]
+    notes: Two 350ohm gauges mounted opposite-sign (e.g. opposite faces of a bending element) -- see wiring/strain-gauge-rig.yml for the full rationale.
+
+  R1B:
+    type: Fixed resistor (350 ohm, bridge #2 completion)
+    pinlabels: ["1", "2"]
+    notes: Precision resistor matching the gauges' nominal resistance -- not a strain gauge.
+
+  R2B:
+    type: Fixed resistor (350 ohm, bridge #2 completion)
+    pinlabels: ["1", "2"]
+    notes: Precision resistor matching the gauges' nominal resistance -- not a strain gauge.
+
+  ENCODER:
+    type: MT6835 magnetic encoder module (pitch encoder)
+    pinlabels: [GND, nCS, SCK, MOSI, MISO, VCC]
+    notes: Pin order confirmed on the bench in this repo's earlier EncoderCalibration rig -- same module/order reused here.
+
+  SBUS_BUS:
+    type: Shared SBUS bus (signal + servo power rail)
+    pinlabels: [SIGNAL, VSERVO, GND]
+    notes: |
+      Represents the shared bus all 5 servos tap -- not a physical part,
+      just this diagram's way of showing one signal/power/ground rail
+      fanning out to 5 servo connectors instead of drawing 5 identical
+      point-to-point runs from the Pico.
+
+  SERVO_PSU:
+    type: Servo power supply (battery/BEC, separate from Pico)
+    pinlabels: ["V+", GND]
+    notes: Voltage per your servos' actual rating -- NOT powered from the Pico (see file header).
+
+  AIL_L:
+    type: Aileron servo (left)
+    pinlabels: [SIGNAL, "V+", GND]
+    notes: Bind to the SBUS channel set for CH_AIL_L (0) in sbusChannelMap[].
+
+  AIL_R:
+    type: Aileron servo (right)
+    pinlabels: [SIGNAL, "V+", GND]
+    notes: Bind to the SBUS channel set for CH_AIL_R (1) in sbusChannelMap[].
+
+  ELEV_L:
+    type: Elevator servo (left)
+    pinlabels: [SIGNAL, "V+", GND]
+    notes: Bind to the SBUS channel set for CH_ELEV_L (2) in sbusChannelMap[].
+
+  ELEV_R:
+    type: Elevator servo (right)
+    pinlabels: [SIGNAL, "V+", GND]
+    notes: Bind to the SBUS channel set for CH_ELEV_R (3) in sbusChannelMap[].
+
+  RUDDER:
+    type: Rudder servo
+    pinlabels: [SIGNAL, "V+", GND]
+    notes: Bind to the SBUS channel set for CH_RUDDER (4) in sbusChannelMap[].
+
+  TRIGGER_IN_EXT:
+    type: External trigger source (other equipment)
+    pinlabels: [SIGNAL, GND]
+    notes: 3.3V logic, edge polarity set via SCPI TRIGCONFIG (default rising).
+
+  TRIGGER_OUT_EXT:
+    type: External trigger sink (other equipment, if HastaDAQ is master)
+    pinlabels: [SIGNAL, GND]
+    notes: 3.3V logic pulse, width set via SCPI TRIGCONFIG (default 2ms).
+
+cables:
+  W_QWIIC_IMU:
+    wirecount: 1
+    colors: [BK]
+    notes: Qwiic cable, Pico to IMU
+
+  W_QWIIC_ADS1:
+    wirecount: 1
+    colors: [BK]
+    notes: Qwiic cable, IMU to ADS1
+
+  W_QWIIC_ADS2:
+    wirecount: 1
+    colors: [BK]
+    notes: Qwiic cable, ADS1 to ADS2
+
+  W_ENC_SIG:
+    wirecount: 4
+    colors: [YE, OG, GN, BU]
+    notes: Encoder SPI1 (SCK/MOSI/MISO/nCS)
+
+  W_ENC_PWR:
+    wirecount: 2
+    colors: [RD, BK]
+    notes: Encoder power (VCC/GND)
+
+  W_SBUS_SIG:
+    wirecount: 1
+    colors: [WH]
+    notes: SBUS signal, Pico to shared bus
+
+  W_PSU_V:
+    wirecount: 1
+    colors: [RD]
+    notes: Servo power rail
+
+  W_PSU_GND:
+    wirecount: 1
+    colors: [BK]
+    notes: Servo power ground
+
+  W_AIL_L:
+    wirecount: 3
+    colors: [WH, RD, BK]
+    notes: Aileron L (signal/power/ground)
+
+  W_AIL_R:
+    wirecount: 3
+    colors: [WH, RD, BK]
+    notes: Aileron R (signal/power/ground)
+
+  W_ELEV_L:
+    wirecount: 3
+    colors: [WH, RD, BK]
+    notes: Elevator L (signal/power/ground)
+
+  W_ELEV_R:
+    wirecount: 3
+    colors: [WH, RD, BK]
+    notes: Elevator R (signal/power/ground)
+
+  W_RUDDER:
+    wirecount: 3
+    colors: [WH, RD, BK]
+    notes: Rudder (signal/power/ground)
+
+  W_TRIG_IN:
+    wirecount: 2
+    colors: [VT, BK]
+    notes: External trigger input
+
+  W_TRIG_OUT:
+    wirecount: 2
+    colors: [VT, BK]
+    notes: External trigger output
+
+  W_ADS1_EXC_HB:
+    wirecount: 1
+    colors: [RD]
+    notes: "EXC+ (from ADS1 VIN) to half-bridge #1 V"
+
+  W_ADS1_EXC_R1:
+    wirecount: 1
+    colors: [RD]
+    notes: "EXC+ (from ADS1 VIN) to R1A (bridge #1 top rail)"
+
+  W_ADS1_GND_HB:
+    wirecount: 1
+    colors: [BK]
+    notes: "EXC- (from ADS1 GND) to half-bridge #1 GND"
+
+  W_ADS1_GND_R2:
+    wirecount: 1
+    colors: [BK]
+    notes: "EXC- (from ADS1 GND) to R2A (bridge #1 bottom rail)"
+
+  W_ADS1_SENSE:
+    wirecount: 1
+    colors: [YE]
+    notes: "OUT+ (half-bridge #1 SENSE) to ADS1 A0"
+
+  W_ADS1_OUTN_MID:
+    wirecount: 1
+    colors: [GN]
+    notes: "OUT- node: R1A/R2A midpoint"
+
+  W_ADS1_OUTN_ADC:
+    wirecount: 1
+    colors: [GN]
+    notes: "OUT- to ADS1 A1"
+
+  W_ADS2_EXC_HB:
+    wirecount: 1
+    colors: [RD]
+    notes: "EXC+ (from ADS2 VIN) to half-bridge #2 V"
+
+  W_ADS2_EXC_R1:
+    wirecount: 1
+    colors: [RD]
+    notes: "EXC+ (from ADS2 VIN) to R1B (bridge #2 top rail)"
+
+  W_ADS2_GND_HB:
+    wirecount: 1
+    colors: [BK]
+    notes: "EXC- (from ADS2 GND) to half-bridge #2 GND"
+
+  W_ADS2_GND_R2:
+    wirecount: 1
+    colors: [BK]
+    notes: "EXC- (from ADS2 GND) to R2B (bridge #2 bottom rail)"
+
+  W_ADS2_SENSE:
+    wirecount: 1
+    colors: [YE]
+    notes: "OUT+ (half-bridge #2 SENSE) to ADS2 A0"
+
+  W_ADS2_OUTN_MID:
+    wirecount: 1
+    colors: [GN]
+    notes: "OUT- node: R1B/R2B midpoint"
+
+  W_ADS2_OUTN_ADC:
+    wirecount: 1
+    colors: [GN]
+    notes: "OUT- to ADS2 A1"
+
+connections:
+  -
+    - PICO: [1]
+    - W_QWIIC_IMU: [1]
+    - IMU: [1]
+  -
+    - IMU: [2]
+    - W_QWIIC_ADS1: [1]
+    - ADS1: [1]
+  -
+    - ADS1: [2]
+    - W_QWIIC_ADS2: [1]
+    - ADS2: [1]
+  -
+    - PICO: [2, 3, 4, 5]
+    - W_ENC_SIG: [1, 2, 3, 4]
+    - ENCODER: [3, 4, 5, 2]
+  -
+    - PICO: [9]
+    - W_ENC_PWR: [1]
+    - ENCODER: [6]
+  -
+    - PICO: [10]
+    - W_ENC_PWR: [2]
+    - ENCODER: [1]
+  -
+    - PICO: [6]
+    - W_SBUS_SIG: [1]
+    - SBUS_BUS: [1]
+  -
+    - SERVO_PSU: [1]
+    - W_PSU_V: [1]
+    - SBUS_BUS: [2]
+  -
+    - SERVO_PSU: [2]
+    - W_PSU_GND: [1]
+    - SBUS_BUS: [3]
+  -
+    - SBUS_BUS: [1, 2, 3]
+    - W_AIL_L: [1, 2, 3]
+    - AIL_L: [1, 2, 3]
+  -
+    - SBUS_BUS: [1, 2, 3]
+    - W_AIL_R: [1, 2, 3]
+    - AIL_R: [1, 2, 3]
+  -
+    - SBUS_BUS: [1, 2, 3]
+    - W_ELEV_L: [1, 2, 3]
+    - ELEV_L: [1, 2, 3]
+  -
+    - SBUS_BUS: [1, 2, 3]
+    - W_ELEV_R: [1, 2, 3]
+    - ELEV_R: [1, 2, 3]
+  -
+    - SBUS_BUS: [1, 2, 3]
+    - W_RUDDER: [1, 2, 3]
+    - RUDDER: [1, 2, 3]
+  -
+    - TRIGGER_IN_EXT: [1, 2]
+    - W_TRIG_IN: [1, 2]
+    - PICO: [7, 10]
+  -
+    - PICO: [8, 10]
+    - W_TRIG_OUT: [1, 2]
+    - TRIGGER_OUT_EXT: [1, 2]
+  -
+    - ADS1: [3]
+    - W_ADS1_EXC_HB: [1]
+    - HALFBRIDGE1: [1]
+  -
+    - ADS1: [3]
+    - W_ADS1_EXC_R1: [1]
+    - R1A: [1]
+  -
+    - ADS1: [4]
+    - W_ADS1_GND_HB: [1]
+    - HALFBRIDGE1: [3]
+  -
+    - ADS1: [4]
+    - W_ADS1_GND_R2: [1]
+    - R2A: [2]
+  -
+    - HALFBRIDGE1: [2]
+    - W_ADS1_SENSE: [1]
+    - ADS1: [5]
+  -
+    - R1A: [2]
+    - W_ADS1_OUTN_MID: [1]
+    - R2A: [1]
+  -
+    - R1A: [2]
+    - W_ADS1_OUTN_ADC: [1]
+    - ADS1: [6]
+  -
+    - ADS2: [2]
+    - W_ADS2_EXC_HB: [1]
+    - HALFBRIDGE2: [1]
+  -
+    - ADS2: [2]
+    - W_ADS2_EXC_R1: [1]
+    - R1B: [1]
+  -
+    - ADS2: [3]
+    - W_ADS2_GND_HB: [1]
+    - HALFBRIDGE2: [3]
+  -
+    - ADS2: [3]
+    - W_ADS2_GND_R2: [1]
+    - R2B: [2]
+  -
+    - HALFBRIDGE2: [2]
+    - W_ADS2_SENSE: [1]
+    - ADS2: [4]
+  -
+    - R1B: [2]
+    - W_ADS2_OUTN_MID: [1]
+    - R2B: [1]
+  -
+    - R1B: [2]
+    - W_ADS2_OUTN_ADC: [1]
+    - ADS2: [5]

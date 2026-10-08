@@ -26,3 +26,5 @@ lib: ArduinoJson@7.4.3
 lib: Bolder Flight Systems SBUS@8.1.4
 lib: Adafruit ADS122C04@1.0.0
 lib: Adafruit BusIO@1.17.4
+lib: Adafruit ICM20X@2.0.7
+lib: Adafruit Unified Sensor@1.1.15

@@ -1,6 +1,6 @@
 # strain-gauge-rig.yml
 #
-# Wiring diagram for the StrainGaugeBringup rig: Pimoroni Pico Plus 2 W +
+# Wiring diagram for the StrainGaugeBringup rig: Pimoroni Pico Plus 2 +
 # Adafruit ADS122C04 24-bit ADC breakout + a half-bridge strain gauge
 # assembly (2x 350ohm gauges mounted on opposite faces of a bending
 # beam, factory-wired into one 3-wire module: V/SENSE/GND) + 2x 350ohm
@@ -42,11 +42,11 @@
 
 metadata:
   title: Strain gauge rig wiring
-  description: Pico Plus 2 W + Adafruit ADS122C04 (Qwiic, VBUS excitation) + half-bridge strain gauge module + 2x 350 ohm completion resistors
+  description: Pico Plus 2 + Adafruit ADS122C04 (Qwiic, VBUS excitation) + half-bridge strain gauge module + 2x 350 ohm completion resistors
 
 connectors:
   PICO:
-    type: Pimoroni Pico Plus 2 W
+    type: Pimoroni Pico Plus 2
     pinlabels: [QWIIC, VBUS]
     notes: |
       QWIIC: Qwiic/STEMMA QT port -- carries 3V3/GND/SDA/SCL to the

@@ -11,7 +11,7 @@
 // Hardware: see StrainGaugeBringup.ino's header comment / wiring/strain-gauge-rig.yml.
 //   - ADS122C04: Qwiic (I2C + 3.3V AVDD), bridge excitation on Pico
 //     VBUS (5V), external reference tapping the bridge's OUT- node.
-//   - WiFi: Pimoroni RM2 (built into the Pico Plus 2 W), same CYW43 pin
+//   - WiFi: Pimoroni RM2 breakout on SP/CE, same CYW43 pin
 //     fix as the other projects in this repo.
 //
 // Wire protocol -- newline-terminated ASCII SCPI over TCP port 5025,
@@ -50,7 +50,7 @@
 #include <Adafruit_ADS122C04.h>
 #include "secrets.h"
 
-// --- CYW43 (RM2, built into the Pico Plus 2 W) pin fix -- confirmed working ---
+// --- CYW43 (RM2 breakout on SP/CE) pin fix -- confirmed working ---
 uint CYW43_PINS_SPCE[CYW43_PIN_INDEX_WL_COUNT] = {
     32, // REG_ON
     35, // DATA_OUT

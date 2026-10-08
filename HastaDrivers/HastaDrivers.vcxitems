@@ -29,7 +29,12 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)src\SweepWave.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)src\Mt6835Encoder.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)src\SbusServo.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\SbusServoBank.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)src\StepperDriver.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\PidController.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\OneMinusCosine.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\ExcitationGenerator.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\TriggerIO.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)src\secrets.h" />
   </ItemGroup>
 </Project>

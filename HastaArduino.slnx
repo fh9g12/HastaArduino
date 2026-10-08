@@ -6,6 +6,10 @@
     <Platform Name="x86" />
   </Configurations>
   <Project Path="HastaDrivers/HastaDrivers.vcxitems" Id="f36634eb-77eb-4a7f-8751-8a76fe60215d" />
+  <Project Path="HastaDAQ/HastaDAQ.vcxproj" Id="5f8d52d7-a77a-4169-8215-26f0d8438043">
+    <Platform Solution="*|x86" Project="x86" />
+    <Deploy />
+  </Project>
   <Project Path="EncoderCalibration/EncoderCalibration.vcxproj" Id="0164f3b4-c86c-45e8-acf2-7a84ff076d9e">
     <Platform Solution="*|x86" Project="x86" />
     <Deploy />
