@@ -105,6 +105,11 @@
 //                     ASCII header line "BIN <n> <bytes>", then n*bytes
 //                     raw HastaDaqSample records (see CaptureManager.h),
 //                     little-endian.
+//   ENCODER?       -> current encoder angle in degrees, plain number
+//                     (latest cached reading, no capture needed).
+//   ZERO           -> software-zero the encoder at its current position
+//                     (RAM only, lost on reboot). Refused with ERR while
+//                     the control loop is enabled.
 //   TRIGCONFIG     -> JSON: {"outPulseMs":..,"inEdge":"rising"|"falling"}
 //   TRIGCONFIG?    -> JSON reply
 //   UDPCONFIG      -> JSON: {"ip":"a.b.c.d","port":..,"rateHz":..,
@@ -125,6 +130,7 @@
 //   - WiFi: Pimoroni RM2 breakout on SP/CE, same CYW43 pin
 //     fix as every other rig in this repo.
 
+#include <Adafruit_ADS122C04.h>
 #include <WiFi.h>
 #include <pico/cyw43_driver.h>
 #include <math.h>
@@ -420,6 +426,24 @@ void GetData(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     interface.write(reinterpret_cast<const uint8_t*>(capture.buffer()), (size_t)capture.sampleCount() * sizeof(HastaDaqSample));
 }
 
+// Latest cached encoder angle (refreshed every loop() by sensors.update()),
+// so this never blocks or touches the SPI bus itself.
+void GetEncoder(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+    interface.println(sensors.encoderDeg(), 3);
+}
+
+// Software zero only (RAM offset, lost on reboot). Zeroing under an
+// enabled control loop would step the PID's error by the old angle, so
+// refuse -- the caller must disable control first.
+void ZeroEncoderCmd(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+    if (ctrlEnabled) {
+        interface.println(F("ERR control loop enabled -- CTRLCONFIG enabled:false first"));
+        return;
+    }
+    sensors.zeroEncoder();
+    interface.println(F("OK"));
+}
+
 void SetTrigConfig(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     String json = interface.readStringUntil('\n');
     json.trim();
@@ -522,6 +546,8 @@ void setup() {
     scpi.RegisterCommand("FIRE", &FireCmd);
     scpi.RegisterCommand("STATUS?", &GetStatus);
     scpi.RegisterCommand("DATA?", &GetData);
+    scpi.RegisterCommand("ENCODER?", &GetEncoder);
+    scpi.RegisterCommand("ZERO", &ZeroEncoderCmd);
     scpi.RegisterCommand("TRIGCONFIG", &SetTrigConfig);
     scpi.RegisterCommand("TRIGCONFIG?", &GetTrigConfig);
     scpi.RegisterCommand("UDPCONFIG", &SetUdpConfig);

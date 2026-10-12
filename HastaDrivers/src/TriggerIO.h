@@ -18,7 +18,7 @@ public:
         _instance = this;
 
         pinMode(_inPin, INPUT_PULLDOWN);
-        attachInterrupt(digitalPinToInterrupt(_inPin), isrTrampoline, _inEdgeMode);
+        attachInterrupt(digitalPinToInterrupt(_inPin), isrTrampoline, (PinStatus)_inEdgeMode);
 
         pinMode(_outPin, OUTPUT);
         digitalWrite(_outPin, LOW);
@@ -29,7 +29,7 @@ public:
         if (edgeMode == _inEdgeMode) return;
         _inEdgeMode = edgeMode;
         detachInterrupt(digitalPinToInterrupt(_inPin));
-        attachInterrupt(digitalPinToInterrupt(_inPin), isrTrampoline, _inEdgeMode);
+        attachInterrupt(digitalPinToInterrupt(_inPin), isrTrampoline, (PinStatus)_inEdgeMode);
     }
     int inEdge() const { return _inEdgeMode; }
 

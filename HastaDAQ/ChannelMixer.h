@@ -16,11 +16,11 @@ struct ChannelDef {
 };
 
 static const ChannelDef CHANNEL_DEFS[] = {
-    {"AIL_L",   0},
-    {"AIL_R",   1},
+    {"RUDDER",  0},
+    {"ELEV_R",  1},
     {"ELEV_L",  2},
-    {"ELEV_R",  3},
-    {"RUDDER",  4},
+    {"AIL_R",   3},
+    {"AIL_L",   4},
 };
 static const uint8_t NUM_CHANNELS = sizeof(CHANNEL_DEFS) / sizeof(CHANNEL_DEFS[0]);
 
@@ -35,7 +35,7 @@ public:
         for (uint8_t i = 0; i < NUM_CHANNELS; i++) {
             _excGain[i] = 0.0f;
             _ctrlGain[i] = 0.0f;
-            _trimDeg[i] = 90.0f;
+            _trimDeg[i] = 0.0f;
         }
     }
 
@@ -66,7 +66,7 @@ public:
     float trimDeg(uint8_t ch) const { return (ch < NUM_CHANNELS) ? _trimDeg[ch] : 0.0f; }
     int16_t chMin(uint8_t ch) const { return _servos.chMin(ch); }
     int16_t chMax(uint8_t ch) const { return _servos.chMax(ch); }
-    float lastCommandedDeg(uint8_t ch) const { return _servos.lastCommandedDeg(ch); }
+    float lastCommandedDeg(uint8_t ch) const { return _servos.lastCommandedDeg(ch) - SERVO_CENTRE_DEG; }
 
     // Applies trim+excitation*excGain+control*ctrlGain per channel and
     // refreshes the SBUS frame -- rate-limited internally (SBUS shouldn't
@@ -79,12 +79,18 @@ public:
 
         for (uint8_t i = 0; i < NUM_CHANNELS; i++) {
             float deg = _trimDeg[i] + _excGain[i] * excitationValue + _ctrlGain[i] * controlOutputDeg;
-            _servos.writeDeg(i, deg);
+            _servos.writeDeg(i, deg + SERVO_CENTRE_DEG);
         }
         _servos.retransmit();
     }
 
 private:
+    // Every angle in this class (trim, excitation, control output, logged
+    // servoDeg) is centred on 0, travel +/-90. SbusServoBank itself works
+    // in 0..180 with 90 = centre, so the offset is applied only at that
+    // boundary (update() in, lastCommandedDeg() out).
+    static constexpr float SERVO_CENTRE_DEG = 90.0f;
+
     static const int8_t SBUS_TX_PIN = 20, SBUS_RX_PIN = 21;
     static const uint32_t SBUS_UPDATE_INTERVAL_US = 9000; // ~111Hz -- standard SBUS frame rate ballpark
 
