@@ -45,6 +45,7 @@ classdef HastaDaqClient < handle
 
     properties (Access = private)
         Conn   % tcpclient
+        ChanArraySupported = true   % false once an old board rejects an array CHANCONFIG
     end
 
     methods
@@ -136,9 +137,65 @@ classdef HastaDaqClient < handle
                 error("HastaDaqClient:badAngle", ...
                     "Angle must be within +/-%.2f deg.", limit);
             end
+            % ONE command for all the surfaces (a JSON array), applied
+            % together on the board so they start moving in the same SBUS
+            % frame - separate commands would each cost a WiFi round trip
+            % and the surfaces would start one after another.
+            body = struct("channel", {}, "trimDeg", {}, "excGain", {}, "ctrlGain", {});
             for k = 1:numel(surface)
-                obj.setChannel(surface(k), trimDeg=angleDeg(k), excGain=0, ctrlGain=0);
+                body(k) = struct("channel", HastaDaqClient.channelId(surface(k)), ...
+                    "trimDeg", angleDeg(k), "excGain", 0, "ctrlGain", 0);
             end
+            % Older firmware only accepts one channel per CHANCONFIG and
+            % answers a multi-surface array with "ERR unknown channel"
+            % (changing nothing): fall back to one command per surface
+            % (not synchronised) and remember it, so this warns only once.
+            if obj.ChanArraySupported || isscalar(surface)
+                try
+                    obj.sendJson("CHANCONFIG", body);
+                    return
+                catch ME
+                    if isscalar(surface) || ME.identifier ~= "HastaDaqClient:boardError" ...
+                            || ~contains(ME.message, "unknown channel")
+                        rethrow(ME);
+                    end
+                    obj.ChanArraySupported = false;
+                    warning("HastaDaqClient:oldFirmware", ...
+                        "The board's firmware can't move several surfaces in one command - " + ...
+                        "update it for synchronised moves. Sending one at a time.");
+                end
+            end
+            for k = 1:numel(surface)
+                obj.sendJson("CHANCONFIG", body(k));
+            end
+        end
+
+        function setSteady(obj, surface, angleDeg, opts)
+            %SETSTEADY Set up a steady (no-excitation) test: move the
+            %surface(s) to a fixed angle and make sure nothing will
+            %oscillate, so the standard run()/waitForDone()/readData()
+            %that follow log a steady condition.
+            %
+            %   hd.setSteady([HDCh.ElevL HDCh.ElevR], 3)
+            %   hd.setSteady([HDCh.AilL HDCh.AilR], [5 -5], settleS=2)
+            %   hd.run(10, 100); hd.waitForDone(); data = hd.readData();
+            %
+            %   Disarms any armed excitation (so run() can't start a
+            %   waveform; it stays disarmed afterwards) and calls setAngle
+            %   (one angle for all surfaces, or one per surface), which also
+            %   zeroes those channels' excGain/ctrlGain. settleS (default
+            %   0) waits that many seconds afterwards so the surfaces have
+            %   arrived before you start logging. Does not touch the PID
+            %   loop's own settings or other channels. THIS MOVES SURFACES.
+            arguments
+                obj
+                surface (1,:) HDCh
+                angleDeg (1,:) double
+                opts.settleS (1,1) double {mustBeNonnegative} = 0
+            end
+            obj.disarmExcitation();
+            obj.setAngle(surface, angleDeg);
+            pause(opts.settleS);
         end
 
         function cfg = getChannel(obj, channel)
@@ -314,15 +371,11 @@ classdef HastaDaqClient < handle
         end
 
         function data = readData(obj)
-            %READDATA Fetch the last completed capture (DATA?) as a struct:
-            %   t_ms, adc1Mv, adc2Mv, encoderDeg       Nx1
-            %   accel, gyro                            Nx3 (x,y,z)
-            %   excitationDeg, controlOutputDeg        Nx1
-            %   servoDeg                               NxNUM_CHANNELS
-            %   channelNames                           (not sent by the
-            %     board; column order follows CHANNEL_DEFS in
-            %     ChannelMixer.h: RUDDER, ELEV_R, ELEV_L, AIL_R, AIL_L)
-            %   Same layout as matlab/common/readHastaDaqData.m.
+            %READDATA Fetch the last completed capture (DATA?) as a
+            %HastaDaqData object: one row per sample, with sensors,
+            %excitation and each servo's commanded angle as its own
+            %property (RUDDER_Angle, ELEV_R_Angle, ELEV_L_Angle,
+            %AIL_R_Angle, AIL_L_Angle). See HastaDaqData.m.
             obj.flushInput();
             writeline(obj.Conn, "DATA?");
             header = strtrim(readline(obj.Conn));
@@ -332,33 +385,14 @@ classdef HastaDaqClient < handle
             end
             n = parsed(1);
             bytesPerSample = parsed(2);
-            numChannels = (bytesPerSample - 48) / 4;
-            if numChannels ~= round(numChannels) || numChannels <= 0
-                error("HastaDaqClient:badReply", ...
-                    "Unexpected sample size (%d): doesn't match the 48-fixed-bytes-plus-4-per-channel layout.", ...
-                    bytesPerSample);
-            end
 
             if n > 0
                 raw = read(obj.Conn, n * bytesPerSample, "uint8");
             else
                 raw = zeros(0, 1, "uint8");
             end
-            raw = reshape(uint8(raw(:)), bytesPerSample, n);
-
-            field = @(byteStart, count) double(typecast( ...
-                reshape(raw(byteStart:byteStart + 4*count - 1, :), [], 1), "single"));
-
-            t_us = typecast(reshape(raw(1:4, :), [], 1), "uint32");
-            data.t_ms = double(t_us) / 1000;
-            data.adc1Mv = field(5, 1);
-            data.adc2Mv = field(9, 1);
-            data.encoderDeg = field(13, 1);
-            data.accel = reshape(field(17, 3), 3, n)';
-            data.gyro = reshape(field(29, 3), 3, n)';
-            data.excitationDeg = field(41, 1);
-            data.controlOutputDeg = field(45, 1);
-            data.servoDeg = reshape(field(49, numChannels), numChannels, n)';
+            raw = reshape(uint8(raw(:)), bytesPerSample, n); % column k = sample k's bytes
+            data = HastaDaqData.FromBytes(raw, bytesPerSample);
         end
 
         function deg = getEncoderDeg(obj)
@@ -451,10 +485,13 @@ classdef HastaDaqClient < handle
 
         function sendJson(obj, command, body)
             %SENDJSON Two-line JSON command: command line, then the JSON
-            %body as a second raw line; expects "OK" back.
+            %body as a second raw line; expects "OK" back. Both lines go out
+            %in ONE write: as two small writes, TCP's Nagle algorithm holds
+            %the second until the first is acknowledged, adding latency to
+            %every command.
             obj.flushInput();
-            writeline(obj.Conn, command);
-            writeline(obj.Conn, jsonencode(body));
+            lines = command + newline + jsonencode(body) + newline;
+            write(obj.Conn, uint8(char(lines)));
             reply = strtrim(readline(obj.Conn));
             HastaDaqClient.checkReply(reply, command);
         end

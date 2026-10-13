@@ -45,18 +45,18 @@ data = hd.readData();
 hd.disarmExcitation(); % don't let a later trigger start it again
 clear hd
 
-t = data.t_ms / 1000; t = t - t(1);
+t = data.Time;
 names = string(enumeration("HDCh"));
 
 figure("Name", "Sine wave");
 subplot(3, 1, 1);
-plot(t, data.excitationDeg); grid on;
+plot(t, data.ExcitationDeg); grid on;
 ylabel("excitation (deg)"); title(sprintf("%.3g Hz sine, %d cycles", FREQ_HZ, CYCLES));
 
 subplot(3, 1, 2);
-plot(t, data.servoDeg); grid on; legend(names, "Location", "best");
+plot(t, data.ServoAngles); grid on; legend(names, "Location", "best");
 ylabel("servo command (deg)");
 
 subplot(3, 1, 3);
-plot(t, data.encoderDeg); grid on;
+plot(t, data.EncoderDeg); grid on;
 xlabel("t (s)"); ylabel("encoder (deg)");

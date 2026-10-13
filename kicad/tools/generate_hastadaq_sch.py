@@ -384,9 +384,15 @@ stub_label("+5V_VSYS", dx + 3.81, dy, "right")
 # SBUS bus out: one 3-pin 0.1in header (V, SIG, GND) to the servo bus
 header("SBUS out (V, SIG, GND)", 390, 100, [("V", "VSERVO"), ("SIG", "SBUS"), ("GND", "GND")])
 
-header("Bench PSU in (8.4 V)", 390, 188, [("V+", "+8V4_IN"), ("GND", "GND")])
-header("Trigger IN (from other equip.)", 390, 215, [("SIG", "TRIG_IN"), ("GND", "GND")])
-header("Trigger OUT (to other equip.)", 390, 240, [("SIG", "TRIG_OUT"), ("GND", "GND")])
+# "Power connector": one 8-wire cable carrying the bench supply, sensor ground
+# and both trigger lines. Pins 1/8 = GND, 2/7 = V supply (8.4 V), 3/6 = sensor
+# GND, 4 = trigger OUT, 5 = trigger IN. Paired pins (1+8, 2+7, 3+6) are
+# doubled up for current / redundancy, so each pair is the same net. Sensor
+# GND is tied to the one common GND here (see note 1).
+header("Power connector (8-wire): supply, GND, triggers", 390, 215,
+       [("GND", "GND"), ("VSUPPLY", "+8V4_IN"), ("GND_SENSOR", "GND"),
+        ("TRIG_OUT", "TRIG_OUT"), ("TRIG_IN", "TRIG_IN"), ("GND_SENSOR", "GND"),
+        ("VSUPPLY", "+8V4_IN"), ("GND", "GND")])
 
 text("HastaDAQ", 20, 20, 3.0, bold=True)
 text("Net labels connect everything: same name = same net. +3V3 / GND are plain labels, not power symbols.", 20, 27)
@@ -406,6 +412,8 @@ text("NOTES\n"
      "   Pico VSYS. Pico VSYS max is 5.5 V (datasheet), so the UBEC MUST be set to 5 V, not 6 V. Confirm the UBEC's\n"
      "   input range covers 8.4 V. USB (VBUS) is left for programming. Set a current limit on the bench PSU.\n"
      "6. Trigger pins are 3.3 V logic only. Pin order on the headers: see each symbol.\n"
+     "   Power connector (8-wire): 1,8 GND | 2,7 V supply (8.4 V) | 3,6 sensor GND | 4 trigger OUT | 5 trigger IN.\n"
+     "   Sensor GND (3,6) is drawn tied to the common GND; split it only if the sensor return must stay separate.\n"
      "7. Per ADC: 1k in each bridge-output leg + 100nF across them (~800 Hz corner), and 10uF + 100nF across the\n"
      "   bridge supply. Place these at the ADC end. Use shielded twisted cable for the gauge wires, shield to GND at\n"
      "   the ADC end only.",

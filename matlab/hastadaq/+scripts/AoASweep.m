@@ -1,0 +1,100 @@
+HastaIP = "192.168.1.107";  % <-- set to your board's actual IP
+OHBIP = "192.168.1.61";
+
+%% setup ohb object
+if ~exist("ohb","var")
+    ohb = wt.OHBControl();
+end
+if ~ohb.connected
+    if ~ohb.connect(OHBIP)
+        error('Not Connected to OHB server')
+    end
+    ohb.openLogFile();
+end
+
+%% setup Hasta DAQ object
+% the board takes one client at a time, so reuse an existing connection
+if ~exist("hd","var") || ~isvalid(hd)
+    hd = HastaDaqClient(HastaIP);
+end
+
+%% setup script
+
+AoAs = -2:1:15;
+Betas = unique([-45:5:45,-15:1.25:15]);
+
+AoAs = 0:3:6;
+Betas = [-20,0,20];
+
+RunNumber = incrementRunNumber();   % from runNumber.txt; call incrementRunNumber() when the wind is turned off/on
+testType = "Steady";   % Steady | Sine | Cosine | Chirp
+
+% <-- fill in the model setup for this run
+modelConfig = ModelConfig(TankType="Solid", TankDiameter_mm=NaN, FuelMass_g=0);
+% assert(~isnan(modelConfig.TankDiameter_mm) && ~isnan(modelConfig.FuelMass_g), ...
+%     "Set the tank diameter and fuel mass in modelConfig before running.");
+
+dataDir = "data";
+if ~isfolder(dataDir)
+    mkdir(dataDir);
+end
+filename = string(fullfile(dataDir, sprintf("Run%02d_AoASweep_%s.mat", RunNumber, ...
+    char(datetime("now", Format="yyyyMMdd_HHmmss")))));
+
+% the most recent zero run (scripts.ZeroRun), recorded in every test point's
+% meta so the force sensors can be zeroed in post-processing
+zeroRun = getLastZeroRun(dataDir);
+if zeroRun == ""
+    warning("AoASweep:noZeroRun", "No zero run found in %s - run scripts.ZeroRun first.", dataDir);
+elseif ~contains(zeroRun, sprintf("Run%02d_", RunNumber))
+    warning("AoASweep:oldZeroRun", "The last zero run is from a different run number: %s", zeroRun);
+end
+
+%% run: one hdData / ohbData / meta per test point, kept in parallel arrays
+hdData = HastaDaqData.empty;
+ohbData = wt.OHBData.empty;
+meta = MetaData.empty;
+
+ohb.moveIncidence(0,2,2,2,blocking=true);
+hd.setSteady(["ElevR","ElevL"],0);
+
+k = 0;   % test points completed so far (TestNumber = k-1, starting at 0)
+try
+    for i = 1:length(AoAs)
+        % set AoA
+        ohb.moveIncidence(AoAs(i),2,2,2,blocking=true);
+        for j = 1:length(Betas)
+            % set elevator angle
+            hd.setSteady(["ElevR","ElevL"],Betas(j));
+            pause(0.5);
+            % trigger sample
+            N = 5;
+            startTime = datetime("now");
+            ohb.sample(N);
+            hd.run(N,100);
+            hd.waitForDone();
+            hdPoint = hd.readData().mean();   % steady: keep just the average
+            pause(0.25)
+            ohbPoint = wt.OHBData.FromString(ohb.readLastSample);
+
+            % only now count the point, so the three arrays stay the same length
+            k = k + 1;
+            hdData(k) = hdPoint;
+            ohbData(k) = ohbPoint;
+            meta(k) = MetaData(Datetime=startTime, RunNumber=RunNumber, TestNumber=k-1, ...
+                TestType=testType, Filename=filename, ZeroRun=zeroRun, ModelConfig=modelConfig, ...
+                Parameters=struct(AoA_deg=AoAs(i), ElevatorDeg=Betas(j)));
+        end
+        hd.setSteady(["ElevR","ElevL"],0);
+    end
+catch ME
+    % don't lose tunnel time: keep what we have, then re-throw
+    partialFile = replace(filename, ".mat", "_partial.mat");
+    save(partialFile, "hdData", "ohbData", "meta");
+    fprintf("Stopped after %d test points; partial data saved to %s\n", k, partialFile);
+    rethrow(ME);
+end
+
+%% save
+save(filename, "hdData", "ohbData", "meta");
+fprintf("Saved %d test points to %s\n", k, filename);

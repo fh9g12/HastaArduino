@@ -47,30 +47,30 @@ data = hd.readData();
 hd.disarmExcitation(); % don't let a later trigger start it again
 clear hd
 
-t = data.t_ms / 1000; t = t - t(1);
+t = data.Time;
 names = string(enumeration("HDCh"));
 
 figure("Name", "Chirp");
 subplot(5, 1, 1);
-plot(t, data.excitationDeg); grid on;
+plot(t, data.ExcitationDeg); grid on;
 ylabel("excitation (deg)"); title("Chirp command");
 
 subplot(5, 1, 2);
-plot(t, data.servoDeg); grid on; legend(names, "Location", "best");
+plot(t, data.ServoAngles); grid on; legend(names, "Location", "best");
 ylabel("servo command (deg)");
 
 subplot(5, 1, 3);
-plot(t, data.encoderDeg); grid on;
+plot(t, data.EncoderDeg); grid on;
 ylabel("encoder (deg)");
 
 % Strain gauges: raw half-bridge ADC readings (mV) from the two ADS122C04s,
 % one plot each so their different scales don't hide each other.
 subplot(5, 1, 4);
-plot(t, data.adc1Mv); grid on;
+plot(t, data.Adc1Mv); grid on;
 ylabel("strain 1 (mV)");
 
 subplot(5, 1, 5);
-plot(t, data.adc2Mv); grid on;
+plot(t, data.Adc2Mv); grid on;
 xlabel("t (s)"); ylabel("strain 2 (mV)");
 
 linkaxes(findall(gcf, "Type", "axes"), "x"); % zoom/pan all five together

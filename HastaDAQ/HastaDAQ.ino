@@ -81,6 +81,9 @@
 //   CHANCONFIG     -> JSON: {"channel":0-4 OR a name from CHANNEL_DEFS
 //                     (e.g. "ELEV_L"), "excGain":-1..1,"ctrlGain":-1..1,
 //                     "trimDeg":..,"chMin":..,"chMax":..}
+//                     or an ARRAY of those objects: all are validated, then
+//                     applied together (surfaces move in the same SBUS
+//                     frame). Use the array form to move surfaces in sync.
 //   CHANCONFIG? <ch or name> -> JSON reply with that channel's config
 //   EXCITE         -> JSON: {"type":"sine"|"cosine"|"chirp","freqHz":..
 //                     (sine),"f0":..,"f1":.. (chirp),"periodS":..
@@ -219,6 +222,30 @@ int resolveChannelIndex(JsonVariantConst v) {
     return v.as<int>();
 }
 
+// (ChanUpdate lives in ChannelMixer.h: Arduino generates function prototypes
+// above any struct defined in the .ino itself, which breaks signatures using it.)
+
+// Parses one channel object into an update (fields not given keep the
+// channel's current value). Returns an error message, or nullptr if OK.
+// Nothing is applied here.
+const __FlashStringHelper* parseChanUpdate(JsonVariantConst cfg, ChanUpdate& u) {
+    int ch = resolveChannelIndex(cfg["channel"]);
+    if (ch < 0 || ch >= NUM_CHANNELS) {
+        return F("ERR unknown channel (index 0-4 or a CHANNEL_DEFS name)");
+    }
+    u.ch = ch;
+    u.excGain = cfg["excGain"] | channelMixer.excGain(ch);
+    u.ctrlGain = cfg["ctrlGain"] | channelMixer.ctrlGain(ch);
+    u.trimDeg = cfg["trimDeg"] | channelMixer.trimDeg(ch);
+    u.chMin = cfg["chMin"] | channelMixer.chMin(ch);
+    u.chMax = cfg["chMax"] | channelMixer.chMax(ch);
+    if (u.chMax <= u.chMin) return F("ERR chMax must be > chMin");
+    return nullptr;
+}
+
+// Takes either ONE channel object or an ARRAY of them. Every entry is
+// checked first and then all are applied together, so several surfaces
+// start moving in the same SBUS frame (and a bad entry changes nothing).
 void SetChanConfig(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     String json = interface.readStringUntil('\n');
     json.trim();
@@ -229,22 +256,31 @@ void SetChanConfig(SCPI_C commands, SCPI_P parameters, Stream& interface) {
         return;
     }
 
-    int ch = resolveChannelIndex(doc["channel"]);
-    if (ch < 0 || ch >= NUM_CHANNELS) {
-        interface.println(F("ERR unknown channel (index 0-4 or a CHANNEL_DEFS name)"));
-        return;
+    ChanUpdate updates[NUM_CHANNELS];
+    size_t count = 0;
+    if (doc.is<JsonArray>()) {
+        for (JsonVariantConst item : doc.as<JsonArrayConst>()) {
+            if (count >= NUM_CHANNELS) {
+                interface.println(F("ERR too many channels in one CHANCONFIG"));
+                return;
+            }
+            const __FlashStringHelper* err = parseChanUpdate(item, updates[count]);
+            if (err) { interface.println(err); return; }
+            count++;
+        }
+    } else {
+        const __FlashStringHelper* err = parseChanUpdate(doc.as<JsonVariantConst>(), updates[0]);
+        if (err) { interface.println(err); return; }
+        count = 1;
     }
 
-    channelMixer.setExcGain(ch, doc["excGain"] | channelMixer.excGain(ch));
-    channelMixer.setCtrlGain(ch, doc["ctrlGain"] | channelMixer.ctrlGain(ch));
-    channelMixer.setTrimDeg(ch, doc["trimDeg"] | channelMixer.trimDeg(ch));
-    int16_t chMin = doc["chMin"] | channelMixer.chMin(ch);
-    int16_t chMax = doc["chMax"] | channelMixer.chMax(ch);
-    if (chMax <= chMin) {
-        interface.println(F("ERR chMax must be > chMin"));
-        return;
+    for (size_t i = 0; i < count; i++) {
+        const ChanUpdate& u = updates[i];
+        channelMixer.setExcGain(u.ch, u.excGain);
+        channelMixer.setCtrlGain(u.ch, u.ctrlGain);
+        channelMixer.setTrimDeg(u.ch, u.trimDeg);
+        channelMixer.setChannelRange(u.ch, u.chMin, u.chMax); // clamped to 64..1984 (920..2120 us)
     }
-    channelMixer.setChannelRange(ch, chMin, chMax); // clamped to 64..1984 (920..2120 us)
 
     interface.println(F("OK"));
 }

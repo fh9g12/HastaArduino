@@ -15,6 +15,14 @@ struct ChannelDef {
     uint8_t sbusChannel;
 };
 
+// One validated CHANCONFIG entry, applied together with the others in the
+// same command (see SetChanConfig in HastaDAQ.ino).
+struct ChanUpdate {
+    int ch;
+    float excGain, ctrlGain, trimDeg;
+    int16_t chMin, chMax;
+};
+
 static const ChannelDef CHANNEL_DEFS[] = {
     {"RUDDER",  0},
     {"ELEV_R",  1},
