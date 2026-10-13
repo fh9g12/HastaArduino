@@ -12,13 +12,13 @@
 % gains and a small outLimitDeg - the output limit is the real safety cap
 % on the loop's authority.
 
-CONFIRMED_AREA_CLEAR = false;  % <-- set true once the surfaces are clear
+CONFIRMED_AREA_CLEAR = true;  % <-- set true once the surfaces are clear
 assert(CONFIRMED_AREA_CLEAR, "Set CONFIRMED_AREA_CLEAR = true once the surfaces are clear to move.");
 
 boardIP = "192.168.68.107";  % <-- set to your board's actual IP
 
-KP = 0.5; KI = 0.0; KD = 0.0;   % <-- tune these and re-run
-OUT_LIMIT_DEG = 10;
+KP = 1; KI = 0.0; KD = 0.0;   % <-- tune these and re-run
+OUT_LIMIT_DEG = 30;
 TARGET_BEFORE_DEG = 0;
 TARGET_AFTER_DEG = 5;
 SETTLE_S = 2;                   % hold the first target this long
@@ -29,12 +29,12 @@ hd = HastaDaqClient(boardIP);
 % Start with control off and no excitation, then wire up the channels.
 hd.disableControl();
 hd.disarmExcitation();
-for ch = enumeration("HastaDaqChannel")'
+for ch = enumeration("HDCh")'
     hd.setChannel(ch, excGain=0, ctrlGain=0, trimDeg=0);
 end
 % Flip one of these to -1 if an elevator servo is mounted mirrored.
-hd.setChannel(HastaDaqChannel.ElevL, ctrlGain=1);
-hd.setChannel(HastaDaqChannel.ElevR, ctrlGain=1);
+hd.setChannel(HDCh.ElevL, ctrlGain=1);
+hd.setChannel(HDCh.ElevR, ctrlGain=1);
 
 % Zero the encoder where the model currently sits (control is off, so
 % this is allowed). Remove if you've already zeroed.

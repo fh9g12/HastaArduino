@@ -240,7 +240,11 @@ void SetChanConfig(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     channelMixer.setTrimDeg(ch, doc["trimDeg"] | channelMixer.trimDeg(ch));
     int16_t chMin = doc["chMin"] | channelMixer.chMin(ch);
     int16_t chMax = doc["chMax"] | channelMixer.chMax(ch);
-    channelMixer.setChannelRange(ch, chMin, chMax);
+    if (chMax <= chMin) {
+        interface.println(F("ERR chMax must be > chMin"));
+        return;
+    }
+    channelMixer.setChannelRange(ch, chMin, chMax); // clamped to 64..1984 (920..2120 us)
 
     interface.println(F("OK"));
 }

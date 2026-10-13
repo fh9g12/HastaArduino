@@ -37,6 +37,12 @@ classdef HastaDaqClient < handle
         Port (1,1) double
     end
 
+    properties (Constant)
+        % Servo travel either side of centre - matches
+        % SbusServoBank::TRAVEL_DEG in the firmware.
+        MaxAngleDeg = 48.06
+    end
+
     properties (Access = private)
         Conn   % tcpclient
     end
@@ -70,16 +76,18 @@ classdef HastaDaqClient < handle
 
         function setChannel(obj, channel, opts)
             %SETCHANNEL Configure one servo channel's mix.
-            %   channel: a HastaDaqChannel member (Rudder, ElevR, ElevL,
+            %   channel: a HDCh member (Rudder, ElevR, ElevL,
             %   AilR, AilL). A firmware name string or 0-4 index also works.
             %   Options (all optional; omitted = unchanged):
             %     excGain, ctrlGain (-1..1), trimDeg, chMin, chMax
             %   Per-channel output is:
             %     trimDeg + excGain*excitation + ctrlGain*controlOutput
             %
-            %   hd.setChannel(HastaDaqChannel.ElevL, excGain=1, trimDeg=0)
+            %   hd.setChannel(HDCh.ElevL, excGain=1, trimDeg=0)
             %
-            %   Angles are centred on 0 (travel +/-90 deg, default trim 0).
+            %   Angles are centred on 0 (travel limited to +/-48.06 deg, default trim 0).
+            %   chMin/chMax are raw SBUS counts (64..1984 = 920..2120 us)
+            %   that clamp the output; the angle scale itself is fixed.
             arguments
                 obj
                 channel
@@ -92,6 +100,45 @@ classdef HastaDaqClient < handle
             body = struct("channel", HastaDaqClient.channelId(channel));
             body = HastaDaqClient.addFields(body, opts);
             obj.sendJson("CHANCONFIG", body);
+        end
+
+        function setAngle(obj, surface, angleDeg)
+            %SETANGLE Move surface(s) to a fixed angle, degrees from centre.
+            %   hd.setAngle(HDCh.Rudder, 10)
+            %   hd.setAngle(HDCh.ElevL, -5)
+            %   hd.setAngle([HDCh.ElevL HDCh.ElevR], 3)
+            %   hd.setAngle([HDCh.AilL HDCh.AilR], [5 -5])
+            %
+            %   Sets that channel's trimDeg to the angle AND zeroes its
+            %   excGain and ctrlGain, so nothing else (excitation, PID) is
+            %   added on top and the surface really goes to angleDeg. That
+            %   changes the channel's mix settings: to get excitation or
+            %   control back on it, call setChannel with excGain/ctrlGain.
+            %   Other channels are untouched. THIS MOVES THE SURFACE.
+            %
+            %   angleDeg must be within +/-48.06 deg (the servos' travel);
+            %   anything outside errors rather than silently clipping.
+            %   One angle applies to every surface, or pass one per surface.
+            arguments
+                obj
+                surface (1,:) HDCh
+                angleDeg (1,:) double
+            end
+            if isscalar(angleDeg)
+                angleDeg = repmat(angleDeg, size(surface));
+            end
+            if numel(angleDeg) ~= numel(surface)
+                error("HastaDaqClient:badAngle", ...
+                    "Give one angle for all surfaces, or one angle per surface.");
+            end
+            limit = HastaDaqClient.MaxAngleDeg;
+            if any(abs(angleDeg) > limit)
+                error("HastaDaqClient:badAngle", ...
+                    "Angle must be within +/-%.2f deg.", limit);
+            end
+            for k = 1:numel(surface)
+                obj.setChannel(surface(k), trimDeg=angleDeg(k), excGain=0, ctrlGain=0);
+            end
         end
 
         function cfg = getChannel(obj, channel)
@@ -429,9 +476,9 @@ classdef HastaDaqClient < handle
         end
 
         function id = channelId(channel)
-            %CHANNELID HastaDaqChannel member -> its firmware name;
+            %CHANNELID HDCh member -> its firmware name;
             %a raw name string or 0-4 index is passed through as-is.
-            if isa(channel, "HastaDaqChannel")
+            if isa(channel, "HDCh")
                 id = char(channel.WireName);
             elseif isstring(channel) || ischar(channel)
                 id = char(channel);

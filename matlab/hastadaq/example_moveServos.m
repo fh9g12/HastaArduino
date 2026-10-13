@@ -1,7 +1,7 @@
 % example_moveServos.m
 %
 % Move individual control surfaces to set angles. Angles are centred on 0
-% (travel +/-90 deg); each channel's commanded angle is
+% (travel +/-48.06 deg); each channel's commanded angle is
 %   trimDeg + excGain*excitation + ctrlGain*controlOutput
 % so for a plain static move we set trimDeg and make sure the other two
 % terms are off.
@@ -17,34 +17,30 @@ boardIP = "192.168.68.107";  % <-- set to your board's actual IP
 
 hd = HastaDaqClient(boardIP);
 
-% Make sure nothing else is driving the surfaces: PID off, no excitation
-% armed, and no excitation/control mixed into any channel.
+% setAngle sets a channel's trim AND zeroes its excitation/control gains,
+% so nothing else is added on top of the angle you ask for. We still turn
+% the PID and any armed excitation off so nothing else is running.
 hd.disableControl();
 hd.disarmExcitation();
-for ch = enumeration("HastaDaqChannel")'
-    hd.setChannel(ch, excGain=0, ctrlGain=0, trimDeg=0);
-end
+allSurfaces = enumeration("HDCh")';
+hd.setAngle(allSurfaces, 0);
 pause(1);
 
 % Rudder out to +10, then -10, then back to centre.
-hd.setChannel(HastaDaqChannel.Rudder, trimDeg=10);   pause(1.5);
-hd.setChannel(HastaDaqChannel.Rudder, trimDeg=-10);  pause(1.5);
-hd.setChannel(HastaDaqChannel.Rudder, trimDeg=0);    pause(1.5);
+hd.setAngle(HDCh.Rudder, 10);   pause(1.5);
+hd.setAngle(HDCh.Rudder, -10);  pause(1.5);
+hd.setAngle(HDCh.Rudder, 0);    pause(1.5);
 
 % Both elevators together by +5 (flip one sign if your servos are mirrored).
-hd.setChannel(HastaDaqChannel.ElevL, trimDeg=5);
-hd.setChannel(HastaDaqChannel.ElevR, trimDeg=5);
+hd.setAngle([HDCh.ElevL HDCh.ElevR], 5);
 pause(1.5);
 
-% Ailerons differentially: left up, right down.
-hd.setChannel(HastaDaqChannel.AilL, trimDeg=5);
-hd.setChannel(HastaDaqChannel.AilR, trimDeg=-5);
+% Ailerons differentially: left +5, right -5 (one angle per surface).
+hd.setAngle([HDCh.AilL HDCh.AilR], [5 -5]);
 pause(1.5);
 
 % Back to centre.
-for ch = enumeration("HastaDaqChannel")'
-    hd.setChannel(ch, trimDeg=0);
-end
+hd.setAngle(allSurfaces, 0);
 disp("Done - all surfaces returned to 0.");
 
 clear hd % closes the TCP connection (surfaces hold their last command)

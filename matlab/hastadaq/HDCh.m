@@ -1,8 +1,8 @@
-classdef HastaDaqChannel
+classdef HDCh
     %HASTADAQCHANNEL The five HastaDAQ control surfaces.
     %   Use these instead of channel-name strings or indices:
     %
-    %   hd.setChannel(HastaDaqChannel.ElevL, trimDeg=2)
+    %   hd.setChannel(HDCh.ElevL, trimDeg=2)
     %
     %   The declaration order below is the column order of
     %   readData().servoDeg, and WireName must match CHANNEL_DEFS in
@@ -17,13 +17,13 @@ classdef HastaDaqChannel
     end
 
     methods
-        function obj = HastaDaqChannel(wireName)
+        function obj = HDCh(wireName)
             obj.WireName = wireName;
         end
 
         function c = column(obj)
             %COLUMN Index of this channel in readData().servoDeg.
-            c = find(enumeration("HastaDaqChannel") == obj, 1);
+            c = find(enumeration("HDCh") == obj, 1);
         end
     end
 

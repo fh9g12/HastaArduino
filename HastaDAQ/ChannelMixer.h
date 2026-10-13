@@ -66,7 +66,7 @@ public:
     float trimDeg(uint8_t ch) const { return (ch < NUM_CHANNELS) ? _trimDeg[ch] : 0.0f; }
     int16_t chMin(uint8_t ch) const { return _servos.chMin(ch); }
     int16_t chMax(uint8_t ch) const { return _servos.chMax(ch); }
-    float lastCommandedDeg(uint8_t ch) const { return _servos.lastCommandedDeg(ch) - SERVO_CENTRE_DEG; }
+    float lastCommandedDeg(uint8_t ch) const { return _servos.lastCommandedDeg(ch); }
 
     // Applies trim+excitation*excGain+control*ctrlGain per channel and
     // refreshes the SBUS frame -- rate-limited internally (SBUS shouldn't
@@ -79,17 +79,17 @@ public:
 
         for (uint8_t i = 0; i < NUM_CHANNELS; i++) {
             float deg = _trimDeg[i] + _excGain[i] * excitationValue + _ctrlGain[i] * controlOutputDeg;
-            _servos.writeDeg(i, deg + SERVO_CENTRE_DEG);
+            _servos.writeDeg(i, deg);
         }
         _servos.retransmit();
     }
 
 private:
     // Every angle in this class (trim, excitation, control output, logged
-    // servoDeg) is centred on 0, travel +/-90. SbusServoBank itself works
-    // in 0..180 with 90 = centre, so the offset is applied only at that
-    // boundary (update() in, lastCommandedDeg() out).
-    static constexpr float SERVO_CENTRE_DEG = 90.0f;
+    // servoDeg) is centred on 0 and limited to +/-SbusServoBank::TRAVEL_DEG
+    // (+/-48.06 deg = the servos' programmed 920..2120 us end-points).
+    // Anything commanded beyond that is clamped, and the logged servoDeg
+    // shows the clamped value actually sent.
 
     static const int8_t SBUS_TX_PIN = 20, SBUS_RX_PIN = 21;
     static const uint32_t SBUS_UPDATE_INTERVAL_US = 9000; // ~111Hz -- standard SBUS frame rate ballpark

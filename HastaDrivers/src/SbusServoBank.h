@@ -16,19 +16,33 @@
 // a raw gpio_set_outover() poke -- confirmed fragile against
 // digitalWrite() elsewhere), and the chMax=2047 (not 2048) ceiling from
 // SBUS's 11-bit channel packing.
+//
+// Unlike SbusServo.h (which maps 0..180 deg onto a configurable raw range),
+// this class is calibrated to the HastaDAQ servos: programmed via the
+// Futaba CIU-3 for 1520 us centre and 920..2120 us end-points = +/-48.06
+// deg. SBUS channel value <-> pulse width uses the Futaba S.BUS convention
+// of 0.625 us per count with 1024 = 1520 us, i.e. 920 us = 64, 1520 us =
+// 1024, 2120 us = 1984. All angles here are degrees CENTRED ON 0.
 class SbusServoBank {
 public:
+    static constexpr float US_PER_COUNT = 0.625f;
+    static constexpr int16_t CENTRE_COUNT = 1024;
+    static constexpr int16_t MIN_COUNT = 64;    // 920 us
+    static constexpr int16_t MAX_COUNT = 1984;  // 2120 us
+    static constexpr float TRAVEL_DEG = 48.06f; // at MIN_COUNT / MAX_COUNT
+    static constexpr float COUNTS_PER_DEG = (MAX_COUNT - CENTRE_COUNT) / TRAVEL_DEG;
+
     // txPin/rxPin: tied together externally at the SBUS connector, same
     // as SbusServo.h.
     // channels: SBUS channel number (0-15) for each of numServos local
     // indices, e.g. {0,1,2,3,4} if your receiver/servos are bound to the
     // first 5 SBUS channels in order.
-    // chMin/chMax: shared default range for every channel -- override
-    // per-channel via setChannelRange() once you know an individual
-    // servo's real usable range differs (same reasoning as
-    // SbusServo.h/ServoBank's tunable pulse ranges).
+    // chMin/chMax: per-channel hard clamp on the raw SBUS value actually
+    // sent, defaulting to the servos' programmed end-points. Narrow it via
+    // setChannelRange() to software-limit one surface's travel; the
+    // degrees<->counts scale itself stays fixed.
     SbusServoBank(int8_t txPin, int8_t rxPin, const uint8_t* channels, uint8_t numServos,
-                  int16_t chMin = 0, int16_t chMax = 2047)
+                  int16_t chMin = MIN_COUNT, int16_t chMax = MAX_COUNT)
         : _txPin(txPin), _rxPin(rxPin), _numServos(numServos), _sbusTx(&Serial2, true) {
         for (uint8_t i = 0; i < _numServos && i < MAX_SERVOS; i++) {
             _channels[i] = channels[i];
@@ -39,7 +53,7 @@ public:
 
     void begin() {
         for (int i = 0; i < 16; i++) {
-            _data.ch[i] = (172 + 1811) / 2; // neutral on every unused channel
+            _data.ch[i] = CENTRE_COUNT; // neutral (1520 us) on every unused channel
         }
 
         Serial2.setTX(_txPin);
@@ -48,7 +62,7 @@ public:
         Serial2.setInvertRX(true);
         _sbusTx.Begin();
 
-        writeAllDeg(90.0f); // center every managed channel on startup
+        writeAllDeg(0.0f); // center every managed channel on startup
     }
 
     void setFast(bool fast) {
@@ -59,12 +73,14 @@ public:
     bool fast() const { return _fast; }
 
     // index: local index (0..numServos-1), NOT a raw SBUS channel number.
+    // deg: degrees centred on 0. Clamped to the channel's chMin/chMax, and
+    // lastCommandedDeg() reports what was actually sent after that clamp.
     void writeDeg(uint8_t index, float deg) {
         if (index >= _numServos) return;
-        deg = constrain(deg, 0.0f, 180.0f);
-        int16_t value = _chMin[index] + (int16_t)((deg / 180.0f) * (_chMax[index] - _chMin[index]));
+        int16_t value = (int16_t)lroundf(CENTRE_COUNT + deg * COUNTS_PER_DEG);
+        value = constrain(value, _chMin[index], _chMax[index]);
         _data.ch[_channels[index]] = value;
-        _lastCommandedDeg[index] = deg;
+        _lastCommandedDeg[index] = (value - CENTRE_COUNT) / COUNTS_PER_DEG;
     }
 
     void writeAllDeg(float deg) {
@@ -85,6 +101,11 @@ public:
 
     void setChannelRange(uint8_t index, int16_t chMin, int16_t chMax) {
         if (index >= _numServos) return;
+        // Never beyond the 11-bit field (2048 would wrap to 0) or the
+        // servos' programmed end-points.
+        chMin = constrain(chMin, MIN_COUNT, MAX_COUNT);
+        chMax = constrain(chMax, MIN_COUNT, MAX_COUNT);
+        if (chMax <= chMin) return;
         _chMin[index] = chMin;
         _chMax[index] = chMax;
     }

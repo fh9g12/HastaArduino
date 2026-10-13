@@ -27,11 +27,11 @@ SAMPLE_HZ = 100;
 hd = HastaDaqClient(boardIP);
 
 hd.disableControl(); % pure open-loop excitation
-for ch = enumeration("HastaDaqChannel")'
+for ch = enumeration("HDCh")'
     hd.setChannel(ch, excGain=0, ctrlGain=0, trimDeg=0);
 end
-hd.setChannel(HastaDaqChannel.ElevL, excGain=1);
-hd.setChannel(HastaDaqChannel.ElevR, excGain=1);
+hd.setChannel(HDCh.ElevL, excGain=1);
+hd.setChannel(HDCh.ElevR, excGain=1);
 
 % cycles=1 -> run exactly one sweep, then stop by itself.
 hd.setExcitation("chirp", f0=F0_HZ, f1=F1_HZ, periodS=PERIOD_S, ...
@@ -48,7 +48,7 @@ hd.disarmExcitation(); % don't let a later trigger start it again
 clear hd
 
 t = data.t_ms / 1000; t = t - t(1);
-names = string(enumeration("HastaDaqChannel"));
+names = string(enumeration("HDCh"));
 
 figure("Name", "Chirp");
 subplot(5, 1, 1);

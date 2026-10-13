@@ -24,11 +24,11 @@ SAMPLE_HZ = 100;
 hd = HastaDaqClient(boardIP);
 
 hd.disableControl(); % pure open-loop excitation
-for ch = enumeration("HastaDaqChannel")'
+for ch = enumeration("HDCh")'
     hd.setChannel(ch, excGain=0, ctrlGain=0, trimDeg=0);
 end
-hd.setChannel(HastaDaqChannel.ElevL, excGain=1);
-hd.setChannel(HastaDaqChannel.ElevR, excGain=1);
+hd.setChannel(HDCh.ElevL, excGain=1);
+hd.setChannel(HDCh.ElevR, excGain=1);
 
 % cycles=CYCLES -> runs that many periods, then stops by itself
 % (cycles=0 would run until disarmed).
@@ -46,7 +46,7 @@ hd.disarmExcitation(); % don't let a later trigger start it again
 clear hd
 
 t = data.t_ms / 1000; t = t - t(1);
-names = string(enumeration("HastaDaqChannel"));
+names = string(enumeration("HDCh"));
 
 figure("Name", "Sine wave");
 subplot(3, 1, 1);
