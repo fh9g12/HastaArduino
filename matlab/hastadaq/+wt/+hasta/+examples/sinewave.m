@@ -1,11 +1,15 @@
-% example_sinewave.m
+% sinewave.m
 %
 % Drive both elevators with a fixed-frequency sine for a set number of
 % cycles while logging, then plot the command and the encoder response.
 %
-% Same mechanism as example_chirp.m: EXCITE configures the shared
+% Same mechanism as chirp.m: EXCITE configures the shared
 % waveform, each channel's excGain says how much of it that channel
-% follows, and RUN starts a capture plus the armed waveform (after delayS).
+% follows, and a capture (RUN) records plus starts the armed waveform
+% (after delayS).
+%
+% For the same thing with the model free to pitch, held by the controller
+% first, see freePitchSine.
 %
 % THIS MOVES THE ELEVATORS. Make sure they are clear.
 
@@ -21,14 +25,17 @@ DELAY_S = 1;          % baseline logged before the sine starts
 TAIL_S = 1;           % extra logging after it ends
 SAMPLE_HZ = 100;
 
-hd = HastaDaqClient(boardIP);
+elevators = [wt.hasta.HDCh.ElevL wt.hasta.HDCh.ElevR];
+
+% the board takes one client at a time, so reuse an existing connection
+if ~exist("hd","var") || ~isvalid(hd)
+    hd = wt.hasta.DaqClient(boardIP);
+end
 
 hd.disableControl(); % pure open-loop excitation
-for ch = enumeration("HDCh")'
-    hd.setChannel(ch, excGain=0, ctrlGain=0, trimDeg=0);
-end
-hd.setChannel(HDCh.ElevL, excGain=1);
-hd.setChannel(HDCh.ElevR, excGain=1);
+% every surface at 0 with nothing mixed in, then the elevators follow the sine
+hd.setMix(enumeration("wt.hasta.HDCh")', trimDeg=0, excGain=0, ctrlGain=0);
+hd.setMix(elevators, excGain=1);       % one command, so the elevators change together
 
 % cycles=CYCLES -> runs that many periods, then stops by itself
 % (cycles=0 would run until disarmed).
@@ -37,16 +44,14 @@ hd.setExcitation("sine", freqHz=FREQ_HZ, amplitudeDeg=AMPLITUDE_DEG, ...
 disp(hd.getExcitation());
 
 durationS = DELAY_S + CYCLES / FREQ_HZ + TAIL_S;
-hd.run(durationS, SAMPLE_HZ);         % returns immediately
 fprintf("Capturing %.1f s ...\n", durationS);
-hd.waitForDone(durationS + 15);
-data = hd.readData();
+data = hd.capture(durationS, SAMPLE_HZ);   % record, wait, read back
 
 hd.disarmExcitation(); % don't let a later trigger start it again
 clear hd
 
 t = data.Time;
-names = string(enumeration("HDCh"));
+names = string(enumeration("wt.hasta.HDCh"));
 
 figure("Name", "Sine wave");
 subplot(3, 1, 1);

@@ -1,6 +1,6 @@
-% ZeroRun: wind-off zeroing run. Moves the model to zero incidence, zeroes
-% the pitch encoder, takes one sample from the OHB and the Hasta DAQ, and
-% saves it as a run. AoASweep records the latest of these in each test
+% ZeroRun: wind-off zeroing run. Moves the model to zero incidence, sends
+% the saved pitch-encoder zero (scripts.ZeroEncoderRun), takes one sample
+% from the OHB and the Hasta DAQ, and saves it as a run. AoASweep records the latest of these in each test
 % point's meta.ZeroRun so the force sensors can be zeroed in post-processing
 % (nothing is subtracted here).
 %
@@ -23,7 +23,7 @@ end
 %% setup Hasta DAQ object
 % the board takes one client at a time, so reuse an existing connection
 if ~exist("hd","var") || ~isvalid(hd)
-    hd = HastaDaqClient(HastaIP);
+    hd = wt.hasta.DaqClient(HastaIP);
 end
 
 %% check the wind is off
@@ -33,12 +33,12 @@ assert(abs(windSpeed) <= 0.25, ...
     "Wind speed is %.2f m/s - turn the wind off before a zero run.", windSpeed);
 
 %% setup script
-RunNumber = incrementRunNumber();   % from runNumber.txt; call incrementRunNumber() when the wind is turned off/on
+RunNumber = wt.runNum.increment();   % saved in a MATLAB preference; wt.runNum.get() reads it without changing it, wt.runNum.set(n) sets it
 testType = "Zero";
 N = 5;                        % sample time, s
 
 % <-- keep in step with the model setup in AoASweep
-modelConfig = ModelConfig(TankType="Solid", TankDiameter_mm=NaN, FuelMass_g=0);
+modelConfig = wt.hasta.ModelConfig(TankType="Liquid", TankDiameter_mm=50, FuelMass_g=165);
 
 dataDir = "data";
 if ~isfolder(dataDir)
@@ -55,8 +55,17 @@ ohb.moveIncidence(0,2,2,2,blocking=true);
 hd.disableControl();
 hd.setSteady(["ElevR","ElevL"],0,settleS=0.5);
 
-% a) zero the encoder at zero incidence
-hd.zeroEncoder();
+% a) send the saved encoder zero (scripts.ZeroEncoderRun) instead of zeroing
+%    again, then check it: at zero incidence the encoder should read ~0
+hd.setEncoderZeroOffset(wt.hasta.encoderZero.get());
+zeroInfo = wt.hasta.encoderZero.info();
+encoderDeg = hd.getEncoderDeg();
+fprintf("Saved encoder zero sent (saved %s); the encoder reads %.3f deg at zero incidence.\n", ...
+    zeroInfo.SavedAt, encoderDeg);
+if abs(encoderDeg) > 0.5
+    warning("ZeroRun:encoderOff", ...
+        "The encoder reads %.2f deg at zero incidence - has it moved? Re-run scripts.ZeroEncoderRun if so.", encoderDeg);
+end
 
 % b) take a sample
 startTime = datetime("now");
@@ -68,7 +77,7 @@ pause(0.25)
 ohbData = wt.OHBData.FromString(ohb.readLastSample);
 
 % same layout as AoASweep, just with one test point
-meta = MetaData(Datetime=startTime, RunNumber=RunNumber, TestNumber=0, ...
+meta = wt.hasta.MetaData(Datetime=startTime, RunNumber=RunNumber, TestNumber=0, ...
     TestType=testType, Filename=filename, ModelConfig=modelConfig, ...
     Parameters=struct(AoA_deg=0, ElevatorDeg=0, WindSpeed_ms=windSpeed));
 

@@ -1,16 +1,16 @@
-classdef HastaDaqData
-    %HASTADAQDATA One HastaDAQ capture: sensors, excitation and the
+classdef DaqData
+    %DAQDATA One HastaDAQ capture: sensors, excitation and the
     %commanded angle of each servo, one row per sample.
-    %   Returned by HastaDaqClient.readData(). A plain value class, so an
+    %   Returned by wt.hasta.DaqClient.readData(). A plain value class, so an
     %   instance can be saved and loaded like any variable:
     %
     %   data = hd.readData();
-    %   save("run01.mat", "data")            % HastaDaqData must be on the
+    %   save("run01.mat", "data")            % wt.hasta.DaqData must be on the
     %                                        % path when you load it again
     %
     %   plot(data.Time, data.ELEV_L_Angle)
     %   plot(data.Time, data.ServoAngles)    % all five, N x 5
-    %   data.Angle(HDCh.ElevL)               % same as data.ELEV_L_Angle
+    %   data.Angle(wt.hasta.HDCh.ElevL)               % same as data.ELEV_L_Angle
     %   T = data.ToTable();
     %
     %   Commanded servo angles are degrees from centre (the angle after the
@@ -41,7 +41,7 @@ classdef HastaDaqData
     properties (Dependent)
         Time          % seconds since the first sample
         NumSamples
-        ServoAngles   % N x 5, columns in HDCh declaration order
+        ServoAngles   % N x 5, columns in wt.hasta.HDCh declaration order
     end
 
     properties (Constant, Access = private)
@@ -57,11 +57,11 @@ classdef HastaDaqData
                 raw uint8
                 bytesPerSample (1,1) double
             end
-            surfaces = enumeration("HDCh");
-            numChannels = (bytesPerSample - HastaDaqData.FixedBytes) / 4;
+            surfaces = enumeration("wt.hasta.HDCh");
+            numChannels = (bytesPerSample - wt.hasta.DaqData.FixedBytes) / 4;
             if numChannels ~= numel(surfaces)
-                error("HastaDaqData:badLayout", ...
-                    "Board sent %g servo angles per sample but HDCh defines %d - " + ...
+                error("DaqData:badLayout", ...
+                    "Board sent %g servo angles per sample but wt.hasta.HDCh defines %d - " + ...
                     "keep HDCh.m in step with CHANNEL_DEFS in ChannelMixer.h.", ...
                     numChannels, numel(surfaces));
             end
@@ -70,7 +70,7 @@ classdef HastaDaqData
             field = @(byteStart, count) double(typecast( ...
                 reshape(raw(byteStart:byteStart + 4*count - 1, :), [], 1), "single"));
 
-            obj = HastaDaqData();
+            obj = wt.hasta.DaqData();
             obj.Datetime = datetime("now");
             obj.TimeMs = double(typecast(reshape(raw(1:4, :), [], 1), "uint32")) / 1000;
             obj.Adc1Mv = field(5, 1);
@@ -83,7 +83,7 @@ classdef HastaDaqData
 
             angles = reshape(field(49, numChannels), numChannels, n)';
             for k = 1:numel(surfaces)
-                obj.(HastaDaqData.angleProperty(surfaces(k))) = angles(:, k);
+                obj.(wt.hasta.DaqData.angleProperty(surfaces(k))) = angles(:, k);
             end
         end
     end
@@ -102,10 +102,10 @@ classdef HastaDaqData
         end
 
         function a = get.ServoAngles(obj)
-            surfaces = enumeration("HDCh");
+            surfaces = enumeration("wt.hasta.HDCh");
             a = zeros(obj.NumSamples, numel(surfaces));
             for k = 1:numel(surfaces)
-                a(:, k) = obj.(HastaDaqData.angleProperty(surfaces(k)));
+                a(:, k) = obj.(wt.hasta.DaqData.angleProperty(surfaces(k)));
             end
         end
 
@@ -135,12 +135,12 @@ classdef HastaDaqData
         end
 
         function a = Angle(obj, surface)
-            %ANGLE Commanded angle of one servo, e.g. data.Angle(HDCh.ElevL).
+            %ANGLE Commanded angle of one servo, e.g. data.Angle(wt.hasta.HDCh.ElevL).
             arguments
                 obj
-                surface (1,1) HDCh
+                surface (1,1) wt.hasta.HDCh
             end
-            a = obj.(HastaDaqData.angleProperty(surface));
+            a = obj.(wt.hasta.DaqData.angleProperty(surface));
         end
 
         function out = ToStruct(obj)
@@ -162,9 +162,9 @@ classdef HastaDaqData
                 'VariableNames', ["Time", "TimeMs", "Adc1Mv", "Adc2Mv", "EncoderDeg", ...
                     "AccelX", "AccelY", "AccelZ", "GyroX", "GyroY", "GyroZ", ...
                     "ExcitationDeg", "ControlOutputDeg"]);
-            surfaces = enumeration("HDCh");
+            surfaces = enumeration("wt.hasta.HDCh");
             for k = 1:numel(surfaces)
-                name = HastaDaqData.angleProperty(surfaces(k));
+                name = wt.hasta.DaqData.angleProperty(surfaces(k));
                 T.(name) = obj.(name);
             end
         end
@@ -173,7 +173,7 @@ classdef HastaDaqData
     methods (Static, Access = private)
         function name = angleProperty(surface)
             %ANGLEPROPERTY Property holding a surface's angle, e.g.
-            %HDCh.ElevL -> "ELEV_L_Angle".
+            %wt.hasta.HDCh.ElevL -> "ELEV_L_Angle".
             name = surface.WireName + "_Angle";
         end
     end

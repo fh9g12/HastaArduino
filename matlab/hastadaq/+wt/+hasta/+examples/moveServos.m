@@ -1,4 +1,4 @@
-% example_moveServos.m
+% moveServos.m
 %
 % Move individual control surfaces to set angles. Angles are centred on 0
 % (travel +/-48.06 deg); each channel's commanded angle is
@@ -15,28 +15,32 @@ assert(CONFIRMED_AREA_CLEAR, "Set CONFIRMED_AREA_CLEAR = true once the surfaces 
 
 boardIP = "192.168.68.107";  % <-- set to your board's actual IP
 
-hd = HastaDaqClient(boardIP);
+% the board takes one client at a time, so reuse an existing connection
+if ~exist("hd","var") || ~isvalid(hd)
+    hd = wt.hasta.DaqClient(boardIP);
+end
 
 % setAngle sets a channel's trim AND zeroes its excitation/control gains,
-% so nothing else is added on top of the angle you ask for. We still turn
-% the PID and any armed excitation off so nothing else is running.
+% so nothing else is added on top of the angle you ask for. Several surfaces
+% in one call go out as ONE command, so they start moving together. We still
+% turn the PID and any armed excitation off so nothing else is running.
 hd.disableControl();
 hd.disarmExcitation();
-allSurfaces = enumeration("HDCh")';
+allSurfaces = enumeration("wt.hasta.HDCh")';
 hd.setAngle(allSurfaces, 0);
 pause(1);
 
 % Rudder out to +10, then -10, then back to centre.
-hd.setAngle(HDCh.Rudder, 10);   pause(1.5);
-hd.setAngle(HDCh.Rudder, -10);  pause(1.5);
-hd.setAngle(HDCh.Rudder, 0);    pause(1.5);
+hd.setAngle(wt.hasta.HDCh.Rudder, 10);   pause(1.5);
+hd.setAngle(wt.hasta.HDCh.Rudder, -10);  pause(1.5);
+hd.setAngle(wt.hasta.HDCh.Rudder, 0);    pause(1.5);
 
 % Both elevators together by +5 (flip one sign if your servos are mirrored).
-hd.setAngle([HDCh.ElevL HDCh.ElevR], 5);
+hd.setAngle([wt.hasta.HDCh.ElevL wt.hasta.HDCh.ElevR], 5);
 pause(1.5);
 
 % Ailerons differentially: left +5, right -5 (one angle per surface).
-hd.setAngle([HDCh.AilL HDCh.AilR], [5 -5]);
+hd.setAngle([wt.hasta.HDCh.AilL wt.hasta.HDCh.AilR], [5 -5]);
 pause(1.5);
 
 % Back to centre.

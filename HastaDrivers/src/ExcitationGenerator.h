@@ -27,10 +27,25 @@
 // oscillating -- exactly "wait for a trigger, start N seconds later".
 class ExcitationGenerator {
 public:
-    enum class Type : uint8_t { SINE = 0, COSINE = 1, CHIRP = 2 };
+    // SINE, COSINE (the 1-cosine pulse: a smooth bump from 0 up to
+    // amplitudeDeg and back over periodS), CHIRP, and STEP: 0 until the start
+    // delay has elapsed, then amplitudeDeg held until disarmed. A step has no
+    // period or cycle count (periodS and cycles are ignored), so a step test
+    // is "arm, trigger, the step happens delayS later" with the step timed
+    // here on the board rather than by a command from the host.
+    enum class Type : uint8_t { SINE = 0, COSINE = 1, CHIRP = 2, STEP = 3 };
 
     void setType(Type type) { _type = type; }
     Type type() const { return _type; }
+    const char* typeName() const {
+        switch (_type) {
+            case Type::COSINE: return "cosine";
+            case Type::CHIRP:  return "chirp";
+            case Type::STEP:   return "step";
+            case Type::SINE:
+            default:           return "sine";
+        }
+    }
 
     void setFreqHz(float freqHz) { _freqHz = freqHz; }       // SINE
     float freqHz() const { return _freqHz; }
@@ -64,6 +79,11 @@ public:
     float update(uint32_t nowUs) {
         if (!_active) return 0.0f;
         if (nowUs < _startUs) return 0.0f; // still waiting out the start delay
+
+        // A step has no period or cycle count: it holds its amplitude from the
+        // start delay until setArmed(false), so it must not fall through to
+        // the cycle-count auto-stop below.
+        if (_type == Type::STEP) return _amplitudeDeg;
 
         float tS = (nowUs - _startUs) / 1000000.0f;
         float periodS;

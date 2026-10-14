@@ -1,7 +1,7 @@
 classdef ModelConfig
     %MODELCONFIG How the wind-tunnel model was set up for a test.
     %
-    %   cfg = ModelConfig(TankType="Liquid", TankDiameter_mm=40, FuelMass_g=150);
+    %   cfg = wt.hasta.ModelConfig(TankType="Liquid", TankDiameter_mm=40, FuelMass_g=150);
     %
     %   Defaults are deliberately "not set" (NaN) apart from TankType, which
     %   has to be something, so check you've filled all three in.

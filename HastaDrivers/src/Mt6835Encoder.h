@@ -87,6 +87,33 @@ public:
         _zeroOffsetDeg = _continuousDeg;
     }
 
+    // --- Saving a zero across power cycles (no hardware change) ---------
+    // The MT6835 is an ABSOLUTE single-turn encoder: its raw angle [0,360)
+    // is the same after every power-up. So a zero can be described by the
+    // raw angle that reads as 0 -- read it once after zeroing, keep the
+    // number on the host, and re-apply it later instead of re-zeroing.
+    // Only valid while the encoder/magnet hasn't moved relative to what it
+    // measures. Software only (RAM): nothing is written to the chip.
+
+    // The raw angle [0,360) that currently reads as 0 deg. Call update()
+    // first so the raw reading is fresh.
+    float zeroOffsetRawDegrees() const {
+        float zero = fmodf(_lastRawDeg - getDegrees(), 360.0f);
+        if (zero < 0.0f) zero += 360.0f;
+        return zero;
+    }
+
+    // Re-applies a zero saved from zeroOffsetRawDegrees(). The shaft is
+    // taken to be within +/-180 deg of that zero (so a reading just either
+    // side of the 0/360 raw wrap comes out as a small +/- angle, not
+    // ~360). Call update() first so the raw reading is fresh.
+    void setZeroOffsetRawDegrees(float zeroRawDeg) {
+        float delta = fmodf(_lastRawDeg - zeroRawDeg, 360.0f); // (-360, 360)
+        if (delta > 180.0f) delta -= 360.0f;
+        else if (delta <= -180.0f) delta += 360.0f;
+        _zeroOffsetDeg = _continuousDeg - delta;
+    }
+
     // Hardware zero: MT6835's confirmed "Auto Setting Zero-Position" SPI
     // command (datasheet section 7.6.7) -- writes the CURRENT shaft
     // position as the new zero into the chip's own ZERO_POS[11:0]

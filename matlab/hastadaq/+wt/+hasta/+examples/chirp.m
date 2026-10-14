@@ -1,12 +1,15 @@
-% example_chirp.m
+% chirp.m
 %
 % Excite both elevators with one chirp (frequency sweep f0 -> f1 over
 % periodS) while logging the encoder, IMU and strain gauges, then plot.
 %
 % How it fits together: EXCITE configures one shared waveform; each
-% channel's excGain (-1..1) sets how much of it that channel follows; RUN
-% starts a capture AND triggers the armed waveform, which begins after
-% delayS (so you log a quiet baseline first).
+% channel's excGain (-1..1) sets how much of it that channel follows; a
+% capture (RUN) starts recording AND triggers the armed waveform, which
+% begins after delayS (so you log a quiet baseline first).
+%
+% For the same thing with the model free to pitch, held by the controller
+% first, see freePitchChirp.
 %
 % THIS MOVES THE ELEVATORS. Make sure they are clear. Opposite excGain
 % signs on the two elevators would drive them differentially instead.
@@ -16,22 +19,27 @@ assert(CONFIRMED_AREA_CLEAR, "Set CONFIRMED_AREA_CLEAR = true once the surfaces 
 
 boardIP = "192.168.1.107";  % <-- set to your board's actual IP
 
-F0_HZ = 0.5;          % chirp start frequency
-F1_HZ = 5;            % chirp end frequency
+F0_HZ = 0.25;          % chirp start frequency
+F1_HZ = 2;            % chirp end frequency
 PERIOD_S = 15;        % sweep time
-AMPLITUDE_DEG = 3;
+AMPLITUDE_DEG = 5;
 DELAY_S = 1;          % baseline logged before the chirp starts
 TAIL_S = 1;           % extra logging after it ends
 SAMPLE_HZ = 100;
 
-hd = HastaDaqClient(boardIP);
+elevators = [wt.hasta.HDCh.ElevL wt.hasta.HDCh.ElevR];
 
-hd.disableControl(); % pure open-loop excitation
-for ch = enumeration("HDCh")'
-    hd.setChannel(ch, excGain=0, ctrlGain=0, trimDeg=0);
+% the board takes one client at a time, so reuse an existing connection
+if ~exist("hd","var") || ~isvalid(hd)
+    hd = wt.hasta.DaqClient(boardIP);
 end
-hd.setChannel(HDCh.ElevL, excGain=1);
-hd.setChannel(HDCh.ElevR, excGain=1);
+
+% Un-comment these to start from a clean slate: controller off, and every
+% surface at 0 with no excitation or controller mixed in. (Left as they were
+% so the surfaces keep whatever state an earlier script gave them.)
+% hd.disableControl(); % pure open-loop excitation
+% hd.setMix(enumeration("wt.hasta.HDCh")', trimDeg=0, excGain=0, ctrlGain=0);
+hd.setMix(elevators, excGain=1);       % the elevators follow the chirp (one command, so together)
 
 % cycles=1 -> run exactly one sweep, then stop by itself.
 hd.setExcitation("chirp", f0=F0_HZ, f1=F1_HZ, periodS=PERIOD_S, ...
@@ -39,16 +47,14 @@ hd.setExcitation("chirp", f0=F0_HZ, f1=F1_HZ, periodS=PERIOD_S, ...
 disp(hd.getExcitation());
 
 durationS = DELAY_S + PERIOD_S + TAIL_S;
-hd.run(durationS, SAMPLE_HZ);         % returns immediately
 fprintf("Capturing %.1f s ...\n", durationS);
-hd.waitForDone(durationS + 15);
-data = hd.readData();
+data = hd.capture(durationS, SAMPLE_HZ);   % record, wait, read back
 
 hd.disarmExcitation(); % don't let a later trigger start it again
 clear hd
 
 t = data.Time;
-names = string(enumeration("HDCh"));
+names = string(enumeration("wt.hasta.HDCh"));
 
 figure("Name", "Chirp");
 subplot(5, 1, 1);

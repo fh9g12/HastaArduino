@@ -1,7 +1,7 @@
 function file = getLastZeroRun(dataDir)
 % GETLASTZERORUN Path of the most recent zero run file (scripts.ZeroRun).
-%   file = getLastZeroRun()            % looks in ./data
-%   file = getLastZeroRun("somewhere") % looks in that folder
+%   file = wt.hasta.getLastZeroRun()            % looks in ./data
+%   file = wt.hasta.getLastZeroRun("somewhere") % looks in that folder
 %
 %   Returns "" if there isn't one. "Most recent" is by file date, so
 %   deleting a bad zero run file makes the one before it current again.

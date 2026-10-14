@@ -58,6 +58,10 @@ public:
 
     float encoderDeg() const { return encoder.getDegrees(); }
     void zeroEncoder() { encoder.zeroAtCurrentPosition(); }
+    // Saved-zero support: see Mt6835Encoder.h. update() has run this loop,
+    // so the raw reading is fresh.
+    float encoderZeroOffsetRawDeg() const { return encoder.zeroOffsetRawDegrees(); }
+    void setEncoderZeroOffsetRawDeg(float zeroRawDeg) { encoder.setZeroOffsetRawDegrees(zeroRawDeg); }
 
     float adc1Mv() const { return latestAdc1Mv; }
     float adc2Mv() const { return latestAdc2Mv; }

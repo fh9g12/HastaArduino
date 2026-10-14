@@ -1,26 +1,34 @@
 % controlStepResponseTest.m
 %
-% Step-response test for HastaDAQ's elevator control loop -- plots how
-% the encoder tracks a step change in target angle, to help tune
-% Kp/Ki/Kd (control loop runs every loop() iteration on its own real
-% elapsed dt -- no separate rate to tune, just the gains).
+% Step-response test for HastaDAQ's pitch controller - plots how the
+% encoder tracks a step change in target angle, to help tune Kp/Ki/Kd (the
+% controller runs every loop() iteration on its own real elapsed dt - there
+% is no separate rate to tune, just the gains).
 %
-% Exploits HastaDAQ's non-blocking RUN (see HastaDAQ.ino: it returns "OK"
-% immediately, the capture continues in the background): starts a
-% capture, lets it log a moment at the STARTING target, then steps
-% CTRLCONFIG's target MID-CAPTURE and keeps logging the response -- one
-% continuous capture spanning both the pre-step baseline and the
-% transient, rather than needing to stitch two separate runs together.
+% The capture is non-blocking: it is started, the target is stepped part way
+% through, and the response is read back afterwards - one continuous record
+% spanning both the quiet baseline before the step and the transient, rather
+% than two runs to stitch together. For a rougher look that just polls the
+% encoder, see wt.hasta.examples.setupControl.
+%
+% Run scripts.ZeroEncoderRun once first: the targets are angles on the
+% encoder, so the encoder's zero must be the model's real zero.
+%
+% THIS MOVES THE ELEVATORS (AND THE MODEL, IF IT IS FREE TO PITCH). Make sure
+% the area is clear, and start with gentle gains and a small OUT_LIMIT_DEG.
+% If the model runs away from the target instead of settling, the
+% controller's sign is wrong: set CTRL_GAIN = -1.
 %
 % Get boardIP from the Serial Monitor at boot ("[WiFi] Connected, IP=...").
 
-addpath(fullfile(fileparts(mfilename("fullpath")), "..", "common"));
+CONFIRMED_AREA_CLEAR = false;  % <-- set true once the area is clear
+assert(CONFIRMED_AREA_CLEAR, "Set CONFIRMED_AREA_CLEAR = true once the area is clear.");
 
 boardIP = "192.168.68.107";  % <-- set to your board's actual IP
-port = 5025;
 
 KP = 1.0; KI = 0.0; KD = 0.0; % <-- tune these and re-run
 OUT_LIMIT_DEG = 15.0;
+CTRL_GAIN = 1;                % -1 if the controller pushes the wrong way
 TARGET_BEFORE_DEG = 0.0;
 TARGET_AFTER_DEG = 10.0;
 PRE_STEP_S = 1.0;   % baseline logged before the step
@@ -28,50 +36,39 @@ POST_STEP_S = 4.0;  % response logged after the step
 SAMPLE_HZ = 100;
 
 durationS = PRE_STEP_S + POST_STEP_S;
-t = tcpclient(boardIP, port, "Timeout", durationS + 15);
-configureTerminator(t, "LF");
 
-writeline(t, "*IDN?");
-disp("IDN: " + readline(t));
-
-% Configure & enable the control loop, then let it physically settle at
-% the starting target BEFORE the timed capture begins -- otherwise the
-% initial settle transient would contaminate the "before" baseline.
-ctrlParams = struct("kp", KP, "ki", KI, "kd", KD, "targetDeg", TARGET_BEFORE_DEG, ...
-                     "outLimitDeg", OUT_LIMIT_DEG, "enabled", true);
-writeline(t, "CTRLCONFIG");
-writeline(t, jsonencode(ctrlParams));
-disp("CTRLCONFIG: " + strtrim(readline(t)));
-pause(2);
-
-runParams = struct("durationS", durationS, "sampleHz", SAMPLE_HZ);
-writeline(t, "RUN");
-writeline(t, jsonencode(runParams));
-disp("Run result: " + strtrim(readline(t))); % "OK" immediately -- capture continues in the background
-
-pause(PRE_STEP_S);
-writeline(t, "CTRLCONFIG");
-writeline(t, jsonencode(struct("targetDeg", TARGET_AFTER_DEG)));
-disp("Step applied: " + strtrim(readline(t)));
-
-% Poll until the background capture finishes.
-while true
-    writeline(t, "STATUS?");
-    status = strtrim(readline(t));
-    if startsWith(status, "DONE")
-        break
-    end
-    pause(0.2);
+% the board takes one client at a time, so reuse an existing connection
+if ~exist("hd","var") || ~isvalid(hd)
+    hd = wt.hasta.DaqClient(boardIP);
 end
-disp("Status: " + status);
 
-data = readHastaDaqData(t);
-clear t % close the TCP connection
+% the real zero, then the controller's settings
+hd.disableControl();                                      % the zero is refused while the PID runs
+hd.setEncoderZeroOffset(wt.hasta.encoderZero.get());
+hd.setControl(Kp=KP, Ki=KI, Kd=KD, outLimitDeg=OUT_LIMIT_DEG);
 
-figure("Name", "Elevator control step response");
+% Hold the starting target and let it settle BEFORE the timed capture
+% begins - otherwise the initial settle transient would contaminate the
+% "before" baseline. holdPitch also wires the elevators to the controller
+% and enables it.
+r = hd.holdPitch(TARGET_BEFORE_DEG, ctrlGain=CTRL_GAIN);
+fprintf("Holding %.2f deg: pitch %.2f deg (error %+.2f) after %.1f s\n", ...
+    TARGET_BEFORE_DEG, r.pitchDeg, r.errorDeg, r.timeS);
+
+hd.run(durationS, SAMPLE_HZ);          % returns at once; the capture continues on the board
+pause(PRE_STEP_S);
+hd.setControl(targetDeg=TARGET_AFTER_DEG);
+fprintf("Step to %.2f deg applied.\n", TARGET_AFTER_DEG);
+
+hd.waitForDone(durationS + 30);
+data = hd.readData();
+hd.disableControl();                   % the elevators drop back to their trim
+clear hd % close the TCP connection
+
+figure("Name", "Pitch control step response");
 
 subplot(2, 1, 1);
-plot(data.t_ms / 1000, data.encoderDeg, "DisplayName", "encoder (measured)");
+plot(data.Time, data.EncoderDeg, "DisplayName", "encoder (measured)");
 hold on;
 yline(TARGET_BEFORE_DEG, "k--", "DisplayName", "target before");
 yline(TARGET_AFTER_DEG, "k:", "DisplayName", "target after");
@@ -83,7 +80,7 @@ legend("Location", "best");
 grid on;
 
 subplot(2, 1, 2);
-plot(data.t_ms / 1000, data.controlOutputDeg);
+plot(data.Time, data.ControlOutputDeg);
 xlabel("t (s)"); ylabel("control output (deg)");
 title("PID output (pre-mix, before excGain/ctrlGain scaling)");
 grid on;

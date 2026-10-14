@@ -15,22 +15,27 @@ end
 %% setup Hasta DAQ object
 % the board takes one client at a time, so reuse an existing connection
 if ~exist("hd","var") || ~isvalid(hd)
-    hd = HastaDaqClient(HastaIP);
+    hd = wt.hasta.DaqClient(HastaIP);
 end
+
+%% send the saved encoder zero
+% (saved by scripts.ZeroEncoderRun; the board forgets its zero when it restarts)
+hd.disableControl();   % the offset is refused while the PID is enabled
+hd.setEncoderZeroOffset(wt.hasta.encoderZero.get());
 
 %% setup script
 
-AoAs = -2:1:15;
+AoAs = -5:1:15;
 Betas = unique([-45:5:45,-15:1.25:15]);
 
 AoAs = 0:3:6;
 Betas = [-20,0,20];
 
-RunNumber = incrementRunNumber();   % from runNumber.txt; call incrementRunNumber() when the wind is turned off/on
+RunNumber = wt.runNum.increment();   % saved in a MATLAB preference; wt.runNum.get() reads it without changing it, wt.runNum.set(n) sets it
 testType = "Steady";   % Steady | Sine | Cosine | Chirp
 
 % <-- fill in the model setup for this run
-modelConfig = ModelConfig(TankType="Solid", TankDiameter_mm=NaN, FuelMass_g=0);
+modelConfig = wt.hasta.ModelConfig(TankType="Solid", TankDiameter_mm=NaN, FuelMass_g=0);
 % assert(~isnan(modelConfig.TankDiameter_mm) && ~isnan(modelConfig.FuelMass_g), ...
 %     "Set the tank diameter and fuel mass in modelConfig before running.");
 
@@ -43,7 +48,7 @@ filename = string(fullfile(dataDir, sprintf("Run%02d_AoASweep_%s.mat", RunNumber
 
 % the most recent zero run (scripts.ZeroRun), recorded in every test point's
 % meta so the force sensors can be zeroed in post-processing
-zeroRun = getLastZeroRun(dataDir);
+zeroRun = wt.hasta.getLastZeroRun(dataDir);
 if zeroRun == ""
     warning("AoASweep:noZeroRun", "No zero run found in %s - run scripts.ZeroRun first.", dataDir);
 elseif ~contains(zeroRun, sprintf("Run%02d_", RunNumber))
@@ -51,9 +56,9 @@ elseif ~contains(zeroRun, sprintf("Run%02d_", RunNumber))
 end
 
 %% run: one hdData / ohbData / meta per test point, kept in parallel arrays
-hdData = HastaDaqData.empty;
+hdData = wt.hasta.DaqData.empty;
 ohbData = wt.OHBData.empty;
-meta = MetaData.empty;
+meta = wt.hasta.MetaData.empty;
 
 ohb.moveIncidence(0,2,2,2,blocking=true);
 hd.setSteady(["ElevR","ElevL"],0);
@@ -81,7 +86,7 @@ try
             k = k + 1;
             hdData(k) = hdPoint;
             ohbData(k) = ohbPoint;
-            meta(k) = MetaData(Datetime=startTime, RunNumber=RunNumber, TestNumber=k-1, ...
+            meta(k) = wt.hasta.MetaData(Datetime=startTime, RunNumber=RunNumber, TestNumber=k-1, ...
                 TestType=testType, Filename=filename, ZeroRun=zeroRun, ModelConfig=modelConfig, ...
                 Parameters=struct(AoA_deg=AoAs(i), ElevatorDeg=Betas(j)));
         end

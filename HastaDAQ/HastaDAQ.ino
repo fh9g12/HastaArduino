@@ -62,7 +62,7 @@
 //
 // ---------------------------------------------------------------------
 // ARCHITECTURE NOTE -- unlike every earlier rig in this repo (see
-// README.md), this sketch is fully non-blocking/event-driven: loop()
+// docs/README.md), this sketch is fully non-blocking/event-driven: loop()
 // services SCPI, polls the trigger pin, refreshes sensors, advances
 // excitation/control/capture/UDP state, and refreshes SBUS every
 // iteration, unconditionally. RUN/ARM/FIRE just flip state a state
@@ -85,11 +85,15 @@
 //                     applied together (surfaces move in the same SBUS
 //                     frame). Use the array form to move surfaces in sync.
 //   CHANCONFIG? <ch or name> -> JSON reply with that channel's config
-//   EXCITE         -> JSON: {"type":"sine"|"cosine"|"chirp","freqHz":..
+//   EXCITE         -> JSON: {"type":"sine"|"cosine"|"chirp"|"step","freqHz":..
 //                     (sine),"f0":..,"f1":.. (chirp),"periodS":..
 //                     (cosine/chirp),"amplitudeDeg":..,"cycles":.. (0 =
 //                     run until disarmed),"delayS":.. (wait this long
-//                     after a trigger before actually starting),
+//                     after a trigger before actually starting). "cosine"
+//                     is the 1-cosine pulse (0 -> amplitudeDeg -> 0 over
+//                     periodS); "step" holds amplitudeDeg from delayS until
+//                     disarmed (periodS and cycles are ignored), so a step
+//                     test is timed on the board, not by a host command,
 //                     "armed":true|false (should the NEXT trigger start
 //                     this -- see TRIGGERING above, NOT "is it running
 //                     right now", that's EXCITE?'s read-only "active")}
@@ -113,6 +117,15 @@
 //   ZERO           -> software-zero the encoder at its current position
 //                     (RAM only, lost on reboot). Refused with ERR while
 //                     the control loop is enabled.
+//   ZEROOFFSET?    -> the raw (absolute, 0-360 deg) encoder angle that reads
+//                     as 0 right now. Read it once after ZERO and save it.
+//   ZEROOFFSET <deg> -> re-apply a saved zero instead of re-zeroing (valid
+//                     while the encoder hasn't moved; same ERR rule as ZERO).
+//   SYS?           -> JSON link health: {"uptimeS","resetReason","wifiConnected",
+//                     "rssi","freeHeap","connects","disconnects","wifiDrops",
+//                     "maxLoopMs"} -- maxLoopMs is the longest loop() since
+//                     the last SYS?. A new SCPI connection always replaces
+//                     the current one; each is given TCP keepalive.
 //   TRIGCONFIG     -> JSON: {"outPulseMs":..,"inEdge":"rising"|"falling"}
 //   TRIGCONFIG?    -> JSON reply
 //   UDPCONFIG      -> JSON: {"ip":"a.b.c.d","port":..,"rateHz":..,
@@ -142,7 +155,7 @@
 // Widen both the hash AND the command-count ceiling from the library's
 // defaults (uint8_t hash / 20 commands) -- this sketch registers ~16
 // commands, and EncoderCalibration.ino hit a REAL silent-hash-collision
-// bug at just 13 with the default 8-bit hash (see README.md).
+// bug at just 13 with the default 8-bit hash (see docs/README.md).
 #define SCPI_HASH_TYPE uint16_t
 #define SCPI_MAX_COMMANDS 32
 #include <Vrekrer_scpi_parser.h>
@@ -183,6 +196,14 @@ UdpStreamer udpStreamer;
 TriggerIO triggerIO;
 
 bool ctrlEnabled = false;
+
+// ---- link diagnostics, reported by SYS? and the Serial log ----
+uint32_t connectCount = 0;      // SCPI clients accepted
+uint32_t disconnectCount = 0;   // ... and lost or replaced
+uint32_t wifiDrops = 0;         // times the WiFi link was seen to go down
+uint32_t maxLoopUs = 0;         // longest loop() since SYS? was last read
+bool clientWasConnected = false;
+const char* resetReasonName = "unknown";
 
 HastaDaqSample buildLiveSample(float excitationValue, float controlOutputDeg) {
     HastaDaqSample s;
@@ -320,14 +341,14 @@ void SetExcite(SCPI_C commands, SCPI_P parameters, Stream& interface) {
         return;
     }
 
-    const char* typeCstr = doc["type"] | (exciter.type() == ExcitationGenerator::Type::SINE ? "sine"
-                                           : exciter.type() == ExcitationGenerator::Type::COSINE ? "cosine" : "chirp");
+    const char* typeCstr = doc["type"] | exciter.typeName();
     String type(typeCstr);
     if (type == "sine") exciter.setType(ExcitationGenerator::Type::SINE);
     else if (type == "cosine") exciter.setType(ExcitationGenerator::Type::COSINE);
     else if (type == "chirp") exciter.setType(ExcitationGenerator::Type::CHIRP);
+    else if (type == "step") exciter.setType(ExcitationGenerator::Type::STEP);
     else {
-        interface.println(F("ERR type must be sine|cosine|chirp"));
+        interface.println(F("ERR type must be sine|cosine|chirp|step"));
         return;
     }
 
@@ -344,8 +365,7 @@ void SetExcite(SCPI_C commands, SCPI_P parameters, Stream& interface) {
 
 void GetExcite(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     JsonDocument doc;
-    doc["type"] = exciter.type() == ExcitationGenerator::Type::SINE ? "sine"
-                : exciter.type() == ExcitationGenerator::Type::COSINE ? "cosine" : "chirp";
+    doc["type"] = exciter.typeName();
     doc["freqHz"] = exciter.freqHz();
     doc["f0"] = exciter.f0();
     doc["f1"] = exciter.f1();
@@ -484,6 +504,66 @@ void ZeroEncoderCmd(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     interface.println(F("OK"));
 }
 
+const char* resetReasonToString(RP2040::resetReason_t reason) {
+    switch (reason) {
+        case RP2040::PWRON_RESET:    return "power-on";
+        case RP2040::RUN_PIN_RESET:  return "run-pin";
+        case RP2040::SOFT_RESET:     return "soft";
+        case RP2040::WDT_RESET:      return "watchdog";
+        case RP2040::DEBUG_RESET:    return "debug";
+        case RP2040::GLITCH_RESET:   return "glitch";
+        case RP2040::BROWNOUT_RESET: return "brownout";
+        default:                     return "unknown";
+    }
+}
+
+// Link health, for working out why a connection went quiet: uptime (a reset
+// shows as a small number), why the chip last reset, WiFi state and signal,
+// how many clients have come and gone, and the longest loop() since last
+// asked (a stalled loop shows as a large number).
+void GetSys(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+    JsonDocument doc;
+    doc["uptimeS"] = millis() / 1000.0;
+    doc["resetReason"] = resetReasonName;
+    doc["wifiConnected"] = (WiFi.status() == WL_CONNECTED);
+    doc["rssi"] = WiFi.RSSI();
+    doc["freeHeap"] = rp2040.getFreeHeap();
+    doc["connects"] = connectCount;
+    doc["disconnects"] = disconnectCount;
+    doc["wifiDrops"] = wifiDrops;
+    doc["maxLoopMs"] = maxLoopUs / 1000.0;
+    maxLoopUs = 0; // report the worst case since last asked
+    serializeJson(doc, interface);
+    interface.println();
+}
+
+// The raw (absolute, 0-360) encoder angle that currently reads as 0 deg.
+// Read it once after ZERO and keep it; ZEROOFFSET puts it back later.
+void GetZeroOffset(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+    interface.println(sensors.encoderZeroOffsetRawDeg(), 6);
+}
+
+// Re-applies a saved zero: ZEROOFFSET <raw deg>. Same rule as ZERO --
+// refused while the control loop is enabled (it would step the PID error).
+void SetZeroOffset(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+    if (parameters.Size() < 1) {
+        interface.println(F("ERR missing offset (degrees)"));
+        return;
+    }
+    char* end = nullptr;
+    float offsetDeg = strtof(parameters[0], &end);
+    if (end == parameters[0] || !isfinite(offsetDeg)) {
+        interface.println(F("ERR offset must be a number (degrees)"));
+        return;
+    }
+    if (ctrlEnabled) {
+        interface.println(F("ERR control loop enabled -- CTRLCONFIG enabled:false first"));
+        return;
+    }
+    sensors.setEncoderZeroOffsetRawDeg(offsetDeg);
+    interface.println(F("OK"));
+}
+
 void SetTrigConfig(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     String json = interface.readStringUntil('\n');
     json.trim();
@@ -588,26 +668,69 @@ void setup() {
     scpi.RegisterCommand("DATA?", &GetData);
     scpi.RegisterCommand("ENCODER?", &GetEncoder);
     scpi.RegisterCommand("ZERO", &ZeroEncoderCmd);
+    scpi.RegisterCommand("ZEROOFFSET?", &GetZeroOffset);
+    scpi.RegisterCommand("ZEROOFFSET", &SetZeroOffset);
+    scpi.RegisterCommand("SYS?", &GetSys);
     scpi.RegisterCommand("TRIGCONFIG", &SetTrigConfig);
     scpi.RegisterCommand("TRIGCONFIG?", &GetTrigConfig);
     scpi.RegisterCommand("UDPCONFIG", &SetUdpConfig);
     scpi.RegisterCommand("UDPCONFIG?", &GetUdpConfig);
+
+    resetReasonName = resetReasonToString(rp2040.getResetReason());
+    Serial.printf("[boot] last reset: %s\n", resetReasonName);
 
     scpiServer.begin();
     Serial.print(F("[SCPI] Listening on port ")); Serial.println(SCPI_PORT);
 }
 
 void loop() {
+    uint32_t loopStartUs = micros();
+
     // SCPI service -- never blocks (see architecture note at top of file).
-    if (!scpiClient || !scpiClient.connected()) {
-        WiFiClient incoming = scpiServer.accept();
-        if (incoming) {
-            scpiClient = incoming;
-            Serial.println(F("[SCPI] Client connected"));
+    //
+    // A new connection ALWAYS replaces the current one (last connection
+    // wins), so a client whose old socket is half-dead can still get back
+    // in; a second MATLAB session would therefore take the link over.
+    WiFiClient incoming = scpiServer.accept();
+    if (incoming) {
+        if (clientWasConnected) {
+            disconnectCount++;
+            Serial.printf("[%lu ms] [SCPI] new client replaces the previous one\n", (unsigned long)millis());
         }
+        scpiClient.stop();
+        scpiClient = incoming;
+        scpiClient.setNoDelay(true);    // send replies at once: no Nagle holding small writes
+        scpiClient.keepAlive(5, 2, 3);  // probe an idle link every 5 s; a dead peer is noticed in ~11 s
+        connectCount++;
+        clientWasConnected = true;
+        Serial.printf("[%lu ms] [SCPI] Client connected (#%lu)\n",
+            (unsigned long)millis(), (unsigned long)connectCount);
     }
-    if (scpiClient && scpiClient.connected() && scpiClient.available()) {
+    bool clientUp = scpiClient && scpiClient.connected();
+    if (clientWasConnected && !clientUp) {
+        clientWasConnected = false;
+        disconnectCount++;
+        Serial.printf("[%lu ms] [SCPI] Client disconnected\n", (unsigned long)millis());
+    }
+    if (clientUp && scpiClient.available()) {
         scpi.ProcessInput(scpiClient, "\n");
+    }
+
+    // WiFi link watch (log only -- re-joining would block this loop, and
+    // with it the SBUS output).
+    static uint32_t lastWifiCheckMs = 0;
+    static bool wifiWasUp = true;
+    if (millis() - lastWifiCheckMs >= 1000) {
+        lastWifiCheckMs = millis();
+        bool wifiUp = (WiFi.status() == WL_CONNECTED);
+        if (wifiWasUp && !wifiUp) {
+            wifiDrops++;
+            Serial.printf("[%lu ms] [WiFi] link LOST\n", (unsigned long)millis());
+        } else if (!wifiWasUp && wifiUp) {
+            Serial.printf("[%lu ms] [WiFi] link restored, RSSI=%d\n",
+                (unsigned long)millis(), (int)WiFi.RSSI());
+        }
+        wifiWasUp = wifiUp;
     }
 
     if (triggerIO.pollPending()) doTrigger();
@@ -623,4 +746,7 @@ void loop() {
     capture.updateCapture(live);
     udpStreamer.update(live);
     triggerIO.update();
+
+    uint32_t loopUs = micros() - loopStartUs;
+    if (loopUs > maxLoopUs) maxLoopUs = loopUs;
 }

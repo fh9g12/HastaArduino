@@ -1,12 +1,13 @@
-% example_steady.m
+% steady.m
 %
 % Hold both elevators at a fixed angle for N seconds while logging, and
 % plot the result - the encoder, IMU and strain readings at a steady
 % condition (e.g. for a static calibration point or a noise floor).
 %
 % setSteady moves the surfaces (setAngle), disarms any armed excitation so
-% nothing oscillates, and waits SETTLE_S for the surfaces to get there. The
-% normal run / waitForDone / readData calls then log DURATION_S.
+% nothing oscillates, and waits SETTLE_S for the surfaces to get there.
+% capture then records DURATION_S and returns the data. For a steady point
+% you only want the average of, call data.mean() on the result.
 %
 % THIS MOVES THE ELEVATORS. Make sure they are clear.
 
@@ -20,21 +21,24 @@ DURATION_S = 10;     % how long to log
 SETTLE_S = 2;        % wait for the surfaces to reach the angle first
 SAMPLE_HZ = 100;
 
-hd = HastaDaqClient(boardIP);
+elevators = [wt.hasta.HDCh.ElevL wt.hasta.HDCh.ElevR];
+
+% the board takes one client at a time, so reuse an existing connection
+if ~exist("hd","var") || ~isvalid(hd)
+    hd = wt.hasta.DaqClient(boardIP);
+end
 hd.disableControl(); % pure open-loop hold
 
-hd.setSteady([HDCh.ElevL HDCh.ElevR], ANGLE_DEG, settleS=SETTLE_S);
+hd.setSteady(elevators, ANGLE_DEG, settleS=SETTLE_S);
 
-hd.run(DURATION_S, SAMPLE_HZ);        % returns immediately
 fprintf("Capturing %.1f s ...\n", DURATION_S);
-hd.waitForDone(DURATION_S + 15);
-data = hd.readData();
+data = hd.capture(DURATION_S, SAMPLE_HZ);   % record, wait, read back
 
-hd.setAngle([HDCh.ElevL HDCh.ElevR], 0); % back to centre
+hd.setAngle(elevators, 0); % back to centre
 clear hd
 
 t = data.Time;
-names = string(enumeration("HDCh"));
+names = string(enumeration("wt.hasta.HDCh"));
 
 figure("Name", "Steady test");
 subplot(4, 1, 1);
