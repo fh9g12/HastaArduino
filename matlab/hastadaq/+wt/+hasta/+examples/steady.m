@@ -14,7 +14,7 @@
 CONFIRMED_AREA_CLEAR = true;  % <-- set true once the surfaces are clear
 assert(CONFIRMED_AREA_CLEAR, "Set CONFIRMED_AREA_CLEAR = true once the surfaces are clear to move.");
 
-boardIP = "192.168.68.107";  % <-- set to your board's actual IP
+boardIP = "192.168.1.107";  % <-- set to your board's actual IP
 
 ANGLE_DEG = 3;       % elevator angle to hold
 DURATION_S = 10;     % how long to log

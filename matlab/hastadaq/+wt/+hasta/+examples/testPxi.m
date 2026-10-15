@@ -23,7 +23,7 @@ PXI_CARD = "PXI1Slot4_2";     % <-- the NI card with the analogue outputs (the P
 PXI_RATE_HZ = 200;
 DURATION_S = 3;               % how long each test record is
 TEST_BOARD = true;            % false: only test the PXI by itself
-boardIP = "192.168.68.107";   % <-- set to your board's actual IP
+boardIP = "192.168.1.107";   % <-- set to your board's actual IP
 SAMPLE_HZ = 100;              % the board's sample rate for step 2
 
 %% 1. the PXI by itself

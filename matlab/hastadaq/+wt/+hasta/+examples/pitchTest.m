@@ -26,7 +26,7 @@
 CONFIRMED_AREA_CLEAR = false;  % <-- set true once the area is clear
 assert(CONFIRMED_AREA_CLEAR, "Set CONFIRMED_AREA_CLEAR = true once the area is clear.");
 
-boardIP = "192.168.68.107";  % <-- set to your board's actual IP
+boardIP = "192.168.1.107";  % <-- set to your board's actual IP
 
 TARGET_PITCH_DEG = 5;          % pitch angle (encoder) to hold
 KP = 1; KI = 0.2; KD = 0;      % <-- tune these

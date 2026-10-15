@@ -4,7 +4,7 @@ classdef DaqClient < handle
     %   TCP port 5025). Get the board's IP from the Serial Monitor at boot
     %   ("[WiFi] Connected, IP=...").
     %
-    %   hd = wt.hasta.DaqClient("192.168.68.107");
+    %   hd = wt.hasta.DaqClient("192.168.1.107");
     %   hd.setControl(Kp=1, targetDeg=0, outLimitDeg=15, enabled=true);
     %   hd.setExcitation("chirp", f0=1, f1=5, periodS=15, amplitudeDeg=3, armed=true);
     %   hd.run(15, 100);        % <-- moves the control surfaces

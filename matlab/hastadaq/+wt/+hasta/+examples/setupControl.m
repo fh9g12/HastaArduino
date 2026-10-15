@@ -20,7 +20,7 @@
 CONFIRMED_AREA_CLEAR = true;  % <-- set true once the surfaces are clear
 assert(CONFIRMED_AREA_CLEAR, "Set CONFIRMED_AREA_CLEAR = true once the surfaces are clear to move.");
 
-boardIP = "192.168.68.107";  % <-- set to your board's actual IP
+boardIP = "192.168.1.107";  % <-- set to your board's actual IP
 
 KP = 0; KI = 0.1; KD = 0;   % <-- tune these and re-run
 OUT_LIMIT_DEG = 30;
