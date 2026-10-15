@@ -14,35 +14,22 @@
 CONFIRMED_AREA_CLEAR = true;  % <-- set true once the surfaces are clear
 assert(CONFIRMED_AREA_CLEAR, "Set CONFIRMED_AREA_CLEAR = true once the surfaces are clear to move.");
 
-boardIP = "192.168.1.107";  % <-- set to your board's actual IP
-
 ANGLE_DEG = 3;       % elevator angle to hold
 DURATION_S = 10;     % how long to log
 SETTLE_S = 2;        % wait for the surfaces to reach the angle first
 SAMPLE_HZ = 100;
 USE_PXI = true;      % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
-PXI_CARD = "PXI1Slot4_2";    % the NI device
-PXI_RATE_HZ = 200;    % force-sensor sample rate
 USE_CAMERA = true;    % true: pulse the tracking camera before and after the record (needs USE_PXI)
 
 elevators = [wt.hasta.HDCh.ElevL wt.hasta.HDCh.ElevR];
 
-% the board takes one client at a time, so reuse an existing connection
-if ~exist("hd","var") || ~isvalid(hd)
-    hd = wt.hasta.DaqClient(boardIP);
-end
-
-% the force sensor, if used (needs the PXI wired to the board's trigger input)
-forceDaq = [];
-if USE_PXI
-    forceDaq = wt.pxi.connect(hd, PXI_CARD, PXI_RATE_HZ);   % trigger line low, board set to a rising-edge start
-end
+[hd, ~, pxi] = wt.hasta.setupTestEnvironment(UsePxi=USE_PXI, UseCamera=USE_CAMERA);
 hd.disableControl(); % pure open-loop hold
 
 hd.setSteady(elevators, ANGLE_DEG, settleS=SETTLE_S);
 
 fprintf("Capturing %.1f s ...\n", DURATION_S);
-[data, force] = wt.pxi.record(hd, forceDaq, DURATION_S, SAMPLE_HZ, camera=USE_CAMERA);   % record, wait, read back
+[data, force] = wt.pxi.record(hd, pxi, DURATION_S, SAMPLE_HZ);   % record, wait, read back
 
 hd.setAngle(elevators, 0); % back to centre
 % hd stays open for the next script (the board takes one client at a time; `clear hd` closes it)

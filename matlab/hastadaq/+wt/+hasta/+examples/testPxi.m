@@ -24,7 +24,6 @@ PXI_RATE_HZ = 200;
 USE_CAMERA = false;           % true: also pulse the tracking camera around the PXI record
 DURATION_S = 3;               % how long each test record is
 TEST_BOARD = true;            % false: only test the PXI by itself
-boardIP = "192.168.1.107";   % <-- set to your board's actual IP
 SAMPLE_HZ = 100;              % the board's sample rate for step 2
 
 %% 1. the PXI by itself
@@ -67,10 +66,8 @@ linkaxes(findall(gcf, "Type", "axes"), "x");
 if ~TEST_BOARD
     return
 end
-fprintf("\n2. PXI + board at %s ...\n", boardIP);
-if ~exist("hd","var") || ~isvalid(hd)
-    hd = wt.hasta.DaqClient(boardIP);
-end
+hd = wt.hasta.setupTestEnvironment(SendEncoderZero=false);
+fprintf("\n2. PXI + board at %s ...\n", hd.BoardIP);
 hd.disarmExcitation();                                    % nothing may move
 forceDaq = wt.pxi.connect(hd, PXI_CARD, PXI_RATE_HZ);     % trigger low, board set to a rising edge
 fprintf("  board trigger settings: %s\n", jsonencode(hd.getTrigger()));

@@ -38,6 +38,7 @@ classdef ForceDaq < handle
         TailLowS (1,1) double {mustBeNonnegative} = 0.05    % ... and low again at the end
         TriggerVolts (1,1) double {mustBePositive} = 3.3    % trigger level; must stay at what the Arduino pin tolerates
         CameraPulseS (1,1) double {mustBePositive} = 0.001  % camera pulse width
+        Camera (1,1) logical = false                        % pulse the tracking camera around each record (acquire's default)
     end
 
     properties (Access = private)
@@ -81,21 +82,26 @@ classdef ForceDaq < handle
             %   left at 0 V. Returns a wt.pxi.ForceData.
             %
             %   camera=true also sends the camera pulse just before the record
-            %   starts and again just after it ends (start / stop tracking).
+            %   starts and again just after it ends (start / stop tracking);
+            %   omitted, it follows the Camera property.
             arguments
                 obj
                 durationS (1,1) double {mustBePositive}
-                opts.camera (1,1) logical = false
+                opts.camera {mustBeScalarOrEmpty} = []
+            end
+            useCamera = obj.Camera;
+            if ~isempty(opts.camera)
+                useCamera = logical(opts.camera);
             end
             nLead = round(obj.LeadInS * obj.Rate);
             nHigh = round(durationS * obj.Rate);
             nTail = max(1, round(obj.TailLowS * obj.Rate));    % at least one sample, so it ends at 0 V
             out = [zeros(nLead, 1); obj.TriggerVolts * ones(nHigh, 1); zeros(nTail, 1)];
-            if opts.camera
+            if useCamera
                 obj.pulseCamera();
             end
             tt = readwrite(obj.Dq, out);
-            if opts.camera
+            if useCamera
                 obj.pulseCamera();
             end
             data = wt.pxi.ForceData.FromTimetable(tt, obj.Calibration);

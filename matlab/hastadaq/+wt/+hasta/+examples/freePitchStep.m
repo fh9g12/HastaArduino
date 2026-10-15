@@ -29,19 +29,14 @@
 % the area is clear and the tunnel conditions are what you intend. Start with
 % a small DELTA_PITCH_DEG and gentle controller gains. If the model runs away
 % from the target instead of settling, the controller's sign is wrong: set
-% CTRL_GAIN = -1.
+% CtrlGain=1 in the ControlSettings.
 
 CONFIRMED_AREA_CLEAR = false;  % <-- set true once the area is clear
 assert(CONFIRMED_AREA_CLEAR, "Set CONFIRMED_AREA_CLEAR = true once the area is clear.");
 
-boardIP = "192.168.1.107";  % <-- set to your board's actual IP
-
 %% test settings
 TARGET_PITCH_DEG = 5;          % pitch angle (encoder) the step returns to
 DELTA_PITCH_DEG = 3;           % <-- start this far from the target (negative = the other side)
-KP = 0.1; KI = 0.2; KD = 0.05; % <-- controller gains
-OUT_LIMIT_DEG = 15;            % the controller can move the elevators at most this far
-CTRL_GAIN = -1;                % -1 if the controller pushes the wrong way
 OVERSHOOT_ALLOWANCE_DEG = 3;   % abort if pitch strays more than |delta| + this from the target
 
 STEADY_S = 4;                  % sample at the target
@@ -50,33 +45,21 @@ PRE_STEP_S = 2;                % recorded at the displaced pitch before the step
 POST_STEP_S = 10;              % recorded after the step
 SAMPLE_HZ = 100;
 USE_PXI = false;      % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
-PXI_CARD = "PXI1Slot4_2";    % the NI device
-PXI_RATE_HZ = 200;    % force-sensor sample rate (while it records, MATLAB cannot watch the model, so no abort)
 USE_CAMERA = false;    % true: pulse the tracking camera before and after the record (needs USE_PXI)
 
 elevators = [wt.hasta.HDCh.ElevR wt.hasta.HDCh.ElevL];   % flip a servo's sign by hand if it is mounted mirrored
 
-% the board takes one client at a time, so reuse an existing connection
-if ~exist("hd","var") || ~isvalid(hd)
-    hd = wt.hasta.DaqClient(boardIP);
-end
+[hd, ~, pxi] = wt.hasta.setupTestEnvironment(UsePxi=USE_PXI, UseCamera=USE_CAMERA);
 
-% the force sensor, if used (needs the PXI wired to the board's trigger input)
-forceDaq = [];
-if USE_PXI
-    forceDaq = wt.pxi.connect(hd, PXI_CARD, PXI_RATE_HZ);   % trigger line low, board set to a rising-edge start
-end
-
-%% set up: the real zero, and the controller's settings
-hd.disableControl();                                      % the zero is refused while the PID runs
-hd.setEncoderZeroOffset(wt.hasta.encoderZero.get());
-hd.setControl(Kp=KP, Ki=KI, Kd=KD, outLimitDeg=OUT_LIMIT_DEG);
+%% set up: the controller's settings
+control = wt.hasta.ControlSettings();   % Kp 0.1, Ki 0.2, Kd 0.05, limit 20, CtrlGain -1, tolerance 0.2: change by Name=Value
+control.apply(hd);
 fprintf("Model is at %.2f deg. Step from %.2f deg back to %.2f deg ...\n", ...
     hd.getEncoderDeg(), TARGET_PITCH_DEG + DELTA_PITCH_DEG, TARGET_PITCH_DEG);
 
 try
     %% 1. hold the target; the elevator angles that hold it
-    r = hd.holdPitch(TARGET_PITCH_DEG, ctrlGain=CTRL_GAIN);
+    r = control.hold(hd, TARGET_PITCH_DEG);
     fprintf("  holding the target: %s after %.1f s, pitch %.2f deg\n", settledText(r.settled), r.timeS, r.pitchDeg);
     atTarget = hd.capture(STEADY_S, SAMPLE_HZ);
     anglesTarget = meanAngles(atTarget, elevators);
@@ -84,7 +67,7 @@ try
 
     %% 2. move delta away; the elevator angles that hold that
     displacedPitch = TARGET_PITCH_DEG + DELTA_PITCH_DEG;
-    r = hd.holdPitch(displacedPitch, ctrlGain=CTRL_GAIN);
+    r = control.hold(hd, displacedPitch);
     fprintf("  holding the displaced pitch: %s after %.1f s, pitch %.2f deg\n", settledText(r.settled), r.timeS, r.pitchDeg);
     displaced = hd.capture(DISPLACED_S, SAMPLE_HZ);
     anglesDisplaced = meanAngles(displaced, elevators);
@@ -106,7 +89,7 @@ try
     aborted = false;
     if USE_PXI
         % the PXI record blocks MATLAB, so the model cannot be watched (no abort) until it ends
-        [response, force] = wt.pxi.record(hd, forceDaq, totalS, SAMPLE_HZ, camera=USE_CAMERA);
+        [response, force] = wt.pxi.record(hd, pxi, totalS, SAMPLE_HZ);
     else
         hd.run(totalS, SAMPLE_HZ);              % the trigger: the board times the step itself
         clk = tic;
@@ -121,7 +104,7 @@ try
             pause(0.05);
         end
         if aborted
-            hd.holdPitch(TARGET_PITCH_DEG, ctrlGain=CTRL_GAIN, timeoutS=10);   % also disarms the step
+            control.hold(hd, TARGET_PITCH_DEG, timeoutS=10);   % also disarms the step
         end
         hd.waitForDone(totalS + 30);
         response = hd.readData();
@@ -132,7 +115,7 @@ catch ME
     fprintf("\n!!! %s\n", ME.message);
     try
         hd.disarmExcitation();
-        hd.holdPitch(TARGET_PITCH_DEG, ctrlGain=CTRL_GAIN, timeoutS=5);
+        control.hold(hd, TARGET_PITCH_DEG, timeoutS=5);
         fprintf("!!! Controller switched back on to hold the model.\n");
     catch
         fprintf("!!! Could not reach the board to put the controller back on.\n");
@@ -141,7 +124,7 @@ catch ME
 end
 
 %% 4. back to holding the model (the settings you gave are kept)
-hd.holdPitch(TARGET_PITCH_DEG, ctrlGain=CTRL_GAIN);
+control.hold(hd, TARGET_PITCH_DEG);
 fprintf("Controller back on, holding %.2f deg (it is left running).\n", TARGET_PITCH_DEG);
 
 %% the response

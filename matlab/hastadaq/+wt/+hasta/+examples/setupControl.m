@@ -20,8 +20,6 @@
 CONFIRMED_AREA_CLEAR = true;  % <-- set true once the surfaces are clear
 assert(CONFIRMED_AREA_CLEAR, "Set CONFIRMED_AREA_CLEAR = true once the surfaces are clear to move.");
 
-boardIP = "192.168.1.107";  % <-- set to your board's actual IP
-
 KP = 0; KI = 0.1; KD = 0;   % <-- tune these and re-run
 OUT_LIMIT_DEG = 30;
 TARGET_BEFORE_DEG = 0;
@@ -29,10 +27,7 @@ TARGET_AFTER_DEG = 5;
 SETTLE_S = 2;                   % hold the first target this long
 RESPONSE_S = 5;                 % then step and log this long
 
-% the board takes one client at a time, so reuse an existing connection
-if ~exist("hd","var") || ~isvalid(hd)
-    hd = wt.hasta.DaqClient(boardIP);
-end
+hd = wt.hasta.setupTestEnvironment(SendEncoderZero=false);   % the connection is kept for the next script
 
 % Start with control off and no excitation, then wire up the channels.
 hd.disableControl();

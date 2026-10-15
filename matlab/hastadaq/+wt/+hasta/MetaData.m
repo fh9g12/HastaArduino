@@ -12,7 +12,12 @@ classdef MetaData
     %               when it starts
     %   TestType    what the surfaces were doing: Steady | Sine | Cosine | Chirp
     %               | Step (an elevator step response, scripts.FreePitchStep),
-    %               or Zero for a wind-off zeroing run (scripts.ZeroRun)
+    %               Random (a stored von Karman turbulence slice), SteppedChirp
+    %               (stepped square wave with shrinking dwells),
+    %               Datum (steady conditions at the attitude a dynamic test
+    %               started from) or Zero for a wind-off zeroing run
+    %   DatumTest   TestNumber of the Datum point (steady conditions at this
+    %               attitude) a dynamic point is referenced to; NaN if none
     %   ZeroRun     file of the most recent zero run when this was taken
     %               (wt.hasta.getLastZeroRun), so the force sensors can be zeroed in
     %               post-processing - nothing is subtracted at acquisition
@@ -24,8 +29,9 @@ classdef MetaData
         Datetime = NaT                      % creation time unless you set it
         RunNumber (1,1) double = NaN
         TestNumber (1,1) double = NaN
-        TestType (1,1) string {mustBeMember(TestType, ["Steady", "Sine", "Cosine", "Chirp", "Step", "Zero"])} = "Steady"
+        TestType (1,1) string {mustBeMember(TestType, ["Steady", "Datum", "Sine", "Cosine", "Chirp", "Step", "Random", "SteppedChirp", "Zero"])} = "Steady"
         Filename (1,1) string = ""          % where the data is saved
+        DatumTest (1,1) double = NaN        % TestNumber of the Datum point this one is referenced to
         ZeroRun (1,1) string = ""           % file of the last zero run (for zeroing the force sensors in post-processing)
         ModelConfig (1,1) wt.hasta.ModelConfig = wt.hasta.ModelConfig()
         Parameters (1,1) struct = struct()

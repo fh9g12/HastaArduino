@@ -21,20 +21,15 @@
 %
 % THIS MOVES THE ELEVATORS AND THE MODEL, WHICH IS FREE TO PITCH. Make sure
 % the area is clear and the tunnel conditions are what you intend. Start with
-% gentle controller gains, a small OUT_LIMIT_DEG and a small amplitude. If
+% gentle controller gains, a small OutLimitDeg and a small amplitude. If
 % the model runs away from the target instead of settling, the controller's
-% sign is wrong: set CTRL_GAIN = -1.
+% sign is wrong: set CtrlGain=1 in the ControlSettings.
 
 CONFIRMED_AREA_CLEAR = true;  % <-- set true once the area is clear
 assert(CONFIRMED_AREA_CLEAR, "Set CONFIRMED_AREA_CLEAR = true once the area is clear.");
 
-boardIP = "192.168.1.107";  % <-- set to your board's actual IP
-
 %% test settings
 TARGET_PITCH_DEG = 5;          % pitch angle (encoder) to hold and excite around
-KP = 0.1; KI = 0.2; KD = 0.05;      % <-- controller gains
-OUT_LIMIT_DEG = 15;            % the controller can move the elevators at most this far
-CTRL_GAIN = -1;                 % -1 if the controller pushes the wrong way
 CONTROLLER_DURING_EXCITATION = false;   % true: leave the controller running during the sine
 
 FREQS_HZ = 0.3:0.05:0.7;          % one sine test per frequency
@@ -46,8 +41,6 @@ TAIL_S = 2;                    % ... and after it ends
 STEADY_S = 4;                  % equilibrium sample time
 SAMPLE_HZ = 100;
 USE_PXI = true;      % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
-PXI_CARD = "PXI1Slot4_2";    % the NI device
-PXI_RATE_HZ = 200;    % force-sensor sample rate
 USE_CAMERA = false;    % true: pulse the tracking camera before and after the record (needs USE_PXI)
 
 assert(CYCLES > DISCARD_CYCLES, "CYCLES must be larger than DISCARD_CYCLES.");
@@ -55,21 +48,11 @@ assert(all(FREQS_HZ > 0), "FREQS_HZ must be positive.");
 
 elevators = [wt.hasta.HDCh.ElevR wt.hasta.HDCh.ElevL];   % flip a servo's sign by hand if it is mounted mirrored
 
-% the board takes one client at a time, so reuse an existing connection
-if ~exist("hd","var") || ~isvalid(hd)
-    hd = wt.hasta.DaqClient(boardIP);
-end
+[hd, ~, pxi] = wt.hasta.setupTestEnvironment(UsePxi=USE_PXI, UseCamera=USE_CAMERA);
 
-% the force sensor, if used (needs the PXI wired to the board's trigger input)
-forceDaq = [];
-if USE_PXI
-    forceDaq = wt.pxi.connect(hd, PXI_CARD, PXI_RATE_HZ);   % trigger line low, board set to a rising-edge start
-end
-
-%% set up: the real zero, and the controller's settings
-hd.disableControl();                                      % the zero is refused while the PID runs
-hd.setEncoderZeroOffset(wt.hasta.encoderZero.get());
-hd.setControl(Kp=KP, Ki=KI, Kd=KD, outLimitDeg=OUT_LIMIT_DEG);
+%% set up: the controller's settings
+control = wt.hasta.ControlSettings();   % Kp 0.1, Ki 0.2, Kd 0.05, limit 20, CtrlGain -1, tolerance 0.2: change by Name=Value
+control.apply(hd);
 fprintf("Model is at %.2f deg. %d frequencies around %.2f deg ...\n", ...
     hd.getEncoderDeg(), numel(FREQS_HZ), TARGET_PITCH_DEG);
 
@@ -82,12 +65,12 @@ try
         fprintf("\n=== %.3g Hz (%d/%d) ===\n", freq, fi, numel(FREQS_HZ));
 
         % 1. hold the target pitch
-        r = hd.holdPitch(TARGET_PITCH_DEG, ctrlGain=CTRL_GAIN);
+        r = control.hold(hd, TARGET_PITCH_DEG);
         fprintf("  holding: %s after %.1f s, pitch %.2f deg (error %+.2f)\n", ...
             settledText(r.settled), r.timeS, r.pitchDeg, r.errorDeg);
 
         % 2. equilibrium values
-        [equilibrium, forceEq] = wt.pxi.record(hd, forceDaq, STEADY_S, SAMPLE_HZ);
+        [equilibrium, forceEq] = wt.pxi.record(hd, pxi, STEADY_S, SAMPLE_HZ, camera=false);
         if USE_PXI
             fprintf("  force sensor at equilibrium: %s\n", forceText(forceEq));
         end
@@ -107,7 +90,7 @@ try
             cycles=CYCLES, delayS=DELAY_S, armed=true);
         durationS = DELAY_S + CYCLES / freq + TAIL_S;
         fprintf("  sine %.2g deg x %d cycles, recording %.0f s ...\n", AMPLITUDE_DEG, CYCLES, durationS);
-        [response, force] = wt.pxi.record(hd, forceDaq, durationS, SAMPLE_HZ, camera=USE_CAMERA);
+        [response, force] = wt.pxi.record(hd, pxi, durationS, SAMPLE_HZ);
         hd.disarmExcitation();
         responses{fi} = response;
 
@@ -123,7 +106,7 @@ catch ME
     fprintf("\n!!! %s\n", ME.message);
     try
         hd.disarmExcitation();
-        hd.holdPitch(TARGET_PITCH_DEG, ctrlGain=CTRL_GAIN, timeoutS=5);
+        control.hold(hd, TARGET_PITCH_DEG, timeoutS=5);
         fprintf("!!! Controller switched back on to hold the model.\n");
     catch
         fprintf("!!! Could not reach the board to put the controller back on.\n");
@@ -132,7 +115,7 @@ catch ME
 end
 
 %% back to holding the model (the settings you gave are kept)
-hd.holdPitch(TARGET_PITCH_DEG, ctrlGain=CTRL_GAIN);
+control.hold(hd, TARGET_PITCH_DEG);
 fprintf("\nController back on, holding %.2f deg (it is left running).\n", TARGET_PITCH_DEG);
 
 %% results

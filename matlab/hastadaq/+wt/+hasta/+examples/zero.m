@@ -15,14 +15,10 @@
 % MATLAB preference (wt.hasta.encoderZero) that ZeroRun, the sweeps and the
 % free-pitch tests then send to the board.
 %
-% Get boardIP from the Serial Monitor at boot ("[WiFi] Connected, IP=...").
+% The board's address is a default of wt.hasta.setupTestEnvironment (see the
+% Serial Monitor at boot, "[WiFi] Connected, IP=...", if it changes).
 
-boardIP = "192.168.1.107";  % <-- set to your board's actual IP
-
-% the board takes one client at a time, so reuse an existing connection
-if ~exist("hd","var") || ~isvalid(hd)
-    hd = wt.hasta.DaqClient(boardIP);
-end
+hd = wt.hasta.setupTestEnvironment(SendEncoderZero=false);   % the connection is kept for the next script
 
 % ZERO (and the offset) are refused while the control loop is enabled
 % (zeroing under it would step the PID error and make the elevators jump).

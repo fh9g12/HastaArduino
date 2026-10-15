@@ -19,12 +19,8 @@
 % If the model runs away from the target instead of settling, the
 % controller's sign is wrong: set CTRL_GAIN = -1.
 %
-% Get boardIP from the Serial Monitor at boot ("[WiFi] Connected, IP=...").
-
 CONFIRMED_AREA_CLEAR = false;  % <-- set true once the area is clear
 assert(CONFIRMED_AREA_CLEAR, "Set CONFIRMED_AREA_CLEAR = true once the area is clear.");
-
-boardIP = "192.168.1.107";  % <-- set to your board's actual IP
 
 KP = 1.0; KI = 0.0; KD = 0.0; % <-- tune these and re-run
 OUT_LIMIT_DEG = 15.0;
@@ -37,14 +33,8 @@ SAMPLE_HZ = 100;
 
 durationS = PRE_STEP_S + POST_STEP_S;
 
-% the board takes one client at a time, so reuse an existing connection
-if ~exist("hd","var") || ~isvalid(hd)
-    hd = wt.hasta.DaqClient(boardIP);
-end
-
-% the real zero, then the controller's settings
-hd.disableControl();                                      % the zero is refused while the PID runs
-hd.setEncoderZeroOffset(wt.hasta.encoderZero.get());
+% the board (with the real zero sent), then the controller's settings
+hd = wt.hasta.setupTestEnvironment();
 hd.setControl(Kp=KP, Ki=KI, Kd=KD, outLimitDeg=OUT_LIMIT_DEG);
 
 % Hold the starting target and let it settle BEFORE the timed capture

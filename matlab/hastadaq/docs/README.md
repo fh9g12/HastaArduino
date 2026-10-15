@@ -38,12 +38,18 @@ matlab/hastadaq/
     MetaData.m           context for one test point
     ModelConfig.m        model setup: tank type / diameter / fuel mass
     getLastZeroRun.m     newest zero-run file in data/
+    setupTestEnvironment.m   [hd, ohb, pxi]: connections, with the IPs / card / rate as defaults
+    ControlSettings.m    controller settings (value class): apply(hd), hold(hd, pitchDeg)
+    runTests.m           run an array of test points in order, record, save
+    TestSession.m        the state of one run (handle): connections, datum, data so far
+    +testtype/           the test points: BaseTestType, Steady, Datum, Zero, ExcitationTest, Sine, Cosine, Chirp, Random, SteppedChirp, Step
     +encoderZero/        get, set, info  : the saved encoder zero
     +examples/           demos needing only the Hasta DAQ
   +wt/+pxi/              optional PXI force sensor (card "PXI1Slot4_2", the PXIe-6363): ForceDaq, ForceData, loadCalibration (private/FT78552.cal), and the helpers connect, record, plotForces
   +wt/+runNum/           get, set, increment : the run number
   +scripts/              tunnel test scripts
   controlStepResponseTest.m   standalone controller step-response tuning
+  tools/exportTurbulenceProfile.m   bakes the turbulence record into the firmware (HastaDrivers/src/TurbulenceProfile.h)
   docs/README.md         this file
 ```
 
@@ -138,7 +144,7 @@ s.meta(2).ZeroRun                                       % the zero-run file for 
 | `setMix(surface, trimDeg=, excGain=, ctrlGain=)` | each: one value or one per surface | several surfaces in **one** command; `excGain`/`ctrlGain` in [-1, 1] |
 | `setChannel(channel, excGain=, ctrlGain=, trimDeg=, chMin=, chMax=)` | | one channel; `channel` = `HDCh`, a name string or 0-4; `chMin/chMax` clamp raw SBUS counts (64..1984) |
 | `getChannel(channel)` | struct | |
-| `setExcitation(type, freqHz=, f0=, f1=, periodS=, amplitudeDeg=, cycles=, delayS=, armed=)` | `type` = `"sine" \| "cosine" \| "chirp" \| "step"` | `cycles=0` runs until disarmed; arming does not move anything until a trigger |
+| `setExcitation(type, freqHz=, f0=, f1=, periodS=, amplitudeDeg=, cycles=, delayS=, startOffsetS=, durationS=, dwells=, armed=)` | `type` = `"sine" \| "cosine" \| "chirp" \| "step" \| "random" \| "stepseq"` | `cycles=0` runs until disarmed; arming does not move anything until a trigger |
 | `getExcitation`, `disarmExcitation` | struct | `active` in the struct is read-only |
 | `setControl(Kp=, Ki=, Kd=, targetDeg=, outLimitDeg=, enabled=)` | | settings are remembered; `enabled` takes a logical |
 | `enableControl`, `disableControl`, `getControl` | struct | `enableControl` re-sends the remembered settings and warns if the board's differ |
@@ -164,7 +170,7 @@ s.meta(2).ZeroRun                                       % the zero-run file for 
 
 **`wt.hasta.HDCh`**: enum `Rudder, ElevR, ElevL, AilR, AilL`. `.WireName` is the firmware's name (`"ELEV_L"`), `.column()` the index into `ServoAngles`. A string with a member's name (`"ElevL"`) converts automatically where an `HDCh` is expected. Its order must match `CHANNEL_DEFS` in the firmware.
 
-**`wt.hasta.MetaData`**: `RunNumber`, `TestNumber` (0-based), `TestType` (`Steady|Sine|Cosine|Chirp|Step|Zero`), `Filename`, `ZeroRun`, `ModelConfig`, `Parameters` (free-form struct of the point's set-points), `Notes`, `Datetime`. Build with `Name=Value`; an unknown name or invalid `TestType` errors.
+**`wt.hasta.MetaData`**: `RunNumber`, `TestNumber` (0-based), `TestType` (`Steady|Datum|Sine|Cosine|Chirp|Step|Random|SteppedChirp|Zero`), `Filename`, `ZeroRun`, `ModelConfig`, `Parameters` (free-form struct of the point's set-points), `Notes`, `Datetime`. Build with `Name=Value`; an unknown name or invalid `TestType` errors.
 
 **`wt.hasta.ModelConfig`**: `TankType` (`"Solid"|"Liquid"`), `TankDiameter_mm`, `FuelMass_g` (NaN = not set).
 
@@ -191,78 +197,92 @@ The board forgets its encoder zero on restart, so scripts **send the saved offse
 
 ## Scripts and examples
 
-**`scripts.*`** are the tunnel tests (they use the OHB connection and save data). Run them by name, e.g. `scripts.ZeroRun`.
+**`scripts.*`** are the tunnel tests (they use the OHB connection and save data). Run them by name, e.g. `scripts.ZeroRun`. Each is a short list of test points (see below) handed to `wt.hasta.runTests`.
 
 | Script | Purpose |
 |---|---|
 | `ZeroEncoderRun` | zero the encoder at the model's zero position and save the offset (flag `CONFIRMED_MODEL_AT_ZERO`) |
-| `ZeroRun` | wind **off**: incidence 0, send saved zero, check encoder ~0, take a sample, save as a run |
-| `AoASweep`, `AoA_V_Sweep` | steady points over AoA (and tunnel speed), with an elevator-angle sweep at chosen AoAs |
-| `FreePitchSine` | model free to pitch, **stepped-sine sweep**: per target pitch, controller hold -> equilibrium sample -> one sine per frequency in `SineFreqsHz`, each from that equilibrium |
-| `FreePitchChirp` | model free to pitch, **chirp**: same flow, with a chirp (`ChirpF0Hz` to `ChirpF1Hz` over `ChirpPeriodS`) for each amplitude in `ChirpAmplitudesDeg` |
-| `FreePitchCosine` | model free to pitch, **1-cosine pulse**: same flow, one pulse per `CosinePeriodsS` x `CosineAmplitudesDeg`, with `CosineDelayS` quiet before and `TailS` free response after |
-| `FreePitchStep` | model free to pitch, **step response**: per target pitch and per `DeltaPitchDeg`: hold the target (record the elevator angles that hold it), hold the model `delta` away, switch the controller off at those angles, then an **armed `step` excitation** steps the elevators back to the target's angles `PreStepS` after the capture starts (timed on the board). Without PXI it polls the encoder while recording and re-engages the controller if the model strays more than `|delta| + OvershootAllowanceDeg` (flagged `Aborted`) |
+| `ZeroRun` | wind **off**: a `Zero` point: incidence 0, elevators 0, wind checked off, encoder checked ~0, one sample saved as a run |
+| `AoASweep`, `AoA_V_Sweep` | `Steady` points over AoA and elevator angle (and tunnel speed, ramped in steps of at most 5 m/s) |
+| `FreePitchSine` | model free to pitch, **stepped sine**: one `Sine` per frequency in `FreqsHz`, per target pitch |
+| `FreePitchChirp` | model free to pitch, **chirp**: one `Chirp` (`F0Hz` to `F1Hz` over `PeriodS`) per amplitude |
+| `FreePitchCosine` | model free to pitch, **1-cosine pulse**: one `Cosine` per period x amplitude |
+| `FreePitchStep` | model free to pitch, **step response**: one `Step` per target and delta. The Datum gives the target's elevator angles, the controller holds the model `delta` away, then an **armed `step` excitation** steps the elevators back, timed on the board. Without the force sensor the encoder is polled and the controller re-engaged if the model strays more than `|delta| + OvershootAllowanceDeg` (flagged `Aborted`) |
+| `FreePitchMixed` | the template for **mixing** test types in one run (sine, chirp, cosine and step at one pitch) |
 
-**Force sensor.** `ZeroRun`, `AoASweep`, `AoA_V_Sweep` and the four free-pitch scripts all have `UsePxi` (default false). On, the PXI six-axis sensor is recorded on the same trigger edge as the board and saved as a fourth parallel array, `pxiData` (placeholders when off). Steady points and the zero run hold the mean over the trigger-high window (the zero run's `Gauges` are the tare: `pxiData(k).Forces(zeroData.Gauges)`); dynamic points keep the whole record. The helpers are `wt.pxi.connect(hd, card, rate)`, `wt.pxi.record(hd, forceDaq, durationS, sampleHz)` and `wt.pxi.plotForces`; the examples `steady`, `chirp`, `sinewave`, `pitchTest` and `freePitch*` take `USE_PXI` and print/plot untared loads (`zero`, `moveServos` and `setupControl` record nothing). `UseCamera` / `USE_CAMERA` (default false, needs the PXI) pulses the tracking camera before and after each record. While the PXI records MATLAB is blocked, so the step script's abort cannot run.
+All of them take `UsePxi` / `UseCamera` (default false, or as you set them) for the force sensor and camera.
 
-The four free-pitch scripts share a flow and a data layout: each target gives a `Steady` point (the averaged equilibrium) followed by the dynamic points (`Sine`, `Chirp`, `Cosine` or `Step`, full time series with their settings in `meta.Parameters`). A `Step` point records `TargetPitch_deg`, `DeltaPitch_deg`, `StepFromDeg` / `StepToDeg` (the elevator angles stepped between), `StepAmplitudeDeg`, `StepGains`, `PreStepS` / `PostStepS`, `StepDelayS` and `StepTimeS` (when the recorded elevator angle actually changed; NaN if the point aborted before the step), `PitchExcursionDeg`, and `Aborted` / `AbortS`.
+### Test points
 
-**`wt.hasta.examples.*`** need only the Hasta DAQ (no tunnel computer, nothing saved) and are the best place to learn the API: `zero`, `moveServos`, `steady`, `chirp`, `sinewave`, `setupControl`, `pitchTest`, `freePitchChirp`, `freePitchSine`, `freePitchStep`, `freePitchCosine`, plus `testPxi` (checks the PXI card, the trigger loopback and that the PXI's edge starts the board; run it before any `USE_PXI`). The free-pitch ones also estimate the response (chirp: FFT ratio; sine: least-squares gain and phase; step: time to 63%, overshoot, 5% settling; cosine: peak excursion and when). Motion examples start with a `CONFIRMED_AREA_CLEAR = false` flag that stops the script until you set it true. `controlStepResponseTest.m` (in this folder) steps the pitch target during a capture to help tune Kp/Ki/Kd.
+A test point is a **condition** (what the rig is set to) plus a **measurement**. They are classes in `wt.hasta.testtype` with a common base, so one array can mix them:
 
-**Run numbers.** Every script that records data (`ZeroRun`, `AoASweep`, `AoA_V_Sweep`, `FreePitchSine`, `FreePitchChirp`, `FreePitchCosine`, `FreePitchStep`) calls `wt.runNum.increment()` when it starts, so each run of a script gets its own run number and there is normally no need to increment by hand. A consequence: a sweep never shares a run number with the `ZeroRun` before it, so the "last zero run is from a different run number" warning the sweeps print is expected with this convention.
+```matlab
+[hd, ohb, pxi] = wt.hasta.setupTestEnvironment(UsePxi=true, UseCamera=true);   % addresses, card and rate are defaults inside
+points = [ wt.hasta.testtype.Sine(PitchDeg=5, FreqHz=0.5, AmplitudeDeg=2, Cycles=6)
+           wt.hasta.testtype.Chirp(PitchDeg=5, F0Hz=0.2, F1Hz=1, PeriodS=30)
+           wt.hasta.testtype.Cosine(PitchDeg=5, PeriodS=2, AmplitudeDeg=-5)
+           wt.hasta.testtype.Step(PitchDeg=5, DeltaPitchDeg=-3)
+           wt.hasta.testtype.Steady(IncidenceDeg=8, ElevatorDeg=-5, SpeedMs=30) ];
+% grow it in a loop with:  points(end+1) = wt.hasta.testtype.Sine(...);   (start from  wt.hasta.testtype.BaseTestType.empty)
+results = wt.hasta.runTests(points, Hd=hd, Ohb=ohb, Pxi=pxi, Name="MyRun", ...
+    ModelConfig=wt.hasta.ModelConfig(TankType="Liquid", TankDiameter_mm=50, FuelMass_g=165), ...
+    Control=wt.hasta.ControlSettings(), HomePitchDeg=0, ConfirmedAreaClear=true);
+% results.hdData, .ohbData, .meta, .pxiData, .filename   (also saved to data/)
+```
+
+| Type | `TestType` saved | Measurement |
+|---|---|---|
+| `Steady` | Steady | hold the condition, sample `DurationS` (OHB + board + force), save the averages |
+| `Datum` | Datum | the same, as the reference for dynamic points; the runner takes these itself |
+| `Zero` | Zero | wind-off zero sample (incidence 0, elevators 0) |
+| `Sine`, `Cosine`, `Chirp` | Sine / Cosine / Chirp | one armed waveform on `Surfaces` (default both elevators), `DelayS` before and `TailS` after, from the Datum's equilibrium (or on top of the fixed `ElevatorDeg`) |
+| `Random` | Random | a gust: `DurationS` of the board's stored von Karman turbulence record from `StartOffsetS` (default 0: the same settings always give the same gust; use explicit offsets for a quasi-random series, or NaN to draw one when the point is created, saved in `meta.Parameters.Excitation.startOffsetS`), scaled by `AmplitudeDeg`, tapered at both ends |
+| `SteppedChirp` | SteppedChirp | stepped square wave about the nominal: to `-DeltaDeg/2` and settle `SettleS`, then `+DeltaDeg/2` for `Dwells(1)*DeltaTS`, `-DeltaDeg/2` for `Dwells(2)*DeltaTS`, ... (default `Dwells = [3 2 1 1]`), then back to nominal; `NominalDeg` NaN = the Datum's equilibrium (free to pitch) or the fixed `ElevatorDeg` |
+| `Step` | Step | free-pitch step response (needs `PitchDeg`) |
+
+**Condition fields** (NaN = leave that part of the rig alone): `IncidenceDeg`, `ElevatorDeg` (fixed elevators), `SpeedMs`, and `PitchDeg` (the controller holds this encoder angle: free to pitch; leave it NaN and the controller is off). The runner only changes what differs from the previous point. Other settings on every point: `Camera` (pulse the camera around this record when the force sensor's camera is on) and `ForceDatum` (take a fresh Datum first).
+
+**The datum.** The OHB only returns averages, so it is sampled only for steady-type points. Dynamic points store a NaN `wt.OHBData` placeholder, and the runner makes sure there is a `Datum` for their condition, no older than `DatumMaxAgeS` (default 60 s; `runTests(..., DatumMaxAgeS=...)`), taking one when needed. `meta.DatumTest` is the `TestNumber` of the Datum a dynamic point belongs to. Put a `Datum` in the array yourself, or set `ForceDatum=true` on a point, to take one at a moment you choose.
+
+**Controller.** `wt.hasta.ControlSettings(Kp=, Ki=, Kd=, OutLimitDeg=, CtrlGain=, ToleranceDeg=, Surfaces=)`, defaults 0.1 / 0.2 / 0.05 / 20 / -1 / 0.2 / both elevators. `runTests` applies it and stores it in every point's `meta.Parameters.Control`.
+
+**Adding a test type** is one class in `+testtype`: subclass `BaseTestType` (or `ExcitationTest` for another waveform), provide `typeName`, `describe`, `durationS` and `run(obj, session)`, and add its name to the `TestType` list in `MetaData`. `run` uses the session (`session.Hd`, `.Ohb`, `.Pxi`, `.Control`, `.Datum`, `session.ensureHeld(pitchDeg)`, `session.recordSteady(...)`, `session.recordDynamic(...)`, `session.markDisturbed()`) and returns a struct: `Hd`, `Ohb`, `Pxi`, `StartTime`, `Parameters`. Give it a `recover(obj, session)` that leaves the rig safe if it fails mid-way.
+
+**Force sensor.** `wt.hasta.setupTestEnvironment(UsePxi=true)` connects it and puts the board's trigger input on a rising edge; every recording then starts the board and the PXI on the same hardware edge and saves a fourth parallel array, `pxiData` (placeholders when off). Steady-type points hold the mean over the trigger-high window (the zero run's `Gauges` are the tare: `pxiData(k).Forces(zeroData.Gauges)`); dynamic points keep the whole record. The lower-level helpers are `wt.pxi.connect(hd, card, rate)`, `wt.pxi.record(hd, forceDaq, durationS, sampleHz)` and `wt.pxi.plotForces`. `UseCamera` pulses the tracking camera before and after each record (it is a property of the force sensor: `pxi.Camera`). While the PXI records MATLAB is blocked, so the step test's abort cannot run.
+
+**Turbulence record.** The `Random` gusts all come from one 60 s record baked into the firmware (`HastaDrivers/src/TurbulenceProfile.h`). To regenerate it (different seed or time scale): `addpath("matlab/hastadaq/tools"); exportTurbulenceProfile(Seed=2, TimeScale_s=1.5)`, which uses the generator in the GustVaneControl repo (`GustVaneMatlabDir`, default `C:\git\GustVaneControl\matlab`), then rebuild and reflash.
+
+A `Step` point records `TargetPitch_deg`, `DeltaPitch_deg`, `StepFromDeg` / `StepToDeg` (the elevator angles stepped between), `StepAmplitudeDeg`, `StepGains`, `PreStepS` / `PostStepS`, `StepDelayS` and `StepTimeS` (when the recorded elevator angle actually changed; NaN if the point aborted before the step), `PitchExcursionDeg`, and `Aborted` / `AbortS`.
+
+**`wt.hasta.examples.*`** need only the Hasta DAQ (no tunnel computer, nothing saved) and are the best place to learn the API: `zero`, `moveServos`, `steady`, `chirp`, `sinewave`, `setupControl`, `pitchTest`, `freePitchChirp`, `freePitchSine`, `freePitchStep`, `freePitchCosine`, plus `testPxi` (checks the PXI card, the trigger loopback and that the PXI's edge starts the board; run it before any `USE_PXI`). The free-pitch ones also estimate the response (chirp: FFT ratio; sine: least-squares gain and phase; step: time to 63%, overshoot, 5% settling; cosine: peak excursion and when). They get their connections from `wt.hasta.setupTestEnvironment` and stay explicit on purpose (one idea each). Motion examples start with a `CONFIRMED_AREA_CLEAR = false` flag that stops the script until you set it true. `controlStepResponseTest.m` (in this folder) steps the pitch target during a capture to help tune Kp/Ki/Kd.
+
+**Run numbers.** `runTests` calls `wt.runNum.increment()` when it starts, so each run of a script gets its own run number and there is normally no need to increment by hand (pass `RunNumber=` to override). A consequence: a sweep never shares a run number with the `ZeroRun` before it, so the "last zero run is from a different run number" warning is expected with this convention.
 
 ## Writing a new test script
 
-Follow the skeleton the existing tunnel scripts use. This is the shape, not boilerplate to copy blindly:
+A tunnel script is a short, functional list: build the points, set up, run, wind down after the save. Do not put hardware logic in the script.
 
 ```matlab
 % MyTest: what it does, in a few lines. What must be done first (ZeroEncoderRun, ZeroRun).
 % THIS MOVES THE SURFACES. <the one thing most likely to go wrong, and what to do>
 
-HastaIP = "192.168.1.107";  % <-- set to your board's actual IP
-OHBIP = "192.168.1.61";
+PitchDeg = 5;  FreqsHz = 0.3:0.1:0.9;                 % parameters, with the units in the names
+UsePxi = false;  UseCamera = false;
+modelConfig = wt.hasta.ModelConfig(TankType="Liquid", TankDiameter_mm=50, FuelMass_g=165);   % <-- fill in
 
-%% setup ohb / Hasta DAQ objects (reuse live ones: the board takes one client at a time)
-if ~exist("ohb","var"),  ohb = wt.OHBControl(); end
-if ~ohb.connected
-    if ~ohb.connect(OHBIP), error('Not Connected to OHB server'); end
-    ohb.openLogFile();
-end
-if ~exist("hd","var") || ~isvalid(hd)
-    hd = wt.hasta.DaqClient(HastaIP);
+points = wt.hasta.testtype.BaseTestType.empty;
+for f = FreqsHz
+    points(end+1) = wt.hasta.testtype.Sine(PitchDeg=PitchDeg, FreqHz=f);   %#ok<SAGROW>
 end
 
-%% send the saved encoder zero
-hd.disableControl();
-hd.setEncoderZeroOffset(wt.hasta.encoderZero.get());
-
-%% plan: parameters, then work out totals for the progress output
-...
-filename = string(fullfile("data", sprintf("Run%02d_MyTest_%s.mat", RunNumber, char(datetime("now", Format="yyyyMMdd_HHmmss")))));
-zeroRun = wt.hasta.getLastZeroRun("data");     % warn if empty / from another run
-
-%% run: parallel arrays, one element per test point
-hdData = wt.hasta.DaqData.empty;  ohbData = wt.OHBData.empty;  meta = wt.hasta.MetaData.empty;
-k = 0;  runTimer = tic;
-try
-    for ...
-        % command the rig, sample ohb and hd together, then ONLY NOW count the point
-        k = k + 1;  hdData(k) = ...;  ohbData(k) = ...;  meta(k) = wt.hasta.MetaData(...);
-        fprintf("    [%d/%d] ... | elapsed %s, ETA %s\n", ...);   % progress a person can follow
-    end
-catch ME
-    save(replace(filename, ".mat", "_partial.mat"), "hdData", "ohbData", "meta");
-    fprintf("\n!!! Stopped after %d/%d points: %s\n", k, totalPoints, ME.message);
-    rethrow(ME);
-end
-
-%% save BEFORE any wind-down step, so a failure there can't lose the data
-save(filename, "hdData", "ohbData", "meta");
-
-%% local functions go at the END of a script file
+[hd, ohb, pxi] = wt.hasta.setupTestEnvironment(UsePxi=UsePxi, UseCamera=UseCamera);
+results = wt.hasta.runTests(points, Hd=hd, Ohb=ohb, Pxi=pxi, Name="MyTest", ModelConfig=modelConfig, ...
+    HomePitchDeg=0, ConfirmedAreaClear=true);
+[hdData, ohbData, meta, pxiData] = deal(results.hdData, results.ohbData, results.meta, results.pxiData);
+% wind down here, AFTER the data is saved
 ```
 
-Checklist: a safety flag or clear warning if it moves things; state left in a **stated** condition at the end; progress output with ETA; partial save on error; arrays stay the same length (add the point to all three together); no new toolbox dependency; run `checkcode` and exercise it against a fake board before it goes near the rig.
+Checklist: a clear warning in the header if it moves things; parameters at the top; state left in a **stated** condition at the end; no new toolbox dependency; run `checkcode` and exercise it against a fake board before it goes near the rig. If you need behaviour that is not a point type yet, add a type (see above) rather than loops of `hd.` calls in the script.
 
 ## Conventions
 
@@ -298,9 +318,9 @@ There is no test suite. What is done, and should be done for any change:
 
 | You see | Cause / fix |
 |---|---|
-| `Unrecognized method, property, or field 'X' for class 'wt.hasta.DaqClient'` | an `hd` made before the class changed keeps the old definition: `clear hd` (then `clear classes` if needed) |
+| `Unrecognized method, property, or field 'X' for class 'wt.hasta.DaqClient'` | an `hd` made before the class changed keeps the old definition: `clear functions` (it forgets the connections kept by `setupTestEnvironment`), then `clear classes` if needed |
 | `No reply from the board to <cmd> after N attempt(s) ...` (`DaqClient:noReply`) | WiFi dropped, the board reset, or a stale connection. Check `hd.getHealth()` (uptime, reset reason, RSSI) and the board's Serial Monitor; `hd.ReconnectCount` shows how often it recovered |
-| `actively refused` / can't connect | the board serves one client; `clear hd` the other session, or reset the board |
+| `actively refused` / can't connect | the board serves one client; close the other session (`clear functions`), or reset the board |
 | `No encoder zero has been saved yet` | run `scripts.ZeroEncoderRun` (model at zero) or `wt.hasta.encoderZero.set(x)` |
 | `ERR control loop enabled -- CTRLCONFIG enabled:false first` | `ZERO` / `ZEROOFFSET` are refused while the controller runs: `hd.disableControl()` first |
 | warning: board's control settings differ ... did the board restart? | the board lost its settings (likely a reboot); the client re-applied yours. Check `getHealth` for a brownout |

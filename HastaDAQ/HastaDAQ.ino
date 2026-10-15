@@ -85,7 +85,7 @@
 //                     applied together (surfaces move in the same SBUS
 //                     frame). Use the array form to move surfaces in sync.
 //   CHANCONFIG? <ch or name> -> JSON reply with that channel's config
-//   EXCITE         -> JSON: {"type":"sine"|"cosine"|"chirp"|"step","freqHz":..
+//   EXCITE         -> JSON: {"type":"sine"|"cosine"|"chirp"|"step"|"random"|"stepseq","freqHz":..
 //                     (sine),"f0":..,"f1":.. (chirp),"periodS":..
 //                     (cosine/chirp),"amplitudeDeg":..,"cycles":.. (0 =
 //                     run until disarmed),"delayS":.. (wait this long
@@ -93,7 +93,15 @@
 //                     is the 1-cosine pulse (0 -> amplitudeDeg -> 0 over
 //                     periodS); "step" holds amplitudeDeg from delayS until
 //                     disarmed (periodS and cycles are ignored), so a step
-//                     test is timed on the board, not by a host command,
+//                     test is timed on the board, not by a host command.
+//                     "random" plays back durationS seconds of the stored
+//                     von Karman turbulence record from startOffsetS,
+//                     scaled by amplitudeDeg and tapered at both ends
+//                     (startOffsetS + durationS must fit the record, 59.98 s,
+//                     else ERR). "stepseq" is -amplitudeDeg for delayS (move
+//                     there and settle), then alternating +/-amplitudeDeg
+//                     for dwells[i]*periodS each ("dwells":[3,2,1,1], up to
+//                     16), then back to 0 -- the stepped chirp,
 //                     "armed":true|false (should the NEXT trigger start
 //                     this -- see TRIGGERING above, NOT "is it running
 //                     right now", that's EXCITE?'s read-only "active")}
@@ -343,14 +351,47 @@ void SetExcite(SCPI_C commands, SCPI_P parameters, Stream& interface) {
 
     const char* typeCstr = doc["type"] | exciter.typeName();
     String type(typeCstr);
-    if (type == "sine") exciter.setType(ExcitationGenerator::Type::SINE);
-    else if (type == "cosine") exciter.setType(ExcitationGenerator::Type::COSINE);
-    else if (type == "chirp") exciter.setType(ExcitationGenerator::Type::CHIRP);
-    else if (type == "step") exciter.setType(ExcitationGenerator::Type::STEP);
+    ExcitationGenerator::Type newType;
+    if (type == "sine") newType = ExcitationGenerator::Type::SINE;
+    else if (type == "cosine") newType = ExcitationGenerator::Type::COSINE;
+    else if (type == "chirp") newType = ExcitationGenerator::Type::CHIRP;
+    else if (type == "step") newType = ExcitationGenerator::Type::STEP;
+    else if (type == "random") newType = ExcitationGenerator::Type::RANDOM;
+    else if (type == "stepseq") newType = ExcitationGenerator::Type::STEPSEQ;
     else {
-        interface.println(F("ERR type must be sine|cosine|chirp|step"));
+        interface.println(F("ERR type must be sine|cosine|chirp|step|random|stepseq"));
         return;
     }
+
+    // everything that can be rejected is checked before anything is applied
+    float startOffsetS = doc["startOffsetS"] | exciter.startOffsetS();
+    float durationS = doc["durationS"] | exciter.durationS();
+    if (newType == ExcitationGenerator::Type::RANDOM && !ExcitationGenerator::randomFits(startOffsetS, durationS)) {
+        interface.println(F("ERR random needs startOffsetS >= 0, durationS > 0 and startOffsetS + durationS within the stored record"));
+        return;
+    }
+    float dwells[ExcitationGenerator::MAX_DWELLS];
+    int nDwells = -1; // -1 = dwells not given, keep the current ones
+    if (doc["dwells"].is<JsonArray>()) {
+        JsonArray arr = doc["dwells"].as<JsonArray>();
+        nDwells = (int)arr.size();
+        if (nDwells < 1 || nDwells > ExcitationGenerator::MAX_DWELLS) {
+            interface.println(F("ERR dwells needs 1 to 16 values"));
+            return;
+        }
+        for (int i = 0; i < nDwells; ++i) {
+            dwells[i] = arr[i].as<float>();
+            if (!(dwells[i] > 0.0f)) {
+                interface.println(F("ERR dwells must be positive"));
+                return;
+            }
+        }
+    }
+
+    exciter.setType(newType);
+    exciter.setStartOffsetS(startOffsetS);
+    exciter.setDurationS(durationS);
+    if (nDwells > 0) exciter.setDwells(dwells, nDwells);
 
     exciter.setFreqHz(doc["freqHz"] | exciter.freqHz());
     exciter.setChirpRange(doc["f0"] | exciter.f0(), doc["f1"] | exciter.f1());
@@ -373,6 +414,10 @@ void GetExcite(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     doc["amplitudeDeg"] = exciter.amplitudeDeg();
     doc["cycles"] = exciter.cycles();
     doc["delayS"] = exciter.delayS();
+    doc["startOffsetS"] = exciter.startOffsetS();
+    doc["durationS"] = exciter.durationS();
+    JsonArray dw = doc["dwells"].to<JsonArray>();
+    for (int i = 0; i < exciter.nDwells(); ++i) dw.add(exciter.dwell(i));
     doc["armed"] = exciter.armed();
     doc["active"] = exciter.active(); // read-only -- is it actually oscillating right now
     serializeJson(doc, interface);

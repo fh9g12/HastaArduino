@@ -43,6 +43,9 @@ classdef DaqClient < handle
         % Servo travel either side of centre - matches
         % SbusServoBank::TRAVEL_DEG in the firmware.
         MaxAngleDeg = 48.06
+        % Length of the turbulence record the "random" excitation plays
+        % (TurbulenceProfile.h: (3000-1)/50 Hz).
+        TurbulenceRecordS = 59.98
     end
 
     properties
@@ -280,7 +283,7 @@ classdef DaqClient < handle
 
         function setExcitation(obj, type, opts)
             %SETEXCITATION Configure the shared excitation waveform.
-            %   type: "sine" | "cosine" | "chirp" | "step"
+            %   type: "sine" | "cosine" | "chirp" | "step" | "random" | "stepseq"
             %   Options (omitted = unchanged): freqHz (sine), f0, f1
             %   (chirp), periodS (cosine/chirp), amplitudeDeg, cycles
             %   (0 = run until disarmed), delayS (wait after a trigger
@@ -295,11 +298,27 @@ classdef DaqClient < handle
             %   (an external edge or run()/fire()) with no host command.
             %   "step" needs firmware that knows it (older boards reply ERR).
             %
+            %   "random" plays back durationS seconds of the board's stored
+            %   von Karman turbulence record starting startOffsetS into it,
+            %   scaled by amplitudeDeg (peak of the whole record = 1) and
+            %   tapered smoothly to 0 at both ends. startOffsetS + durationS
+            %   must be within the record (TurbulenceRecordS, 59.98 s); pick
+            %   different startOffsetS for different gusts. It stops by
+            %   itself after durationS (cycles is ignored).
+            %
+            %   "stepseq" is a stepped square wave about the trim: it goes
+            %   to -amplitudeDeg at the trigger and stays there for delayS
+            %   (move and settle), then alternates +amplitudeDeg,
+            %   -amplitudeDeg, ... holding each level for dwells(i)*periodS
+            %   (dwells up to 16 values, e.g. [3 2 1 1]), then returns to 0
+            %   and stops. The stepped chirp: delta = 2*amplitudeDeg,
+            %   deltaT = periodS. cycles is ignored.
+            %
             %   Setting armed=true does not move anything by itself - the
             %   waveform starts at the next run()/fire()/trigger-pin edge.
             arguments
                 obj
-                type (1,1) string {mustBeMember(type, ["sine","cosine","chirp","step"])}
+                type (1,1) string {mustBeMember(type, ["sine","cosine","chirp","step","random","stepseq"])}
                 opts.freqHz (1,1) double = NaN
                 opts.f0 (1,1) double = NaN
                 opts.f1 (1,1) double = NaN
@@ -307,10 +326,24 @@ classdef DaqClient < handle
                 opts.amplitudeDeg (1,1) double = NaN
                 opts.cycles (1,1) double = NaN
                 opts.delayS (1,1) double = NaN
+                opts.startOffsetS (1,1) double = NaN
+                opts.durationS (1,1) double = NaN
+                opts.dwells (1,:) double {mustBePositive, mustBeFinite} = []
                 opts.armed {mustBeScalarOrEmpty} = []
             end
+            if ~isempty(opts.dwells) && numel(opts.dwells) > 16
+                error("DaqClient:badDwells", "At most 16 dwells.");
+            end
+            if type == "random" && ~isnan(opts.startOffsetS) && ~isnan(opts.durationS) ...
+                    && opts.startOffsetS + opts.durationS > wt.hasta.DaqClient.TurbulenceRecordS
+                error("DaqClient:badRandom", "startOffsetS + durationS (%g s) is beyond the %g s turbulence record.", ...
+                    opts.startOffsetS + opts.durationS, wt.hasta.DaqClient.TurbulenceRecordS);
+            end
             body = struct("type", type);
-            body = wt.hasta.DaqClient.addFields(body, rmfield(opts, "armed"));
+            body = wt.hasta.DaqClient.addFields(body, rmfield(opts, ["armed", "dwells"]));
+            if ~isempty(opts.dwells)
+                body.dwells = num2cell(opts.dwells);   % a cell, so it is a JSON array even for one value
+            end
             if ~isempty(opts.armed)
                 body.armed = logical(opts.armed); % must be a JSON bool, not 0/1
             end

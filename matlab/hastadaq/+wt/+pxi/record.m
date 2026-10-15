@@ -6,13 +6,14 @@ function [hdData, pxiData] = record(hd, forceDaq, durationS, sampleHz, opts)
 %   (this blocks MATLAB for the whole record). With forceDaq = [] the board
 %   is simply run, as hd.capture, and pxiData is an empty placeholder
 %   wt.pxi.ForceData so arrays of results stay parallel.
-%   camera=true also pulses the tracking camera either side of the record.
+%   camera=true/false overrides the force sensor's Camera property (pulse the
+%   tracking camera either side of the record).
     arguments
         hd (1,1) wt.hasta.DaqClient
         forceDaq
         durationS (1,1) double {mustBePositive}
         sampleHz (1,1) double {mustBePositive}
-        opts.camera (1,1) logical = false
+        opts.camera {mustBeScalarOrEmpty} = []
     end
     if isempty(forceDaq)
         hdData = hd.capture(durationS, sampleHz);

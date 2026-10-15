@@ -17,13 +17,8 @@ CONFIRMED_MODEL_AT_ZERO = true;  % <-- set true once the model is at its zero po
 assert(CONFIRMED_MODEL_AT_ZERO, ...
     "Put the model at its zero position, then set CONFIRMED_MODEL_AT_ZERO = true.");
 
-HastaIP = "192.168.1.107";  % <-- set to your board's actual IP
-
-%% setup Hasta DAQ object
-% the board takes one client at a time, so reuse an existing connection
-if ~exist("hd","var") || ~isvalid(hd)
-    hd = wt.hasta.DaqClient(HastaIP);
-end
+% not sending the saved zero: this script is what sets it
+hd = wt.hasta.setupTestEnvironment(SendEncoderZero=false);
 
 %% zero the encoder and save the offset
 hd.disableControl();   % ZERO is refused while the PID is enabled
