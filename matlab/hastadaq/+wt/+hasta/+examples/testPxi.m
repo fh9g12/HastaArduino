@@ -21,6 +21,7 @@
 
 PXI_CARD = "PXI1Slot4_2";     % <-- the NI card with the analogue outputs (the PXIe-6363 in daqlist)
 PXI_RATE_HZ = 200;
+USE_CAMERA = false;           % true: also pulse the tracking camera around the PXI record
 DURATION_S = 3;               % how long each test record is
 TEST_BOARD = true;            % false: only test the PXI by itself
 boardIP = "192.168.1.107";   % <-- set to your board's actual IP
@@ -30,7 +31,7 @@ SAMPLE_HZ = 100;              % the board's sample rate for step 2
 fprintf("1. PXI alone: %s at %g Hz, %g s ...\n", PXI_CARD, PXI_RATE_HZ, DURATION_S);
 pxi = wt.pxi.ForceDaq(PXI_CARD, rate=PXI_RATE_HZ);
 pxi.lowOutput();
-force = pxi.acquire(DURATION_S);
+force = pxi.acquire(DURATION_S, camera=USE_CAMERA);
 
 okTrigger = max(force.TriggerVolts) > 3 && min(force.TriggerVolts) < 0.5;
 fprintf("  samples %d at %g Hz\n", force.NumSamples, force.Rate);

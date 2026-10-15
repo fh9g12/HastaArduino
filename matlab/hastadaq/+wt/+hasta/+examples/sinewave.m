@@ -27,6 +27,7 @@ SAMPLE_HZ = 100;
 USE_PXI = false;      % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
 PXI_CARD = "Dev5";    % the NI device
 PXI_RATE_HZ = 200;    % force-sensor sample rate
+USE_CAMERA = false;    % true: pulse the tracking camera before and after the record (needs USE_PXI)
 
 elevators = [wt.hasta.HDCh.ElevL wt.hasta.HDCh.ElevR];
 
@@ -54,7 +55,7 @@ disp(hd.getExcitation());
 
 durationS = DELAY_S + CYCLES / FREQ_HZ + TAIL_S;
 fprintf("Capturing %.1f s ...\n", durationS);
-[data, force] = wt.pxi.record(hd, forceDaq, durationS, SAMPLE_HZ);   % record, wait, read back
+[data, force] = wt.pxi.record(hd, forceDaq, durationS, SAMPLE_HZ, camera=USE_CAMERA);   % record, wait, read back
 
 hd.disarmExcitation(); % don't let a later trigger start it again
 % hd stays open for the next script (the board takes one client at a time; `clear hd` closes it)

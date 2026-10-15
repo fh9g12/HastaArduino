@@ -52,6 +52,7 @@ SAMPLE_HZ = 100;
 USE_PXI = false;      % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
 PXI_CARD = "Dev5";    % the NI device
 PXI_RATE_HZ = 200;    % force-sensor sample rate (while it records, MATLAB cannot watch the model, so no abort)
+USE_CAMERA = false;    % true: pulse the tracking camera before and after the record (needs USE_PXI)
 
 elevators = [wt.hasta.HDCh.ElevR wt.hasta.HDCh.ElevL];   % flip a servo's sign by hand if it is mounted mirrored
 
@@ -105,7 +106,7 @@ try
     aborted = false;
     if USE_PXI
         % the PXI record blocks MATLAB, so the model cannot be watched (no abort) until it ends
-        [response, force] = wt.pxi.record(hd, forceDaq, totalS, SAMPLE_HZ);
+        [response, force] = wt.pxi.record(hd, forceDaq, totalS, SAMPLE_HZ, camera=USE_CAMERA);
     else
         hd.run(totalS, SAMPLE_HZ);              % the trigger: the board times the step itself
         clk = tic;

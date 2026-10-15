@@ -46,6 +46,7 @@ SAMPLE_HZ = 100;
 USE_PXI = false;      % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
 PXI_CARD = "Dev5";    % the NI device
 PXI_RATE_HZ = 200;    % force-sensor sample rate
+USE_CAMERA = false;    % true: pulse the tracking camera before and after the record (needs USE_PXI)
 
 elevators = [wt.hasta.HDCh.ElevR wt.hasta.HDCh.ElevL];   % flip a servo's sign by hand if it is mounted mirrored
 
@@ -93,7 +94,7 @@ hd.setExcitation("chirp", f0=F0_HZ, f1=F1_HZ, periodS=PERIOD_S, ...
     amplitudeDeg=AMPLITUDE_DEG, cycles=1, delayS=DELAY_S, armed=true);
 durationS = DELAY_S + PERIOD_S + TAIL_S;
 fprintf("Chirp %.2g -> %.2g Hz, %.2g deg, recording %.0f s ...\n", F0_HZ, F1_HZ, AMPLITUDE_DEG, durationS);
-[response, force] = wt.pxi.record(hd, forceDaq, durationS, SAMPLE_HZ);
+[response, force] = wt.pxi.record(hd, forceDaq, durationS, SAMPLE_HZ, camera=USE_CAMERA);
 hd.disarmExcitation();
 
 %% 5. back to holding the model (the settings you gave are kept)

@@ -23,13 +23,14 @@ end
 hd.disableControl();   % the offset is refused while the PID is enabled
 hd.setEncoderZeroOffset(wt.hasta.encoderZero.get());
 
-%%%% force sensor (optional)
-UsePxi = false;            %% true: also record the 6-axis force sensor (PXI), started by the same trigger edge
-PxiCard = "Dev5";          %% the NI device
-PxiRateHz = 200;           %% force-sensor sample rate
+%% force sensor (optional)
+UsePxi = false;            % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
+PxiCard = "Dev5";          % the NI device
+PxiRateHz = 200;           % force-sensor sample rate
+UseCamera = false;         % true: pulse the tracking camera before and after each record (needs UsePxi)
 forceDaq = [];
 if UsePxi
-    forceDaq = wt.pxi.connect(hd, PxiCard, PxiRateHz);   %% trigger line low, board set to a rising-edge start
+    forceDaq = wt.pxi.connect(hd, PxiCard, PxiRateHz);   % trigger line low, board set to a rising-edge start
 end
 
 %% setup script
@@ -86,7 +87,7 @@ try
             N = 5;
             startTime = datetime("now");
             ohb.sample(N);
-            [hdFull, pxiFull] = wt.pxi.record(hd, forceDaq, N, 100);
+            [hdFull, pxiFull] = wt.pxi.record(hd, forceDaq, N, 100, camera=UseCamera);
             hdPoint = hdFull.mean();    % steady: keep just the average
             pxiPoint = pxiFull.mean();  % ... of the force sensor too
             pause(0.25)

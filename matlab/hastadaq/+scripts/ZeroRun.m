@@ -32,13 +32,14 @@ if ~exist("hd","var") || ~isvalid(hd)
     hd = wt.hasta.DaqClient(HastaIP);
 end
 
-%%%% force sensor (optional)
-UsePxi = false;            %% true: also record the 6-axis force sensor (PXI), started by the same trigger edge
-PxiCard = "Dev5";          %% the NI device
-PxiRateHz = 200;           %% force-sensor sample rate
+%% force sensor (optional)
+UsePxi = false;            % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
+PxiCard = "Dev5";          % the NI device
+PxiRateHz = 200;           % force-sensor sample rate
+UseCamera = false;         % true: pulse the tracking camera before and after each record (needs UsePxi)
 forceDaq = [];
 if UsePxi
-    forceDaq = wt.pxi.connect(hd, PxiCard, PxiRateHz);   %% trigger line low, board set to a rising-edge start
+    forceDaq = wt.pxi.connect(hd, PxiCard, PxiRateHz);   % trigger line low, board set to a rising-edge start
 end
 
 %% check the wind is off
@@ -85,7 +86,7 @@ end
 % b) take a sample
 startTime = datetime("now");
 ohb.sample(N);
-[hdFull, pxiFull] = wt.pxi.record(hd, forceDaq, N, 100);
+[hdFull, pxiFull] = wt.pxi.record(hd, forceDaq, N, 100, camera=UseCamera);
 hdData = hdFull.mean();    % steady: keep just the average
 pxiData = pxiFull.mean();  % ... of the force sensor too (its zero/tare gauge voltages)
 pause(0.25)

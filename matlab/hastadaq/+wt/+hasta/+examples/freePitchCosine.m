@@ -47,6 +47,7 @@ SAMPLE_HZ = 100;
 USE_PXI = false;      % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
 PXI_CARD = "Dev5";    % the NI device
 PXI_RATE_HZ = 200;    % force-sensor sample rate
+USE_CAMERA = false;    % true: pulse the tracking camera before and after the record (needs USE_PXI)
 
 elevators = [wt.hasta.HDCh.ElevR wt.hasta.HDCh.ElevL];   % flip a servo's sign by hand if it is mounted mirrored
 
@@ -103,7 +104,7 @@ try
         hd.setExcitation("cosine", periodS=period, amplitudeDeg=AMPLITUDE_DEG, cycles=1, delayS=DELAY_S, armed=true);
         durationS = DELAY_S + period + TAIL_S;
         fprintf("  pulse %+g deg over %.3g s, recording %.0f s ...\n", AMPLITUDE_DEG, period, durationS);
-        [response, force] = wt.pxi.record(hd, forceDaq, durationS, SAMPLE_HZ);
+        [response, force] = wt.pxi.record(hd, forceDaq, durationS, SAMPLE_HZ, camera=USE_CAMERA);
         hd.disarmExcitation();
         responses{pi_} = response;
 

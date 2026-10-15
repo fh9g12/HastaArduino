@@ -45,9 +45,10 @@ DELAY_S = 1;                   % quiet recording before the sine starts
 TAIL_S = 2;                    % ... and after it ends
 STEADY_S = 4;                  % equilibrium sample time
 SAMPLE_HZ = 100;
-USE_PXI = false;      % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
-PXI_CARD = "Dev5";    % the NI device
+USE_PXI = true;      % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
+PXI_CARD = "PXI1Slot4_2";    % the NI device
 PXI_RATE_HZ = 200;    % force-sensor sample rate
+USE_CAMERA = false;    % true: pulse the tracking camera before and after the record (needs USE_PXI)
 
 assert(CYCLES > DISCARD_CYCLES, "CYCLES must be larger than DISCARD_CYCLES.");
 assert(all(FREQS_HZ > 0), "FREQS_HZ must be positive.");
@@ -106,7 +107,7 @@ try
             cycles=CYCLES, delayS=DELAY_S, armed=true);
         durationS = DELAY_S + CYCLES / freq + TAIL_S;
         fprintf("  sine %.2g deg x %d cycles, recording %.0f s ...\n", AMPLITUDE_DEG, CYCLES, durationS);
-        [response, force] = wt.pxi.record(hd, forceDaq, durationS, SAMPLE_HZ);
+        [response, force] = wt.pxi.record(hd, forceDaq, durationS, SAMPLE_HZ, camera=USE_CAMERA);
         hd.disarmExcitation();
         responses{fi} = response;
 
