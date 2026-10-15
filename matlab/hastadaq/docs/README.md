@@ -40,7 +40,7 @@ matlab/hastadaq/
     getLastZeroRun.m     newest zero-run file in data/
     +encoderZero/        get, set, info  : the saved encoder zero
     +examples/           demos needing only the Hasta DAQ
-  +wt/+pxi/              optional PXI force sensor: ForceDaq, ForceData, loadCalibration (private/FT78552.cal)
+  +wt/+pxi/              optional PXI force sensor (card "PXI1Slot4_2", the PXIe-6363): ForceDaq, ForceData, loadCalibration (private/FT78552.cal), and the helpers connect, record, plotForces
   +wt/+runNum/           get, set, increment : the run number
   +scripts/              tunnel test scripts
   controlStepResponseTest.m   standalone controller step-response tuning
@@ -290,8 +290,9 @@ There is no test suite. What is done, and should be done for any change:
    ```
 
    Return synthetic `DATA?` records with a **known response** (e.g. a sine through gain 0.5 and a 0.5 rad lag) and check the analysis recovers it. For the tunnel scripts a stand-in `OHBControl` (a handle class with `connected`, `sample`, `readLastSample`, `readWindSpeed`, `moveIncidence`) and a copy of `wt.OHBData` are enough.
-3. **Keep tests away from the real preferences:** put a folder containing stand-in `+wt/+hasta/+encoderZero/get.m` (and similar) **first** on the path for the test.
-4. Report what you ran (`checkcode`, fake board) and what you did not (the real rig).
+3. **A mock NI card** for the PXI code: a stand-in `daq()` function (first on the path) returning a `MockDaq` whose `readwrite` gives a timetable and calls a callback when the output goes high, standing in for the wire to the board's trigger-in so the fake board's capture starts on the edge.
+4. **Keep tests away from the real preferences:** put a folder containing stand-in `+wt/+hasta/+encoderZero/get.m` (and similar) **first** on the path for the test.
+5. Report what you ran (`checkcode`, fake board) and what you did not (the real rig).
 
 ## Troubleshooting
 

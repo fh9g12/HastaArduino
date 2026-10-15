@@ -45,7 +45,7 @@ TAIL_S = 8;                    % recorded after the pulse ends: the free respons
 STEADY_S = 4;                  % equilibrium sample time
 SAMPLE_HZ = 100;
 USE_PXI = false;      % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
-PXI_CARD = "Dev5";    % the NI device
+PXI_CARD = "PXI1Slot4_2";    % the NI device
 PXI_RATE_HZ = 200;    % force-sensor sample rate
 USE_CAMERA = false;    % true: pulse the tracking camera before and after the record (needs USE_PXI)
 

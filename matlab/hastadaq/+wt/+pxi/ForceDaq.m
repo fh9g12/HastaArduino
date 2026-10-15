@@ -1,6 +1,6 @@
 classdef ForceDaq < handle
     %FORCEDAQ The PXI/NI card that reads the 6-axis force sensor and starts the Arduino.
-    %   One NI card (default "Dev5") with, on a single sample clock:
+    %   One NI card (default "PXI1Slot4_2") with, on a single sample clock:
     %     ai0..ai5   the six strain-gauge voltages of the force/torque sensor
     %     ai6        the trigger line looped back (so the record carries its own marker)
     %     ao0        the trigger OUTPUT: 0 V, then 3.3 V for the record, then 0 V again.
@@ -9,7 +9,7 @@ classdef ForceDaq < handle
     %                armed with it.
     %     ctr1       optional ~1 ms pulse to start/stop a tracking camera
     %
-    %   pxi = wt.pxi.ForceDaq("Dev5");
+    %   pxi = wt.pxi.ForceDaq("PXI1Slot4_2");
     %   hd.arm(10, 100);                  % the Arduino waits for the edge ...
     %   f = pxi.acquire(10);              % ... and this raises it, then records 10 s
     %   d = hd.readData();                % both records start at the same edge
@@ -28,7 +28,7 @@ classdef ForceDaq < handle
     %   order against a known load, and the camera pulse width.
 
     properties (SetAccess = private)
-        Card (1,1) string           % NI device name, e.g. "Dev5"
+        Card (1,1) string           % NI device name, e.g. "PXI1Slot4_2"
         Rate (1,1) double           % scans per second (set at construction)
         Calibration (1,1) struct    % wt.pxi.loadCalibration result
     end
@@ -48,9 +48,9 @@ classdef ForceDaq < handle
     methods
         function obj = ForceDaq(card, opts)
             %FORCEDAQ Open the session and drive the trigger output low.
-            %   pxi = wt.pxi.ForceDaq("Dev5", rate=200, calibrationFile="FT78552.cal")
+            %   pxi = wt.pxi.ForceDaq("PXI1Slot4_2", rate=200, calibrationFile="FT78552.cal")
             arguments
-                card (1,1) string = "Dev5"
+                card (1,1) string = "PXI1Slot4_2"
                 opts.rate (1,1) double {mustBePositive} = 200
                 opts.calibrationFile (1,1) string = fullfile(fileparts(mfilename("fullpath")), "private", "FT78552.cal")
             end

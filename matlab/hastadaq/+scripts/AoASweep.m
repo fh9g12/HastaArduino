@@ -25,7 +25,7 @@ hd.setEncoderZeroOffset(wt.hasta.encoderZero.get());
 
 %% force sensor (optional)
 UsePxi = false;            % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
-PxiCard = "Dev5";          % the NI device
+PxiCard = "PXI1Slot4_2";          % the NI device
 PxiRateHz = 200;           % force-sensor sample rate
 UseCamera = false;         % true: pulse the tracking camera before and after each record (needs UsePxi)
 forceDaq = [];

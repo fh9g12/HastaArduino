@@ -1,6 +1,6 @@
 function forceDaq = connect(hd, card, rate)
 %CONNECT The PXI force sensor, ready to be triggered by the Hasta DAQ's input.
-%   forceDaq = wt.pxi.connect(hd, "Dev5", 200)
+%   forceDaq = wt.pxi.connect(hd, "PXI1Slot4_2", 200)
 %   Opens the NI card on the first call and reuses it afterwards (the card is
 %   opened once per MATLAB session; "clear functions" forgets it). Drives the
 %   trigger line LOW first, then sets the board to start on a rising edge, so
