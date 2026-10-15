@@ -47,4 +47,4 @@ pause(1.5);
 hd.setAngle(allSurfaces, 0);
 disp("Done - all surfaces returned to 0.");
 
-clear hd % closes the TCP connection (surfaces hold their last command)
+% hd stays open for the next script (surfaces hold their last command; `clear hd` closes the link)

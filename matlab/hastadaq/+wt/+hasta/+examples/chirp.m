@@ -60,8 +60,7 @@ fprintf("Capturing %.1f s ...\n", durationS);
 [data, force] = wt.pxi.record(hd, forceDaq, durationS, SAMPLE_HZ);   % record, wait, read back
 
 hd.disarmExcitation(); % don't let a later trigger start it again
-clear hd
-
+% hd stays open for the next script (the board takes one client at a time; `clear hd` closes it)
 t = data.Time;
 names = string(enumeration("wt.hasta.HDCh"));
 

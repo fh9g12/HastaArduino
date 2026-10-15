@@ -309,7 +309,7 @@ There is no automated test suite. What is done instead, and what an agent should
 * **`readline` on timeout returns empty**, not an error; the client converts that into `DaqClient:noReply` (otherwise it surfaces later as a cryptic `strtrim` error).
 * **The board refuses a second client** ("actively refused"); close or `clear` the first (or rely on the replace-old behaviour of current firmware).
 * **`onCleanup` is not a reliable restore** when a script errors out; restore state explicitly.
-* **Scripts run by package name** (`scripts.AoASweep`, `wt.hasta.examples.chirp`) share the base workspace, which is how `hd` and `ohb` persist between them. The older examples (`zero`, `moveServos`, `steady`, `chirp`, `sinewave`, `setupControl`) and `controlStepResponseTest` end with `clear hd`; the tunnel scripts and the free-pitch examples leave it open (they leave the controller running to hold the model).
+* **Scripts run by package name** (`scripts.AoASweep`, `wt.hasta.examples.chirp`) share the base workspace, which is how `hd` and `ohb` persist between them. No example or script clears `hd`, so each can be re-run straight away; run `clear hd` yourself to close the link (the board serves one client, and a client that is cleared may take a while to be dropped by an old firmware).
 
 **Firmware / board**
 

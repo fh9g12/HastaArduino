@@ -47,4 +47,4 @@ else
     fprintf("The zero saved for the test scripts is %.4f deg (saved %s).\n", saved.OffsetDeg, saved.SavedAt);
 end
 
-clear hd % closes the TCP connection
+% hd stays open for the next script (`clear hd` closes the link)

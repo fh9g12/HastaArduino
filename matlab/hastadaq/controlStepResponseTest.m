@@ -63,7 +63,7 @@ fprintf("Step to %.2f deg applied.\n", TARGET_AFTER_DEG);
 hd.waitForDone(durationS + 30);
 data = hd.readData();
 hd.disableControl();                   % the elevators drop back to their trim
-clear hd % close the TCP connection
+% hd stays open for the next script (`clear hd` closes the link)
 
 figure("Name", "Pitch control step response");
 

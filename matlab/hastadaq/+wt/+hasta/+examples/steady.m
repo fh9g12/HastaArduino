@@ -11,7 +11,7 @@
 %
 % THIS MOVES THE ELEVATORS. Make sure they are clear.
 
-CONFIRMED_AREA_CLEAR = false;  % <-- set true once the surfaces are clear
+CONFIRMED_AREA_CLEAR = true;  % <-- set true once the surfaces are clear
 assert(CONFIRMED_AREA_CLEAR, "Set CONFIRMED_AREA_CLEAR = true once the surfaces are clear to move.");
 
 boardIP = "192.168.68.107";  % <-- set to your board's actual IP
@@ -20,8 +20,8 @@ ANGLE_DEG = 3;       % elevator angle to hold
 DURATION_S = 10;     % how long to log
 SETTLE_S = 2;        % wait for the surfaces to reach the angle first
 SAMPLE_HZ = 100;
-USE_PXI = false;      % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
-PXI_CARD = "Dev5";    % the NI device
+USE_PXI = true;      % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
+PXI_CARD = "PXI1Slot4_2";    % the NI device
 PXI_RATE_HZ = 200;    % force-sensor sample rate
 
 elevators = [wt.hasta.HDCh.ElevL wt.hasta.HDCh.ElevR];
@@ -44,8 +44,7 @@ fprintf("Capturing %.1f s ...\n", DURATION_S);
 [data, force] = wt.pxi.record(hd, forceDaq, DURATION_S, SAMPLE_HZ);   % record, wait, read back
 
 hd.setAngle(elevators, 0); % back to centre
-clear hd
-
+% hd stays open for the next script (the board takes one client at a time; `clear hd` closes it)
 t = data.Time;
 names = string(enumeration("wt.hasta.HDCh"));
 
