@@ -43,12 +43,21 @@ DELAY_S = 2;                   % quiet recording before the chirp starts
 TAIL_S = 3;                    % ... and after it ends, to see it settle
 STEADY_S = 4;                  % equilibrium sample time
 SAMPLE_HZ = 100;
+USE_PXI = false;      % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
+PXI_CARD = "Dev5";    % the NI device
+PXI_RATE_HZ = 200;    % force-sensor sample rate
 
 elevators = [wt.hasta.HDCh.ElevR wt.hasta.HDCh.ElevL];   % flip a servo's sign by hand if it is mounted mirrored
 
 % the board takes one client at a time, so reuse an existing connection
 if ~exist("hd","var") || ~isvalid(hd)
     hd = wt.hasta.DaqClient(boardIP);
+end
+
+% the force sensor, if used (needs the PXI wired to the board's trigger input)
+forceDaq = [];
+if USE_PXI
+    forceDaq = wt.pxi.connect(hd, PXI_CARD, PXI_RATE_HZ);   % trigger line low, board set to a rising-edge start
 end
 
 %% set up: the real zero, and the controller's settings
@@ -62,7 +71,10 @@ r = hd.holdPitch(TARGET_PITCH_DEG, ctrlGain=CTRL_GAIN);
 fprintf("  %s after %.1f s: pitch %.2f deg (error %+.2f)\n", settledText(r.settled), r.timeS, r.pitchDeg, r.errorDeg);
 
 %% 2. equilibrium values
-equilibrium = hd.capture(STEADY_S, SAMPLE_HZ);
+[equilibrium, forceEq] = wt.pxi.record(hd, forceDaq, STEADY_S, SAMPLE_HZ);
+if USE_PXI
+    fprintf("  force sensor at equilibrium: %s\n", forceText(forceEq));
+end
 eqMean = equilibrium.mean();
 fprintf("Equilibrium: pitch %.2f deg, elevators R %.2f / L %.2f deg\n", ...
     eqMean.EncoderDeg, eqMean.ELEV_R_Angle, eqMean.ELEV_L_Angle);
@@ -81,7 +93,7 @@ hd.setExcitation("chirp", f0=F0_HZ, f1=F1_HZ, periodS=PERIOD_S, ...
     amplitudeDeg=AMPLITUDE_DEG, cycles=1, delayS=DELAY_S, armed=true);
 durationS = DELAY_S + PERIOD_S + TAIL_S;
 fprintf("Chirp %.2g -> %.2g Hz, %.2g deg, recording %.0f s ...\n", F0_HZ, F1_HZ, AMPLITUDE_DEG, durationS);
-response = hd.capture(durationS, SAMPLE_HZ);
+[response, force] = wt.pxi.record(hd, forceDaq, durationS, SAMPLE_HZ);
 hd.disarmExcitation();
 
 %% 5. back to holding the model (the settings you gave are kept)
@@ -117,6 +129,11 @@ subplot(3, 2, 6);
 plot(equilibrium.Time, equilibrium.EncoderDeg); grid on;
 xlabel("t (s)"); ylabel("pitch (deg)"); title("Equilibrium before the chirp");
 
+if USE_PXI
+    fprintf("Force sensor over the last record: %s\n", forceText(force));
+    wt.pxi.plotForces(force, "Free-pitch chirp: force sensor, last record (untared)");
+end
+
 
 %% local functions (must be at the end of a script)
 function [freqHz, H] = responseEstimate(t, u, y, fLo, fHi)
@@ -143,4 +160,10 @@ function str = settledText(settled)
     if settled
         str = "settled";
     end
+end
+
+function str = forceText(force)
+% The mean loads of a force record (no tare), as text.
+    f = force.mean().Forces();
+    str = sprintf("F = [%.2f %.2f %.2f] N, M = [%.3f %.3f %.3f] N.m (untared)", f);
 end

@@ -49,12 +49,21 @@ DISPLACED_S = 2;               % sample at the displaced pitch
 PRE_STEP_S = 2;                % recorded at the displaced pitch before the step
 POST_STEP_S = 10;              % recorded after the step
 SAMPLE_HZ = 100;
+USE_PXI = false;      % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
+PXI_CARD = "Dev5";    % the NI device
+PXI_RATE_HZ = 200;    % force-sensor sample rate (while it records, MATLAB cannot watch the model, so no abort)
 
 elevators = [wt.hasta.HDCh.ElevR wt.hasta.HDCh.ElevL];   % flip a servo's sign by hand if it is mounted mirrored
 
 % the board takes one client at a time, so reuse an existing connection
 if ~exist("hd","var") || ~isvalid(hd)
     hd = wt.hasta.DaqClient(boardIP);
+end
+
+% the force sensor, if used (needs the PXI wired to the board's trigger input)
+forceDaq = [];
+if USE_PXI
+    forceDaq = wt.pxi.connect(hd, PXI_CARD, PXI_RATE_HZ);   % trigger line low, board set to a rising-edge start
 end
 
 %% set up: the real zero, and the controller's settings
@@ -93,24 +102,29 @@ try
 
     totalS = PRE_STEP_S + POST_STEP_S;
     fprintf("  recording %.0f s; the elevators step by %s deg after %.1f s ...\n", totalS, mat2str(round(stepDeg, 2)), PRE_STEP_S);
-    hd.run(totalS, SAMPLE_HZ);              % the trigger: the board times the step itself
-    clk = tic;
     aborted = false;
-    while toc(clk) < totalS
-        pitch = hd.getEncoderDeg();
-        if abs(pitch - TARGET_PITCH_DEG) > abs(DELTA_PITCH_DEG) + OVERSHOOT_ALLOWANCE_DEG
-            aborted = true;
-            fprintf("  !!! pitch %.2f deg is %.1f deg from the target: switching the controller back on\n", ...
-                pitch, abs(pitch - TARGET_PITCH_DEG));
-            break
+    if USE_PXI
+        % the PXI record blocks MATLAB, so the model cannot be watched (no abort) until it ends
+        [response, force] = wt.pxi.record(hd, forceDaq, totalS, SAMPLE_HZ);
+    else
+        hd.run(totalS, SAMPLE_HZ);              % the trigger: the board times the step itself
+        clk = tic;
+        while toc(clk) < totalS
+            pitch = hd.getEncoderDeg();
+            if abs(pitch - TARGET_PITCH_DEG) > abs(DELTA_PITCH_DEG) + OVERSHOOT_ALLOWANCE_DEG
+                aborted = true;
+                fprintf("  !!! pitch %.2f deg is %.1f deg from the target: switching the controller back on\n", ...
+                    pitch, abs(pitch - TARGET_PITCH_DEG));
+                break
+            end
+            pause(0.05);
         end
-        pause(0.05);
+        if aborted
+            hd.holdPitch(TARGET_PITCH_DEG, ctrlGain=CTRL_GAIN, timeoutS=10);   % also disarms the step
+        end
+        hd.waitForDone(totalS + 30);
+        response = hd.readData();
     end
-    if aborted
-        hd.holdPitch(TARGET_PITCH_DEG, ctrlGain=CTRL_GAIN, timeoutS=10);   % also disarms the step
-    end
-    hd.waitForDone(totalS + 30);
-    response = hd.readData();
     hd.disarmExcitation();
 catch ME
     % leave the model held rather than free-running if something goes wrong
@@ -153,6 +167,11 @@ subplot(3, 1, 3);
 plot(response.Time, response.ExcitationDeg); grid on;
 xlabel("t (s)"); ylabel("step excitation (deg)");
 linkaxes(findall(gcf, "Type", "axes"), "x");
+
+if USE_PXI
+    fprintf("Force sensor over the record: %s\n", forceText(force));
+    wt.pxi.plotForces(force, "Free-pitch step: force sensor (untared)");
+end
 
 
 %% local functions (must be at the end of a script)
@@ -206,4 +225,10 @@ function str = settledText(settled)
     if settled
         str = "settled";
     end
+end
+
+function str = forceText(force)
+% The mean loads of a force record (no tare), as text.
+    f = force.mean().Forces();
+    str = sprintf("F = [%.2f %.2f %.2f] N, M = [%.3f %.3f %.3f] N.m (untared)", f);
 end

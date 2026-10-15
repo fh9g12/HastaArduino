@@ -23,6 +23,15 @@ end
 hd.disableControl();   % the offset is refused while the PID is enabled
 hd.setEncoderZeroOffset(wt.hasta.encoderZero.get());
 
+%%%% force sensor (optional)
+UsePxi = false;            %% true: also record the 6-axis force sensor (PXI), started by the same trigger edge
+PxiCard = "Dev5";          %% the NI device
+PxiRateHz = 200;           %% force-sensor sample rate
+forceDaq = [];
+if UsePxi
+    forceDaq = wt.pxi.connect(hd, PxiCard, PxiRateHz);   %% trigger line low, board set to a rising-edge start
+end
+
 %% setup script
 
 % AoAs = -5:1.25:22.5;
@@ -69,6 +78,7 @@ fprintf("Saving to %s\n\n", filename);
 %% run: one hdData / ohbData / meta per test point, kept in parallel arrays
 hdData = wt.hasta.DaqData.empty;
 ohbData = wt.OHBData.empty;
+pxiData = wt.pxi.ForceData.empty;
 meta = wt.hasta.MetaData.empty;
 
 ohb.moveIncidence(0,2,2,2,blocking=true);
@@ -105,9 +115,9 @@ try
                 N = 4;
                 startTime = datetime("now");
                 ohb.sample(N);
-                hd.run(N,100);
-                hd.waitForDone();
-                hdPoint = hd.readData().mean();   % steady: keep just the average
+                [hdFull, pxiFull] = wt.pxi.record(hd, forceDaq, N, 100);
+                hdPoint = hdFull.mean();    % steady: keep just the average
+                pxiPoint = pxiFull.mean();  % ... of the force sensor too
                 pause(0.25)
                 ohbPoint = wt.OHBData.FromString(ohb.readLastSample);
 
@@ -115,9 +125,10 @@ try
                 k = k + 1;
                 hdData(k) = hdPoint;
                 ohbData(k) = ohbPoint;
+                pxiData(k) = pxiPoint;
                 meta(k) = wt.hasta.MetaData(Datetime=startTime, RunNumber=RunNumber, TestNumber=k-1, ...
                     TestType=testType, Filename=filename, ZeroRun=zeroRun, ModelConfig=modelConfig, ...
-                    Parameters=struct(AoA_deg=AoAs(i), ElevatorDeg=xBetas(j), VelocityTarget=Vs(vi)));
+                    Parameters=struct(AoA_deg=AoAs(i), ElevatorDeg=xBetas(j), VelocityTarget=Vs(vi), PxiUsed=UsePxi));
 
                 elapsed = toc(runTimer);
                 fprintf("    [%d/%d] V=%g AoA=%g beta=%g | elapsed %s, ETA %s\n", ...
@@ -130,7 +141,7 @@ try
 catch ME
     % don't lose tunnel time: keep what we have, then re-throw
     partialFile = replace(filename, ".mat", "_partial.mat");
-    save(partialFile, "hdData", "ohbData", "meta");
+    save(partialFile, "hdData", "ohbData", "meta", "pxiData");
     fprintf("\n!!! Stopped after %d/%d test points: %s\n", k, totalPoints, ME.message);
     fprintf("!!! Partial data saved to %s (the tunnel has been left as it is)\n", partialFile);
     % what the link looked like, to help work out why it stopped
@@ -145,7 +156,7 @@ catch ME
 end
 
 %% save (before winding the tunnel down, so a problem there can't lose the data)
-save(filename, "hdData", "ohbData", "meta");
+save(filename, "hdData", "ohbData", "meta", "pxiData");
 fprintf("\nSaved %d test points to %s (took %s)\n", k, filename, formatDuration(toc(runTimer)));
 if healthOK
     printHealth(hd, "board at end");

@@ -24,12 +24,21 @@ CYCLES = 5;
 DELAY_S = 1;          % baseline logged before the sine starts
 TAIL_S = 1;           % extra logging after it ends
 SAMPLE_HZ = 100;
+USE_PXI = false;      % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
+PXI_CARD = "Dev5";    % the NI device
+PXI_RATE_HZ = 200;    % force-sensor sample rate
 
 elevators = [wt.hasta.HDCh.ElevL wt.hasta.HDCh.ElevR];
 
 % the board takes one client at a time, so reuse an existing connection
 if ~exist("hd","var") || ~isvalid(hd)
     hd = wt.hasta.DaqClient(boardIP);
+end
+
+% the force sensor, if used (needs the PXI wired to the board's trigger input)
+forceDaq = [];
+if USE_PXI
+    forceDaq = wt.pxi.connect(hd, PXI_CARD, PXI_RATE_HZ);   % trigger line low, board set to a rising-edge start
 end
 
 hd.disableControl(); % pure open-loop excitation
@@ -45,7 +54,7 @@ disp(hd.getExcitation());
 
 durationS = DELAY_S + CYCLES / FREQ_HZ + TAIL_S;
 fprintf("Capturing %.1f s ...\n", durationS);
-data = hd.capture(durationS, SAMPLE_HZ);   % record, wait, read back
+[data, force] = wt.pxi.record(hd, forceDaq, durationS, SAMPLE_HZ);   % record, wait, read back
 
 hd.disarmExcitation(); % don't let a later trigger start it again
 clear hd
@@ -65,3 +74,16 @@ ylabel("servo command (deg)");
 subplot(3, 1, 3);
 plot(t, data.EncoderDeg); grid on;
 xlabel("t (s)"); ylabel("encoder (deg)");
+
+if USE_PXI
+    fprintf("Force sensor: %s\n", forceText(force));
+    wt.pxi.plotForces(force, "Sine wave: force sensor (untared)");
+end
+
+
+%% local functions (must be at the end of a script)
+function str = forceText(force)
+% The mean loads of a force record (no tare), as text.
+    f = force.mean().Forces();
+    str = sprintf("F = [%.2f %.2f %.2f] N, M = [%.3f %.3f %.3f] N.m (untared)", f);
+end

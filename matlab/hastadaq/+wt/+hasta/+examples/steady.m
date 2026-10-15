@@ -20,6 +20,9 @@ ANGLE_DEG = 3;       % elevator angle to hold
 DURATION_S = 10;     % how long to log
 SETTLE_S = 2;        % wait for the surfaces to reach the angle first
 SAMPLE_HZ = 100;
+USE_PXI = false;      % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
+PXI_CARD = "Dev5";    % the NI device
+PXI_RATE_HZ = 200;    % force-sensor sample rate
 
 elevators = [wt.hasta.HDCh.ElevL wt.hasta.HDCh.ElevR];
 
@@ -27,12 +30,18 @@ elevators = [wt.hasta.HDCh.ElevL wt.hasta.HDCh.ElevR];
 if ~exist("hd","var") || ~isvalid(hd)
     hd = wt.hasta.DaqClient(boardIP);
 end
+
+% the force sensor, if used (needs the PXI wired to the board's trigger input)
+forceDaq = [];
+if USE_PXI
+    forceDaq = wt.pxi.connect(hd, PXI_CARD, PXI_RATE_HZ);   % trigger line low, board set to a rising-edge start
+end
 hd.disableControl(); % pure open-loop hold
 
 hd.setSteady(elevators, ANGLE_DEG, settleS=SETTLE_S);
 
 fprintf("Capturing %.1f s ...\n", DURATION_S);
-data = hd.capture(DURATION_S, SAMPLE_HZ);   % record, wait, read back
+[data, force] = wt.pxi.record(hd, forceDaq, DURATION_S, SAMPLE_HZ);   % record, wait, read back
 
 hd.setAngle(elevators, 0); % back to centre
 clear hd
@@ -59,6 +68,19 @@ xlabel("t (s)"); ylabel("strain 2 (mV)");
 
 linkaxes(findall(gcf, "Type", "axes"), "x");
 
+if USE_PXI
+    fprintf("Force sensor: %s\n", forceText(force));
+    wt.pxi.plotForces(force, "Steady test: force sensor (untared)");
+end
+
 fprintf("Mean encoder %.4f deg (std %.4f)\n", mean(data.EncoderDeg), std(data.EncoderDeg));
 fprintf("Mean strain  %.4f mV (std %.4f) / %.4f mV (std %.4f)\n", ...
     mean(data.Adc1Mv), std(data.Adc1Mv), mean(data.Adc2Mv), std(data.Adc2Mv));
+
+
+%% local functions (must be at the end of a script)
+function str = forceText(force)
+% The mean loads of a force record (no tare), as text.
+    f = force.mean().Forces();
+    str = sprintf("F = [%.2f %.2f %.2f] N, M = [%.3f %.3f %.3f] N.m (untared)", f);
+end

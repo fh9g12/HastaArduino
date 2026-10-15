@@ -44,12 +44,21 @@ DELAY_S = 1;                   % quiet recording before the pulse starts
 TAIL_S = 8;                    % recorded after the pulse ends: the free response
 STEADY_S = 4;                  % equilibrium sample time
 SAMPLE_HZ = 100;
+USE_PXI = false;      % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
+PXI_CARD = "Dev5";    % the NI device
+PXI_RATE_HZ = 200;    % force-sensor sample rate
 
 elevators = [wt.hasta.HDCh.ElevR wt.hasta.HDCh.ElevL];   % flip a servo's sign by hand if it is mounted mirrored
 
 % the board takes one client at a time, so reuse an existing connection
 if ~exist("hd","var") || ~isvalid(hd)
     hd = wt.hasta.DaqClient(boardIP);
+end
+
+% the force sensor, if used (needs the PXI wired to the board's trigger input)
+forceDaq = [];
+if USE_PXI
+    forceDaq = wt.pxi.connect(hd, PXI_CARD, PXI_RATE_HZ);   % trigger line low, board set to a rising-edge start
 end
 
 %% set up: the real zero, and the controller's settings
@@ -75,7 +84,10 @@ try
             settledText(r.settled), r.timeS, r.pitchDeg, r.errorDeg);
 
         % 2. equilibrium values
-        equilibrium = hd.capture(STEADY_S, SAMPLE_HZ);
+        [equilibrium, forceEq] = wt.pxi.record(hd, forceDaq, STEADY_S, SAMPLE_HZ);
+        if USE_PXI
+            fprintf("  force sensor at equilibrium: %s\n", forceText(forceEq));
+        end
         eqMean = equilibrium.mean();
         fprintf("  equilibrium: pitch %.2f deg, elevators R %.2f / L %.2f deg\n", ...
             eqMean.EncoderDeg, eqMean.ELEV_R_Angle, eqMean.ELEV_L_Angle);
@@ -91,7 +103,7 @@ try
         hd.setExcitation("cosine", periodS=period, amplitudeDeg=AMPLITUDE_DEG, cycles=1, delayS=DELAY_S, armed=true);
         durationS = DELAY_S + period + TAIL_S;
         fprintf("  pulse %+g deg over %.3g s, recording %.0f s ...\n", AMPLITUDE_DEG, period, durationS);
-        response = hd.capture(durationS, SAMPLE_HZ);
+        [response, force] = wt.pxi.record(hd, forceDaq, durationS, SAMPLE_HZ);
         hd.disarmExcitation();
         responses{pi_} = response;
 
@@ -153,6 +165,11 @@ hold off; grid on;
 xlabel("time since the pulse started (s)"); ylabel("pitch change (deg)");
 linkaxes(findall(gcf, "Type", "axes"), "x");
 
+if USE_PXI
+    fprintf("Force sensor over the last record: %s\n", forceText(force));
+    wt.pxi.plotForces(force, "Free-pitch 1-cosine: force sensor, last record (untared)");
+end
+
 
 %% local functions (must be at the end of a script)
 function str = settledText(settled)
@@ -160,4 +177,10 @@ function str = settledText(settled)
     if settled
         str = "settled";
     end
+end
+
+function str = forceText(force)
+% The mean loads of a force record (no tare), as text.
+    f = force.mean().Forces();
+    str = sprintf("F = [%.2f %.2f %.2f] N, M = [%.3f %.3f %.3f] N.m (untared)", f);
 end

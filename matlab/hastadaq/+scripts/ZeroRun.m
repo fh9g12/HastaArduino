@@ -4,6 +4,12 @@
 % point's meta.ZeroRun so the force sensors can be zeroed in post-processing
 % (nothing is subtracted here).
 %
+% FORCE SENSOR (optional, UsePxi): the 6-axis force sensor on the PXI is
+% recorded alongside each sample, started by the same hardware edge as the
+% Arduino's capture, and saved as a fourth array, pxiData, parallel to the
+% others (placeholders when UsePxi is false). The mean gauge voltages of a
+% ZeroRun are the tare for the later runs: pxi.Forces(zeroData.Gauges).
+%
 % Run with the wind OFF. This script checks that, and stops if it isn't.
 
 HastaIP = "192.168.1.107";  % <-- set to your board's actual IP
@@ -24,6 +30,15 @@ end
 % the board takes one client at a time, so reuse an existing connection
 if ~exist("hd","var") || ~isvalid(hd)
     hd = wt.hasta.DaqClient(HastaIP);
+end
+
+%%%% force sensor (optional)
+UsePxi = false;            %% true: also record the 6-axis force sensor (PXI), started by the same trigger edge
+PxiCard = "Dev5";          %% the NI device
+PxiRateHz = 200;           %% force-sensor sample rate
+forceDaq = [];
+if UsePxi
+    forceDaq = wt.pxi.connect(hd, PxiCard, PxiRateHz);   %% trigger line low, board set to a rising-edge start
 end
 
 %% check the wind is off
@@ -70,17 +85,17 @@ end
 % b) take a sample
 startTime = datetime("now");
 ohb.sample(N);
-hd.run(N,100);
-hd.waitForDone();
-hdData = hd.readData().mean();   % steady: keep just the average
+[hdFull, pxiFull] = wt.pxi.record(hd, forceDaq, N, 100);
+hdData = hdFull.mean();    % steady: keep just the average
+pxiData = pxiFull.mean();  % ... of the force sensor too (its zero/tare gauge voltages)
 pause(0.25)
 ohbData = wt.OHBData.FromString(ohb.readLastSample);
 
 % same layout as AoASweep, just with one test point
 meta = wt.hasta.MetaData(Datetime=startTime, RunNumber=RunNumber, TestNumber=0, ...
     TestType=testType, Filename=filename, ModelConfig=modelConfig, ...
-    Parameters=struct(AoA_deg=0, ElevatorDeg=0, WindSpeed_ms=windSpeed));
+    Parameters=struct(AoA_deg=0, ElevatorDeg=0, WindSpeed_ms=windSpeed, PxiUsed=UsePxi));
 
 %% save
-save(filename, "hdData", "ohbData", "meta");
+save(filename, "hdData", "ohbData", "meta", "pxiData");
 fprintf("Zero run saved to %s\n", filename);
