@@ -74,10 +74,10 @@ ToleranceDeg = 0.25;       % "settled" = within this of the target for 1 s
 
 SteadyN = 4;               % equilibrium sample time, s
 SampleHz = 100;
-UsePxi = false;            % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
-PxiCard = "Dev5";          % the NI device
+UsePxi = true;            % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
+PxiCard = "PXI1Slot4_2";          % the NI device
 PxiRateHz = 200;           % force-sensor sample rate
-UseCamera = false;         % true: pulse the tracking camera at the start and end of each dynamic record (needs UsePxi)
+UseCamera = true;         % true: pulse the tracking camera at the start and end of each dynamic record (needs UsePxi)
 ControllerDuringExcitation = false;   % true: leave the controller running during the excitation
 ExciteSurfaces = [wt.hasta.HDCh.ElevR wt.hasta.HDCh.ElevL];   % flip a servo's sign by hand if mounted mirrored
 TailS = 8;                 % extra recording after the pulse ends: the model's free response
@@ -88,8 +88,8 @@ HomePitchDeg = 0;          % where the controller leaves the model at the end
 %   {"cosine", "periodS", 2, "amplitudeDeg", 1, "cycles", 1, "delayS", 1}
 % cycles = 1 is a single pulse. One pulse for every period x amplitude; a
 % negative amplitude pulses the other way:
-CosinePeriodsS = [2 4];         % <-- how long each pulse takes
-CosineAmplitudesDeg = [1 -1];   % <-- elevator pulse size (deg); negative = the other way
+CosinePeriodsS = [1/0.5];         % <-- how long each pulse takes
+CosineAmplitudesDeg = [-10];   % <-- elevator pulse size (deg); negative = the other way
 CosineDelayS = 1;               % quiet recording before the pulse starts
 excitations = {};
 for p = CosinePeriodsS

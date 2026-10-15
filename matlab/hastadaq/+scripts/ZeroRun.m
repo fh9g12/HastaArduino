@@ -64,8 +64,8 @@ filename = string(fullfile(dataDir, sprintf("Run%02d_ZeroRun_%s.mat", RunNumber,
     char(datetime("now", Format="yyyyMMdd_HHmmss")))));
 
 %% zero run
-ohb.moveIncidence(0,2,2,2,blocking=true);
-
+% ohb.moveIncidence(0,2,2,2,blocking=true);
+ohb.moveYaw(0,2,2,2,blocking=true);
 % elevators to zero for the reference sample; ZERO is refused while the
 % PID is enabled, so make sure it is off
 hd.disableControl();

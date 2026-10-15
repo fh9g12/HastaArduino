@@ -69,9 +69,9 @@ ToleranceDeg = 0.25;       % "settled" = within this of the target for 1 s
 SteadyN = 4;               % equilibrium sample time, s
 SampleHz = 100;
 UsePxi = false;            % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
-PxiCard = "Dev5";          % the NI device
+PxiCard = "PXI1Slot4_2";          % the NI device
 PxiRateHz = 200;           % force-sensor sample rate
-UseCamera = false;         % true: pulse the tracking camera at the start and end of each dynamic record (needs UsePxi)
+UseCamera = true;         % true: pulse the tracking camera at the start and end of each dynamic record (needs UsePxi)
 ControllerDuringExcitation = false;   % true: leave the controller running during the excitation
 ExciteSurfaces = [wt.hasta.HDCh.ElevR wt.hasta.HDCh.ElevL];   % flip a servo's sign by hand if mounted mirrored
 TailS = 2;                 % extra recording after the excitation ends
@@ -82,8 +82,8 @@ HomePitchDeg = 0;          % where the controller leaves the model at the end
 %   {"sine", "freqHz", 1, "amplitudeDeg", 1, "cycles", 5, "delayS", 1}
 % cycles must be > 0. A stepped-sine sweep of N frequencies is one sine per
 % frequency:
-SineFreqsHz = 0.3:0.05:0.7;     % <-- the N frequencies
-SineAmplitudeDeg = 1;
+SineFreqsHz = 0.2:0.05:1;     % <-- the N frequencies
+SineAmplitudeDeg = 2.5;
 SineCycles = 8;
 SineDelayS = 1;
 excitations = arrayfun(@(f) {"sine", "freqHz", f, "amplitudeDeg", SineAmplitudeDeg, ...

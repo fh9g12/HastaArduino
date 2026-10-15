@@ -72,7 +72,7 @@ hd.setEncoderZeroOffset(wt.hasta.encoderZero.get());
 
 %% test plan
 TargetPitches = [5];       % pitch angles (encoder, deg) the step returns to
-DeltaPitchDeg = [3 -3];    % <-- how far from each target to start, deg: one step test per delta
+DeltaPitchDeg = [-5];    % <-- how far from each target to start, deg: one step test per delta
 IncidenceDeg = NaN;        % tunnel incidence for the whole test; NaN = leave it where it is
 
 % the controller (kept across disable/enable)
@@ -86,10 +86,10 @@ DisplacedN = 2;            % sample at the displaced pitch (for its elevator ang
 PreStepS = 2;              % recorded at the displaced pitch before the step, s
 PostStepS = 10;            % recorded after the step, s
 SampleHz = 100;
-UsePxi = false;            % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
-PxiCard = "Dev5";          % the NI device
+UsePxi = true;            % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
+PxiCard = "PXI1Slot4_2";          % the NI device
 PxiRateHz = 200;           % force-sensor sample rate
-UseCamera = false;         % true: pulse the tracking camera at the start and end of each step record (needs UsePxi)
+UseCamera = true;         % true: pulse the tracking camera at the start and end of each step record (needs UsePxi)
 StepSurfaces = [wt.hasta.HDCh.ElevR wt.hasta.HDCh.ElevL];   % flip a servo's sign by hand if mounted mirrored
 OvershootAllowanceDeg = 3; % abort if pitch strays more than |delta| + this from the target (not with UsePxi)
 HomePitchDeg = 0;          % where the controller leaves the model at the end

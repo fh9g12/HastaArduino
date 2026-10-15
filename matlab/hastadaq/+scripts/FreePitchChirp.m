@@ -70,10 +70,10 @@ ToleranceDeg = 0.25;       % "settled" = within this of the target for 1 s
 
 SteadyN = 4;               % equilibrium sample time, s
 SampleHz = 100;
-UsePxi = false;            % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
-PxiCard = "Dev5";          % the NI device
+UsePxi = true;            % true: also record the 6-axis force sensor (PXI), started by the same trigger edge
+PxiCard = "PXI1Slot4_2";          % the NI device
 PxiRateHz = 200;           % force-sensor sample rate
-UseCamera = false;         % true: pulse the tracking camera at the start and end of each dynamic record (needs UsePxi)
+UseCamera = true;         % true: pulse the tracking camera at the start and end of each dynamic record (needs UsePxi)
 ControllerDuringExcitation = false;   % true: leave the controller running during the excitation
 ExciteSurfaces = [wt.hasta.HDCh.ElevR wt.hasta.HDCh.ElevL];   % flip a servo's sign by hand if mounted mirrored
 TailS = 2;                 % extra recording after the excitation ends
@@ -85,9 +85,9 @@ HomePitchDeg = 0;          % where the controller leaves the model at the end
 % The chirp sweeps f0 -> f1 once over periodS (cycles = 1). One chirp per
 % amplitude:
 ChirpF0Hz = 0.2;                % <-- sweep start
-ChirpF1Hz = 1.2;                % <-- sweep end
+ChirpF1Hz = 1;                % <-- sweep end
 ChirpPeriodS = 30;              % <-- time the sweep takes
-ChirpAmplitudesDeg = [1];       % <-- one chirp per amplitude (elevator excitation, deg)
+ChirpAmplitudesDeg = [3];       % <-- one chirp per amplitude (elevator excitation, deg)
 ChirpDelayS = 1;                % quiet recording before it starts
 excitations = arrayfun(@(a) {"chirp", "f0", ChirpF0Hz, "f1", ChirpF1Hz, "periodS", ChirpPeriodS, ...
     "amplitudeDeg", a, "cycles", 1, "delayS", ChirpDelayS}, ChirpAmplitudesDeg, UniformOutput=false);
