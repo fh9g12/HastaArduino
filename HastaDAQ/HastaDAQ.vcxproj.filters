@@ -18,13 +18,7 @@
     <ClCompile Include="HastaDAQ.ino" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ChannelMixer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Sensors.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CaptureManager.h">
+    <ClInclude Include="__vm\.HastaDAQ.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

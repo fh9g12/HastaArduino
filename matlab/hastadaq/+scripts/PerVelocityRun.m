@@ -31,7 +31,7 @@ HomePitchDeg = 0;            % where the controller leaves the model at the end
 
 % 1. chirps
 ChirpAmplitudesDeg = [1 2 3];
-ChirpF0Hz = 0.2;  ChirpF1Hz = 1;  ChirpPeriodS = 60;
+ChirpF0Hz = 0.2;  ChirpF1Hz = 1;  ChirpPeriodS = 70;
 
 % 2. sines
 SineAmplitudesDeg = [1 3];
@@ -44,12 +44,12 @@ CosineAmplitudesDeg = [-5 -10];
 
 % 4. turbulence
 TurbulencePitches = 0;
-TurbulenceAmplitudesDeg = [1 2 3];
-TurbulenceDurationS = 59;    % of the 59.98 s stored record, from StartOffsetS = 0
+TurbulenceAmplitudesDeg = [3];
+TurbulenceDurationS = 50;    % of the 59.98 s stored record, from StartOffsetS = 0
 
 % 5. stepped chirp
-SteppedDeltaTS = [2 1];
-SteppedDeltasDeg = [4 8 12];
+SteppedDeltaTS = [];
+SteppedDeltasDeg = [];
 
 UsePxi = true;               % true: also record the 6-axis force sensor (PXI)
 UseCamera = true;            % true: pulse the tracking camera around each dynamic record (needs UsePxi)

@@ -123,4 +123,9 @@
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties config.Debug.customdebug_rp2040_rpipico2w_debugger_type="universal" />
+    </VisualStudio>
+  </ProjectExtensions>
 </Project>

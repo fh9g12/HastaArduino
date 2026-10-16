@@ -17,4 +17,9 @@
   <ItemGroup>
     <ClCompile Include="StrainGaugeCalibration.ino" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="__vm\.StrainGaugeCalibration.vsarduino.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>

@@ -23,7 +23,7 @@ DelayS = 1;                 % quiet recording before the sine starts
 TailS = 2;                  % recording after it ends
 HomePitchDeg = 0;           % where the controller leaves the model at the end
 
-UsePxi = false;             % true: also record the 6-axis force sensor (PXI)
+UsePxi = true;             % true: also record the 6-axis force sensor (PXI)
 UseCamera = true;           % true: pulse the tracking camera around each dynamic record (needs UsePxi)
 control = wt.hasta.ControlSettings();   % Kp 0.1, Ki 0.2, Kd 0.05, limit 20, CtrlGain -1, tolerance 0.2
 % <-- fill in the model setup for this run

@@ -17,9 +17,9 @@ classdef ControlSettings
     %   file records the gains that were used.
 
     properties
-        Kp (1,1) double = 0.1
-        Ki (1,1) double = 0.2
-        Kd (1,1) double = 0.05
+        Kp (1,1) double = 0.15
+        Ki (1,1) double = 0.25
+        Kd (1,1) double = 0.1
         OutLimitDeg (1,1) double {mustBePositive} = 20
         CtrlGain (1,1) double {mustBeInRange(CtrlGain, -1, 1)} = -1
         ToleranceDeg (1,1) double {mustBePositive} = 0.2
