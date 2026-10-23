@@ -43,13 +43,21 @@ public:
 
     // Pin remap MUST happen before SPI1.begin() -- same ordering
     // requirement as the SimpleFOC driver had. Call once from setup().
-    void begin() {
+    //
+    // initBus = false: another object already remapped and started SPI1
+    // (several SPI devices on one bus, each with its own CS -- HastaDAQ v2's
+    // EncoderPorts does this), so skip the pin remap / SPI1.begin() and only
+    // set up this device's chip-select. The default (true) is the original
+    // single-device behaviour.
+    void begin(bool initBus = true) {
         pinMode(_cs, OUTPUT);
         digitalWrite(_cs, HIGH);
-        SPI1.setSCK(_sck);
-        SPI1.setTX(_mosi);
-        SPI1.setRX(_miso);
-        SPI1.begin();
+        if (initBus) {
+            SPI1.setSCK(_sck);
+            SPI1.setTX(_mosi);
+            SPI1.setRX(_miso);
+            SPI1.begin();
+        }
 
         // Prime the unwrap state with a real reading so the first update()
         // doesn't see a bogus delta from an unset 0.0 default.

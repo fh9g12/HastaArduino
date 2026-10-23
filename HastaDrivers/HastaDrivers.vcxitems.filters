@@ -62,6 +62,12 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)src\TriggerIO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\OrbisEncoder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\SoftStop.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)src\secrets.h">
       <Filter>Header Files</Filter>
     </ClInclude>

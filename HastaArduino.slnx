@@ -10,6 +10,10 @@
     <Platform Solution="*|x86" Project="x86" />
     <Deploy />
   </Project>
+  <Project Path="HastaDAQ_v2/HastaDAQ_v2.vcxproj" Id="8126bac6-eaf0-49b7-8db8-e9f531c8e561">
+    <Platform Solution="*|x86" Project="x86" />
+    <Deploy />
+  </Project>
   <Project Path="EncoderCalibration/EncoderCalibration.vcxproj" Id="0164f3b4-c86c-45e8-acf2-7a84ff076d9e">
     <Platform Solution="*|x86" Project="x86" />
     <Deploy />

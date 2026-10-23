@@ -29,6 +29,10 @@ classdef DaqData
         Gyro (:,3) double = zeros(0, 3)             % columns x, y, z
         ExcitationDeg (:,1) double = double.empty(0, 1)      % shared waveform
         ControlOutputDeg (:,1) double = double.empty(0, 1)   % PID output, pre-mix
+        % ENC2..ENC4 angles (deg), columns in port order; NaN = that port is
+        % not fitted. Only the HastaDAQ v2 firmware sends these, so it stays
+        % empty (0 x 3) for data from the original firmware.
+        EncoderExtraDeg (:,3) double = zeros(0, 3)
 
         % Commanded angle of each servo (deg from centre).
         RUDDER_Angle (:,1) double = double.empty(0, 1)
@@ -46,6 +50,7 @@ classdef DaqData
 
     properties (Constant, Access = private)
         FixedBytes = 48   % t_us + 11 floats before the per-servo angles
+        NumExtraEncoders = 3   % v2 firmware: ENC2..ENC4 floats after the servo angles
     end
 
     methods (Static)
@@ -59,6 +64,13 @@ classdef DaqData
             end
             surfaces = enumeration("wt.hasta.HDCh");
             numChannels = (bytesPerSample - wt.hasta.DaqData.FixedBytes) / 4;
+            % HastaDAQ v2 firmware appends three more floats (ENC2..ENC4)
+            % after the servo angles; the original firmware does not.
+            numExtra = 0;
+            if numChannels == numel(surfaces) + wt.hasta.DaqData.NumExtraEncoders
+                numExtra = wt.hasta.DaqData.NumExtraEncoders;
+                numChannels = numChannels - numExtra;
+            end
             if numChannels ~= numel(surfaces)
                 error("DaqData:badLayout", ...
                     "Board sent %g servo angles per sample but wt.hasta.HDCh defines %d - " + ...
@@ -84,6 +96,9 @@ classdef DaqData
             angles = reshape(field(49, numChannels), numChannels, n)';
             for k = 1:numel(surfaces)
                 obj.(wt.hasta.DaqData.angleProperty(surfaces(k))) = angles(:, k);
+            end
+            if numExtra > 0
+                obj.EncoderExtraDeg = reshape(field(49 + 4*numChannels, numExtra), numExtra, n)';
             end
         end
     end
@@ -166,6 +181,11 @@ classdef DaqData
             for k = 1:numel(surfaces)
                 name = wt.hasta.DaqData.angleProperty(surfaces(k));
                 T.(name) = obj.(name);
+            end
+            if ~isempty(obj.EncoderExtraDeg)   % v2 firmware only
+                T.Enc2Deg = obj.EncoderExtraDeg(:, 1);
+                T.Enc3Deg = obj.EncoderExtraDeg(:, 2);
+                T.Enc4Deg = obj.EncoderExtraDeg(:, 3);
             end
         end
     end
