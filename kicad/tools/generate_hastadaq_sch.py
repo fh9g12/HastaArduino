@@ -79,9 +79,11 @@ def define_block(libname, left, right, width):
     defined_blocks[libname] = (rows, top, width)
     pins = []
     for side, lst, x, ang in (("L", left, -width / 2 - STUB, 0), ("R", right, width / 2 + STUB, 180)):
-        for i, (num, name, net) in enumerate(lst):
+        for i, t in enumerate(lst):
+            num, name, net = t[:3]
+            ptype = "no_connect" if net is None else (t[3] if len(t) > 3 else "passive")
             y = (rows - 1) * 1.27 - i * 2.54
-            pins.append(pin_expr(num, name, x, y, ang, STUB, "passive" if net else "no_connect"))
+            pins.append(pin_expr(num, name, x, y, ang, STUB, ptype))
     sym = (
         f'(symbol "{libname}" (pin_names (offset 1.016)) (exclude_from_sim no) '
         f'(in_bom yes) (on_board yes) '
@@ -153,6 +155,49 @@ def define_cap_polarized():
         f'{pin_expr(2, "-", 0, -3.81, 90, 3.048)}) (embedded_fonts no))')
 
 
+def define_testpoint():
+    lib_symbols.append(
+        '(symbol "TestPoint" (pin_numbers (hide yes)) (pin_names (offset 0)) '
+        '(exclude_from_sim no) (in_bom yes) (on_board yes) '
+        f'{lib_prop("Reference", "TP", False)} {lib_prop("Value", "TP", False)} '
+        f'{lib_prop("Footprint", "")} {lib_prop("Datasheet", "")} '
+        '(symbol "TestPoint_0_1" (circle (center 0 0.508) (radius 0.762) '
+        '(stroke (width 0.254) (type default)) (fill (type none)))) '
+        '(symbol "TestPoint_1_1" '
+        f'{pin_expr(1, "", 0, 2.54, 270, 1.27)}) (embedded_fonts no))')
+
+
+def define_pwrflag():
+    # zero-length power_out pin: tells ERC the net is supplied (used on nets fed
+    # through a passive part such as the fuse, a diode or a connector)
+    lib_symbols.append(
+        '(symbol "PWR_FLAG" (power) (pin_numbers (hide yes)) (pin_names (offset 0) (hide yes)) '
+        '(exclude_from_sim no) (in_bom no) (on_board yes) '
+        f'{lib_prop("Reference", "#FLG", False)} {lib_prop("Value", "PWR_FLAG", False)} '
+        f'{lib_prop("Footprint", "")} {lib_prop("Datasheet", "")} '
+        '(symbol "PWR_FLAG_0_1" '
+        '(polyline (pts (xy 0 0) (xy 0 1.27) (xy -1.016 1.905) (xy 0 2.54) (xy 1.016 1.905) (xy 0 1.27)) '
+        '(stroke (width 0) (type default)) (fill (type none)))) '
+        '(symbol "PWR_FLAG_1_1" '
+        f'{pin_expr(1, "pwr", 0, 0, 90, 0, "power_out")}) (embedded_fonts no))')
+
+
+def define_zener():
+    lib_symbols.append(
+        '(symbol "D_Zener" (pin_numbers (hide yes)) (pin_names (offset 0)) '
+        '(exclude_from_sim no) (in_bom yes) (on_board yes) '
+        f'{lib_prop("Reference", "D", False)} {lib_prop("Value", "D", False)} '
+        f'{lib_prop("Footprint", "")} {lib_prop("Datasheet", "")} '
+        '(symbol "D_Zener_0_1" '
+        '(polyline (pts (xy -1.27 1.27) (xy -1.27 -1.27) (xy 1.27 0) (xy -1.27 1.27)) '
+        '(stroke (width 0.254) (type default)) (fill (type none))) '
+        '(polyline (pts (xy 0.762 1.27) (xy 1.27 1.27) (xy 1.27 -1.27) (xy 1.778 -1.27)) '
+        '(stroke (width 0.254) (type default)) (fill (type none)))) '
+        '(symbol "D_Zener_1_1" '
+        f'{pin_expr("A", "A", -3.81, 0, 0, 2.54)} '
+        f'{pin_expr("K", "K", 3.81, 0, 180, 2.54)}) (embedded_fonts no))')
+
+
 def define_diode():
     lib_symbols.append(
         '(symbol "D_Schottky" (pin_numbers (hide yes)) (pin_names (offset 0)) '
@@ -208,11 +253,11 @@ def box(x1, y1, x2, y2):
         f'(stroke (width 0) (type dash)) (fill (type none)) (uuid "{u()}"))')
 
 
-def instance(lib_id, ref, value, x, y, pin_numbers, ref_pos, val_pos, footprint=""):
+def instance(lib_id, ref, value, x, y, pin_numbers, ref_pos, val_pos, footprint="", bom=True):
     pins = " ".join(f'(pin "{q(str(p))}" (uuid "{u()}"))' for p in pin_numbers)
     items.append(
         f'(symbol (lib_id "{lib_id}") (at {n(x)} {n(y)} 0) (unit 1) '
-        f'(exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "{u()}") '
+        f'(exclude_from_sim no) (in_bom {"yes" if bom else "no"}) (on_board {"yes" if bom else "no"}) (dnp no) (uuid "{u()}") '
         f'(property "Reference" "{ref}" (at {n(ref_pos[0])} {n(ref_pos[1])} 0) '
         f'(effects (font (size 1.27 1.27)) (justify left bottom))) '
         f'(property "Value" "{q(value)}" (at {n(val_pos[0])} {n(val_pos[1])} 0) '
@@ -232,22 +277,23 @@ def block(libname, title, x, y, left, right, ref_prefix="U", width=30.48, footpr
         y += 1.27  # keep pins on the 2.54 grid
     ref = next_ref(ref_prefix)
     instance(f"HastaDAQ:{libname}", ref, title, x, y,
-             [a for a, _, _ in left + right],
+             [t[0] for t in left + right],
              (x - width / 2, y - top - 3.81), (x - width / 2, y - top - 1.27), footprint)
     for lst, px, d in ((left, x - width / 2 - STUB, "left"), (right, x + width / 2 + STUB, "right")):
-        for i, (_, _, net) in enumerate(lst):
+        for i, t in enumerate(lst):
+            net = t[2]
             if net:
                 stub_label(net, px, y - ((rows - 1) * 1.27 - i * 2.54), d)
     return ref
 
 
-def header(title, x, y, pins, ref_prefix="J"):
+def header(title, x, y, pins, ref_prefix="J", footprint=None):
     """pins: [(name, net)] -> one 1xN 0.1in header, pin numbers 1..N."""
     cnt = len(pins)
     names = "".join(c if c.isalnum() else "p" for c in "_".join(nm for nm, _ in pins))
     return block(f"Header1x{cnt:02d}_{names}", title, x, y,
                  left=[(i + 1, name, net) for i, (name, net) in enumerate(pins)], right=[],
-                 ref_prefix=ref_prefix, width=15.24, footprint=FP_HDR.format(n=cnt))
+                 ref_prefix=ref_prefix, width=15.24, footprint=footprint or FP_HDR.format(n=cnt))
 
 
 def resistor(x, y, value):
@@ -290,6 +336,9 @@ define_fuse()
 define_cap()
 define_cap_polarized()
 define_diode()
+define_zener()
+define_testpoint()
+define_pwrflag()
 
 # Pimoroni Pico Plus 2 -- all 40 header pins (Pico 2 W datasheet fig. 2; same header)
 pico_left = [
@@ -308,19 +357,38 @@ pico_right = [
     (28, "GND", "GND"), (27, "GP21 UART1-RX", "SBUS"), (26, "GP20 UART1-TX", "SBUS"),
     (25, "GP19", None), (24, "GP18", None), (23, "GND", "GND"), (22, "GP17", None), (21, "GP16", "SOFTSTOP_IN"),
 ]
+def _pico_t(t):
+    num, name, net = t
+    if net is None:
+        return t
+    if name in ("GND", "AGND", "VSYS"):
+        return (num, name, net, "power_in")
+    if name == "3V3(OUT)":
+        return (num, name, net, "power_out")
+    if name.startswith("GP"):
+        return (num, name, net, "bidirectional")
+    return t
+
+
+pico_left = [_pico_t(t) for t in pico_left]
+pico_right = [_pico_t(t) for t in pico_right]
 block("PicoPlus2", "Pimoroni Pico Plus 2 (header pins)", 70, 140,
-      pico_left, pico_right, width=60.96)
+      pico_left, pico_right, width=60.96,
+      footprint="Module:RaspberryPi_Pico_Common_THT")
 
 header("IMU via Qwiic breakout (The Pi Hut 106676)", 185, 45,
-       [("GND", "GND"), ("3V3", "+3V3"), ("SDA", "SDA"), ("SCL", "SCL")])
+       [("GND", "GND"), ("3V3", "+3V3"), ("SDA", "SDA"), ("SCL", "SCL")],
+       footprint="HastaDAQ:Qwiic_Breakout_1x4_Socket")
 
 
 def ads(title, y, a0, a1):
     block("ADS122C04", title, 185, y,
-          left=[(1, "VIN", "+3V3"), (2, "GND", "GND"), (3, "SDA", "SDA"), (4, "SCL", "SCL"),
+          left=[(1, "VIN", "+3V3", "power_in"), (2, "GND", "GND", "power_in"),
+                (3, "SDA", "SDA", "bidirectional"), (4, "SCL", "SCL", "input"),
                 (5, "~{RST}", None), (6, "DRDY", None)],
-          right=[(7, "A0", a0), (8, "A1", a1), (9, "A2", None), (10, "A3", None),
-                 (11, "Ref+", None), (12, "Ref-", None)])
+          right=[(7, "A0", a0, "input"), (8, "A1", a1, "input"), (9, "A2", None), (10, "A3", None),
+                 (11, "Ref+", None), (12, "Ref-", None)],
+          footprint="HastaDAQ:Adafruit_ADS122C04_Breakout")
 
 
 ads("Adafruit ADS122C04 #1 (I2C 0x40)", 115, "ADS1_SIG", "ADS_REF")
@@ -347,7 +415,8 @@ adc_decoupling(2, 152)
 # encoders: three 2x4 0.1in headers on one SPI bus, each with its own CS.
 # Pins 1..8 in order: GND, CS, SCK, MOSI, MISO, 3V3, 5V, GND. 3V3 powers an MT6835,
 # 5V powers an RLS Orbis (3.3 V logic). Pull-ups keep unselected CS lines high at boot.
-FP_HDR_2X4 = "Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical"
+# keyed (polarised) shrouded 0.1in IDC box header: cannot be mated rotated 180 deg
+FP_HDR_2X4 = "Connector_IDC:IDC-Header_2x04_P2.54mm_Vertical"
 
 
 def enc_header(title, y, cs):
@@ -384,18 +453,28 @@ text("CS pull-ups (10k)", 96, 249)
 # M2 mounting holes (2.18 mm, 2.2 mm in from the corners) on the PCB, see Pololu's dimension drawing.
 POL_FAR = [("VOUT", "VSERVO"), ("GND", "GND"), ("GND", "GND"), ("VIN", "+12V"), ("VRP", None), ("PG", None)]
 POL_NEAR = [("VOUT", "VSERVO"), ("GND", "GND"), ("GND", "GND"), ("VIN", "+12V"), ("VRP", None), ("EN", None)]
+def _pol_type(num, name):
+    if name in ("VIN", "GND"):
+        return "power_in"
+    if name == "VOUT":
+        return "power_out" if num == 1 else "passive"  # one driver per net; the other VOUT pad is a duplicate
+    return "passive"
+
+
 block("D42V55F8", "Pololu D42V55F8 8.4V 5A buck (servo rail)", 140, 300,
-      left=[(2 * k + 1, nm, net) for k, (nm, net) in enumerate(POL_FAR)],
-      right=[(2 * k + 2, nm, net) for k, (nm, net) in enumerate(POL_NEAR)],
+      left=[(2 * k + 1, nm, net, _pol_type(2 * k + 1, nm)) for k, (nm, net) in enumerate(POL_FAR)],
+      right=[(2 * k + 2, nm, net, _pol_type(2 * k + 2, nm)) for k, (nm, net) in enumerate(POL_NEAR)],
       ref_prefix="U", width=30.48,
-      footprint="Connector_PinHeader_2.54mm:PinHeader_2x06_P2.54mm_Vertical")
+      footprint="HastaDAQ:Pololu_D42V55Fx")
 # SparkFun BabyBuck 5V (AP63357, 6-32 V in, ~3 A): 4 pins on 0.1" pitch, order along the header
-# as read off the module: 5V GND VIN EN. EN (rated to 32 V) is tied to VIN so the output is always on.
+# as read off the module: 5V GND VIN EN. EN is LEFT OPEN: SparkFun's own schematic has an on-board divider
+# (93.1k VIN->EN, 22k EN->GND, ~2.3 V at 12 V) that enables the converter, and the AP63357 EN pin limit could
+# not be found, so it is not tied to 12 V. The module has 2x22uF on 5V and 2x4.7uF on VIN.
 block("BabyBuck_5V", "SparkFun BabyBuck 5V (AP63357) (Pico VSYS, Orbis)", 140, 340,
-      left=[(3, "VIN", "+12V"), (2, "GND", "GND"), (4, "EN", "+12V")],
-      right=[(1, "VOUT 5V", "+5V")],
-      ref_prefix="U", width=30.48, footprint="Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical")
-vertical_part("Fuse", "F", "Fuse (size to servo load)", 250, 300, "+12V_IN", "+12V",
+      left=[(3, "VIN", "+12V", "power_in"), (2, "GND", "GND", "power_in"), (4, "EN", None)],
+      right=[(1, "VOUT 5V", "+5V", "power_out")],
+      ref_prefix="U", width=30.48, footprint="HastaDAQ:SparkFun_BabyBuck_5V")
+vertical_part("Fuse", "F", "Fuse T3.15A 5x20mm time-delay", 250, 300, "+12V_IN", "+12V",
               "Fuse:Fuseholder_Clip-5x20mm_Keystone_3517_Inline_P23.11x6.76mm_D1.70mm_Horizontal")
 vertical_part("C_Polarized", "C", "100uF input bulk (>=25V)", 285, 300, "+12V", "GND",
               "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm")
@@ -407,16 +486,19 @@ instance("HastaDAQ:D_Schottky", ref_d, "Schottky (e.g. 1N5822, 3A)", dx, dy, ["A
          (dx - 5, dy - 5.08), (dx - 5, dy - 2.54), "Diode_THT:D_DO-201AD_P15.24mm_Horizontal")
 stub_label("+5V", dx - 3.81, dy, "left")
 stub_label("+5V_VSYS", dx + 3.81, dy, "right")
+# local bulk on +5V near the Pico / encoder ports (the BabyBuck only has 2x22uF ceramic at the converter)
+vertical_part("C_Polarized", "C", "100uF 5V bulk (>=10V)", 250, 345, "+5V", "GND",
+              "Capacitor_THT:CP_Radial_D6.3mm_P2.50mm")
 
-# SBUS out: one 3x6 servo header, 6 servo plugs side by side. Servo k = pins 3k-2 (V), 3k-1 (SIG), 3k (GND);
-# V = VSERVO, SIG = SBUS (all six in parallel), GND. Footprint is the project's own HastaDAQ:PinHeader_3x06
-# (KiCad has no 3x6 header): 6 columns on 2.54 mm, rows V / SIG / GND, pad 1 square.
+# SBUS out: one 3x6 servo header, 6 servo plugs side by side. Servo k = pins 3k-2 (GND), 3k-1 (V), 3k (SIG),
+# the servos' plug order with V in the middle; V = VSERVO, SIG = SBUS (all six in parallel), GND. Footprint is the project's own HastaDAQ:PinHeader_3x06
+# (KiCad has no 3x6 header): 6 columns on 2.54 mm, rows GND / V / SIG, pad 1 square.
 FP_SBUS = "HastaDAQ:PinHeader_3x06_P2.54mm_Vertical"
 sbus_pins = []
 for k in range(6):
-    sbus_pins += [(3 * k + 1, f"S{k + 1} V", "VSERVO"), (3 * k + 2, f"S{k + 1} SIG", "SBUS"),
-                  (3 * k + 3, f"S{k + 1} GND", "GND")]
-block("Header3x06_SBUS", "SBUS servo header 3x6 (6 x V, SIG, GND)", 380, 75,
+    sbus_pins += [(3 * k + 1, f"S{k + 1} GND", "GND"), (3 * k + 2, f"S{k + 1} V", "VSERVO"),
+                  (3 * k + 3, f"S{k + 1} SIG", "SBUS")]
+block("Header3x06_SBUS", "SBUS servo header 3x6 (6 plugs: GND, V, SIG)", 380, 75,
       left=sbus_pins, right=[], ref_prefix="J", width=15.24, footprint=FP_SBUS)
 
 # Main supply cable: 2x4 0.1in header, pins 1..8 row-major (1,2 / 3,4 / 5,6 / 7,8). Functions are placed
@@ -425,7 +507,6 @@ block("Header3x06_SBUS", "SBUS servo header 3x6 (6 x V, SIG, GND)", 380, 75,
 # ends of a normally-closed loop at the far end: SOFTSTOP- is board GND, SOFTSTOP+ goes through 1k to a
 # Pico GPIO that is pulled up to 3V3. Loop intact = low = run; loop broken (cable pulled, switch open) =
 # high = stop the manoeuvre in firmware.
-FP_HDR_2X4 = "Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical"
 pw_pins = [("VSUPPLY", "+12V_IN"), ("VGND", "GND"), ("TRIG_IN", "TRIG_IN"), ("SOFTSTOP+", "SOFTSTOP_CABLE"),
            ("SOFTSTOP-", "GND"), ("TRIG_OUT", "TRIG_OUT"), ("VGND", "GND"), ("VSUPPLY", "+12V_IN")]
 pw_names = "".join(c if c.isalnum() else "p" for c in "_".join(nm for nm, _ in pw_pins))
@@ -435,11 +516,19 @@ block(f"Header2x04_{pw_names}", "Main supply cable (2x4): VSUPPLY, VGND, TRIG, S
 r_fp = "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 vertical_part("R", "R", "1k (soft-stop series)", 330, 260, "SOFTSTOP_CABLE", "SOFTSTOP_IN", r_fp)
 vertical_part("R", "R", "10k (soft-stop pull-up)", 385, 260, "+3V3", "SOFTSTOP_IN", r_fp)
+# protection: 5.1 V zener from the GPIO node to GND clamps a cable fault to 12 V above (and negative spikes below)
+# the 5.5 V the RP2350 pin tolerates; the 1k series resistor limits the fault current to ~7 mA.
+ref_z = next_ref("D")
+zx, zy = snap(358), snap(296)
+instance("HastaDAQ:D_Zener", ref_z, "5.1V zener (BZX55C5V1) soft-stop clamp", zx, zy, ["A", "K"],
+         (zx - 5, zy - 5.08), (zx - 5, zy - 2.54), "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal")
+stub_label("GND", zx - 3.81, zy, "left")
+stub_label("SOFTSTOP_IN", zx + 3.81, zy, "right")
 
 # Trigger I/O conditioning for 3.3 V .. 24 V equipment (all through hole).
 # TRIG_IN : cable -> 1k/1W -> PC817 LED (1N4148 antiparallel, 10k pull-down on the cable side);
 #           opto transistor pulls TRIG_IN_GPIO (GP14) low, 10k pull-up to 3V3. Inverted: active = low.
-# TRIG_OUT: GP15 -> 100R -> 2N7000 gate (100k pull-down); drain = TRIG_OUT cable line. Open drain,
+# TRIG_OUT: GP15 -> 2.2k -> 2N3904 base (10k base-emitter pull-down); collector = TRIG_OUT cable line. Open collector,
 #           1.5k pull-up from TRIG_PU, which a 2x3 jumper header ties to 3V3, 5V or +12V (or leave
 #           off if the receiver has its own pull-up). Inverted: GPIO high = line low.
 FP_R = "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
@@ -460,12 +549,12 @@ block("PC817", "PC817 opto (TRIG_IN)", 495, 235,
       ref_prefix="U", width=20.32, footprint="Package_DIP:DIP-4_W7.62mm")
 vertical_part("R", "R", "10k pull-up", 535, 235, "+3V3", "TRIG_IN_GPIO", FP_R)
 
-text("TRIGGER OUT: open-drain, pull-up rail chosen by jumper", 430, 285)
-vertical_part("R", "R", "100R", 435, 315, "TRIG_OUT_GPIO", "TRIG_OUT_GATE", FP_R)
-vertical_part("R", "R", "100k", 455, 315, "TRIG_OUT_GATE", "GND", FP_R)
-block("2N7000", "2N7000 (TO-92: check pinout S/G/D)", 495, 315,
-      left=[(2, "G", "TRIG_OUT_GATE")],
-      right=[(3, "D", "TRIG_OUT"), (1, "S", "GND")],
+text("TRIGGER OUT: open-collector NPN, pull-up rail chosen by jumper", 430, 285)
+vertical_part("R", "R", "2.2k (base)", 435, 315, "TRIG_OUT_GPIO", "TRIG_OUT_BASE", FP_R)
+vertical_part("R", "R", "10k (base-emitter)", 455, 315, "TRIG_OUT_BASE", "GND", FP_R)
+block("2N3904", "2N3904 NPN (TO-92, pin 1 E, 2 B, 3 C)", 495, 315,
+      left=[(2, "B", "TRIG_OUT_BASE")],
+      right=[(3, "C", "TRIG_OUT"), (1, "E", "GND")],
       ref_prefix="Q", width=15.24, footprint="Package_TO_SOT_THT:TO-92_Inline")
 vertical_part("R", "R", "1.5k pull-up", 535, 315, "TRIG_PU", "TRIG_OUT", FP_R)
 pu_pins = [("3V3", "+3V3"), ("PU", "TRIG_PU"), ("5V", "+5V"), ("PU", "TRIG_PU"),
@@ -477,6 +566,23 @@ block("Header2x03_PU_SEL", "TRIG_OUT pull-up sel.", 570, 315,
 text("Jumper a row (3V3 / 5V / 12V) to pull TRIG_OUT up to that rail; remove it if the receiver has its own pull-up.\n"
      "Pull-up current: 3.3 V ~2 mA, 5 V ~3 mA, 12 V ~7 mA (enough for a 6.5 mA opto input such as MPS4200).\n"
      "24 V receivers: no jumper, add an external 24 V pull-up in the harness. 3V3 for eSync 2 high-Z ports (3.3 V max).", 430, 345)
+
+# Test points (through-hole pads) for bring-up, and PWR_FLAGs on nets that are supplied through a passive
+# part (cable connector, fuse, diode) so ERC's power-pin check has a source on them.
+FP_TP = "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm"
+TP_NETS = ["GND", "GND"]
+box(436, 28, 572, 128)
+text("TEST POINTS (2.0 mm through-hole pads): two GND pads for a scope clip (near the supply and near the ADCs).\n"
+     "Rails and signals are probed at component leads and header pins (fuse clips, C5/C6/C7, D1, Pico pins 36/39).", 438, 40)
+for i, net in enumerate(TP_NETS):
+    tx, ty = snap(444 + i * 15), snap(66)
+    instance("HastaDAQ:TestPoint", next_ref("TP"), "TP", tx, ty, [1], (tx + 2, ty - 1), (tx + 2, ty + 2), FP_TP)
+    stub_label(net, tx, ty - 2.54, "up")
+text("PWR_FLAG: marks nets supplied through the supply connector (+12V_IN, GND), the fuse (+12V) and the Schottky (+5V_VSYS)", 438, 90)
+for i, net in enumerate(["+12V_IN", "+12V", "GND", "+5V_VSYS"]):
+    fx, fy = snap(444 + i * 22), snap(104)
+    instance("HastaDAQ:PWR_FLAG", next_ref("#FLG"), "PWR_FLAG", fx, fy, [1], (fx + 2, fy - 3), (fx + 2, fy - 1), "", bom=False)
+    stub_label(net, fx, fy, "down", 2.54)
 
 text("HastaDAQ", 20, 20, 3.0, bold=True)
 text("Net labels connect everything: same name = same net. +3V3 / GND are plain labels, not power symbols.", 20, 27)
@@ -490,14 +596,16 @@ text("NOTES\n"
      "3. Each half-bridge module (2 gauges) plugs into a 3-pin header: V, SIG (mid-point), GND. SIG -> A0 of its ADC, direct\n"
      "   (no input filter). ONE shared pair of fixed 350R completion resistors; its mid-point (ADS_REF) goes to A1 of BOTH\n"
      "   ADCs. Excitation is the ADC's own VIN, so VREF_SUPPLY is ratiometric -- no Ref+/Ref- wiring.\n"
-     "4. SBUS: GP20 (TX) and GP21 (RX) on one net (UART inverted in firmware). One 3x6 servo header (6 plugs of V, SIG, GND;\n"
+     "4. SBUS: GP20 (TX) and GP21 (RX) on one net (UART inverted in firmware). One 3x6 servo header (6 plugs of GND, V, SIG;\n"
      "   footprint HastaDAQ:PinHeader_3x06): V = VSERVO (8.4 V), SIG = SBUS (all six in parallel), GND.\n"
      "5. POWER: 12 V in -> fuse -> +12V rail -> (a) Pololu D42V55F8 = VSERVO 8.4 V (servos), (b) SparkFun BabyBuck 5V = +5V (Orbis,\n"
      "   Schottky -> Pico VSYS). VSYS max is 5.5 V. USB (VBUS) is left for programming; with USB only, +5V is not live.\n"
-     "6. Trigger pins are 3.3 V logic only. Pin order on the headers: see each symbol.\n"
+     "   BabyBuck EN is left open (its own divider enables it). 5V bulk: module has 2x22uF; 100uF added near the Pico/ports.\n"
+     "6. Triggers: TRIG_IN accepts 3.3-24 V (opto), TRIG_OUT is open collector with a jumper-selected pull-up. Pin order: see each symbol.\n"
      "   Main supply cable (2x4, pins 1-8 row-major): 1,8 VSUPPLY (12 V) | 2,7 VGND | 3 TRIG_IN | 6 TRIG_OUT | 4 SOFTSTOP+ | 5 SOFTSTOP-.\n"
-     "   SOFTSTOP+ -> 1k -> GP16 (10k pull-up to 3V3), SOFTSTOP- = GND: loop closed = run, loop broken = stop (fail-safe on a cable break).\n"
-     "   Use a keyed/shrouded header; a 0.1in header pin is only good for ~1-3 A, so check the servo peak current against 2 supply pins.\n"
+     "   SOFTSTOP+ -> 1k -> GP16 (10k pull-up to 3V3, 5.1 V zener to GND), SOFTSTOP- = GND: loop closed = run, broken = stop.\n"
+     "   Keyed shrouded IDC box headers (cannot be mated rotated) are used for this connector and ENC1-4. Measured system current\n"
+     "   was <= 1 A at 8.4 V, well inside ~3 A per 0.1in pin.\n"
      "7. Encoders: 4 x 2x4 headers (pins 1-8: GND, CS, SCK, MOSI, MISO, 3V3, 5V, GND) on one SPI1 bus; CS = GP13/GP9/GP8/GP7.\n"
      "   MT6835 uses 3V3 (3.3 V logic); RLS Orbis uses 5V with 3.3 V logic. Check MISO tri-states when CS is high.\n"
      "   The four ENC headers are a generic SPI port (SPI1: SCK GP10, MOSI GP11, MISO GP12, own CS each, 3V3 and 5V supply), so any 3.3 V\n"
@@ -535,7 +643,7 @@ x2, y2 = 5 * 2.54 + 1.27, 2 * 2.54 + 1.27
 fpmod = (
     '(footprint "PinHeader_3x06_P2.54mm_Vertical"\n  (version 20240108)\n  (generator "pcbnew")\n'
     '  (generator_version "8.0")\n  (layer "F.Cu")\n'
-    '  (descr "3x6 pin header, 2.54 mm pitch: 6 servo plugs side by side, rows V / SIG / GND")\n'
+    '  (descr "3x6 pin header, 2.54 mm pitch: 6 servo plugs side by side, rows GND / V / SIG")\n'
     '  (tags "servo header 3x6 2.54mm")\n'
     '  (property "Reference" "REF**" (at 6.35 -2.54 0) (layer "F.SilkS") (effects (font (size 1 1) (thickness 0.15))))\n'
     '  (property "Value" "PinHeader_3x06_P2.54mm_Vertical" (at 6.35 7.62 0) (layer "F.Fab") (effects (font (size 1 1) (thickness 0.15))))\n'
