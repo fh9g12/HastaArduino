@@ -1,0 +1,4 @@
+Id	Description	Qty	Unit	Designators
+1	Cable, 4 wires	0	m	W_LOOM
+2	Connector, Gauge board J1, 1x4 0.1in header (keyed plug), 4 pins	1		GAUGE_J1
+3	Connector, Main board J2, 1x4 0.1in header (keyed plug), 4 pins	1		MAIN_J2

@@ -1,6 +1,7 @@
 // HastaDAQ_v2.ino
 //
-// HastaDAQ v2 -- firmware for the REV A board (kicad/hastadaq/, docs/README.md).
+// HastaDAQ v2 -- firmware for the REV A main board (kicad/hastadaq/) plus its
+// strain-gauge board (kicad/gaugeboard/); see docs/README.md.
 // Flight-test SCPI instrument: 5 SBUS control surfaces, up to four SPI
 // encoders (MT6835 / RLS Orbis) with ENC1 as the pitch encoder for
 // closed-loop trim-hold, 2x ADS122C04 half-bridge strain-gauge ADCs, and an
@@ -181,16 +182,21 @@
 //   UDPCONFIG?     -> JSON reply
 //
 // ---------------------------------------------------------------------
-// Hardware: REV A board, see kicad/hastadaq/ (schematic) and docs/README.md.
+// Hardware: REV A boards, see kicad/hastadaq/ + kicad/gaugeboard/ (schematics) and docs/README.md.
 //   - Encoder ports ENC1..ENC4: SPI1 SCK GP10, MOSI GP11, MISO GP12, CS
 //     GP13 / GP9 / GP8 / GP7 (see EncoderPorts.h).
 //   - SBUS: TX/RX on GPIO20/21 (see ChannelMixer.h).
-//   - I2C0 (GP4/GP5, default Wire pins) is hard-wired to the IMU and both
-//     ADS122C04s. Second ADS122C04's address is UNCONFIRMED -- Sensors.h
+//   - I2C0 (GP4/GP5, default Wire pins) goes to the IMU header and to a
+//     4-wire loom (GND, +5V, SDA, SCL) to the separate strain-gauge board,
+//     which holds both ADS122C04s on its own 3.3 V regulator (the ADS
+//     breakouts supply the pull-ups). Second ADS122C04's address is UNCONFIRMED -- Sensors.h
 //     falls back to a boot-time I2C scan if it doesn't answer at the
 //     guessed 0x41.
 //   - Trigger IN: GP14 (opto, board pulls it up, falls when the cable goes
 //     high). Trigger OUT: GP15 (open-collector NPN, GPIO high = line low).
+//   - SBUS IN: GP1 (UART0 RX, Serial1) from an RC receiver, for a pass-through
+//     mode. The pin and the board are ready; the pass-through firmware itself is
+//     NOT written yet (SBUS is 100 kbaud 8E2, inverted: Serial1.setInvertRX(true)).
 //   - Soft stop: GP16 (closed loop = low = run; external 10k pull-up to 3V3
 //     and a 5.1 V zener on the board).
 //   - WiFi: Pimoroni RM2 breakout on SP/CE (GP32-GP36), same CYW43 pin

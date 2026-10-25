@@ -1,0 +1,46 @@
+# gauge-loom.yml
+#
+# The 4-wire I2C loom between the HastaDAQ main board (J2) and the strain-gauge
+# board (J1). Schematics: kicad/hastadaq/ and kicad/gaugeboard/. Both headers are
+# 0.1 in 1x4 with the same pin order, so the loom is a straight 1:1 cable.
+#
+# Render (Graphviz must be on PATH; it is installed at C:\Program Files\Graphviz\bin):
+#   wireviz gauge-loom.yml
+#
+# PIN 2 IS +5V, NOT 3V3: do not use a Qwiic cable or plug a Qwiic device into
+# either header. Fit a keyed plug/shroud on both ends (chosen when soldering up).
+
+metadata:
+  title: Strain-gauge board loom (main board J2 to gauge board J1)
+  description: 4-wire I2C loom, GND / +5V / SDA / SCL, with a ferrite on the 5V wire
+
+connectors:
+  MAIN_J2:
+    type: Main board J2, 1x4 0.1in header (keyed plug)
+    pinlabels: [GND, +5V, SDA, SCL]
+    notes: |
+      Main board (kicad/hastadaq). +5V comes from the BabyBuck 5V rail.
+      SDA/SCL = Pico GP4/GP5 (I2C0), no pull-ups on this board.
+
+  GAUGE_J1:
+    type: Gauge board J1, 1x4 0.1in header (keyed plug)
+    pinlabels: [GND, +5V, SDA, SCL]
+    notes: |
+      Gauge board (kicad/gaugeboard). +5V feeds the on-board 3.3V LDO only;
+      the ADS122C04 breakouts provide the I2C pull-ups (3.3V logic).
+
+cables:
+  W_LOOM:
+    wirecount: 4
+    colors: [BK, RD, GN, YE]
+    notes: |
+      Keep short (boards sit side by side). Fit a ferrite on the +5V wire
+      (clip-on, or the wire looped through a bead) near the gauge-board end;
+      any ferrite is part of the loom, it is not on either PCB.
+      Twisting SDA with SCL, or each with a GND, is optional.
+
+connections:
+  -
+    - MAIN_J2: [1, 2, 3, 4]
+    - W_LOOM: [1, 2, 3, 4]
+    - GAUGE_J1: [1, 2, 3, 4]

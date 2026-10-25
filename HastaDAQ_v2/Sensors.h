@@ -15,12 +15,12 @@
 // ADC CONFIG -- CONFIRMED half-bridge strain gauges (2x 350ohm gauges +
 // 2x 350ohm completion resistors per channel), same ratiometric approach
 // as StrainGaugeCalibration.ino/wiring/strain-gauge-rig.yml: bridge
-// excitation is the SAME 3.3V rail that powers both ADS122C04s (v2 board:
-// header-wired, one SHARED pair of 350R completion resistors feeds A1 of
-// both ADCs), so VREF_SUPPLY (AVDD-referenced) is directly ratiometric
+// excitation is the SAME 3.3V rail that powers both ADS122C04s (v2: on the
+// separate strain-gauge board, kicad/gaugeboard/, reached by a 4-wire I2C
+// loom; one SHARED pair of 350R completion resistors feeds A1 of both ADCs), so VREF_SUPPLY (AVDD-referenced) is directly ratiometric
 // against it with no extra reference wiring needed -- unlike that earlier
 // rig, nothing here is on a separate VBUS/5V rail, so there's no
-// REFP/REFN tap-off-the-bridge dance required. See kicad/hastadaq/.
+// REFP/REFN tap-off-the-bridge dance required. See kicad/gaugeboard/.
 class SensorHub {
 public:
     void begin() {
