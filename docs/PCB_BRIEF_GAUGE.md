@@ -8,10 +8,10 @@ A small, reusable, **through-hole** (hand-soldered) breakout that holds everythi
 
 | Function | Circuit |
 |---|---|
-| Loom | J1, 1x4 header: 1=GND, 2=+5V, 3=SDA, 4=SCL (same order as J2 on the main board) |
+| Loom | J1 (in) and J2 (out, wired in parallel: a pass-through to daisy-chain another I2C board), 1x4 headers: 1=GND, 2=+5V, 3=SDA, 4=SCL (same order as J2 on the main board) |
 | Power conditioning | 47 uF C1 + 100 nF C2 on the incoming 5 V (any ferrite bead is part of the loom cable, not on this board), then a 3.3 V LDO (U1, TI LP2950-N 3.3 V, TO-92) with 10 uF C3 + 100 nF C4 on its output |
 | ADCs | 2 x Adafruit ADS122C04 breakout (U2, U3), I2C, powered from the on-board 3V3 only |
-| Gauges | J2, J3: 1x3 half-bridge headers, 1=+3V3 (V), 2=ADSn_SIG, 3=GND |
+| Gauges | J3, J4: 1x3 half-bridge headers, 1=+3V3 (V), 2=ADSn_SIG, 3=GND |
 | Completion | one shared pair of 350R resistors R5, R6; mid-point `ADS_REF` goes to input A1 of both ADCs |
 | Input filter (optional) | per channel: 0R links in series with A0 and A1 (R1/R2 for ADS1, R3/R4 for ADS2) and a DNP 100 nF across A0-A1 (C5, C8) |
 | ADC decoupling | per ADC: 10 uF + 100 nF at its VIN (C6/C7 for ADS1, C9/C10 for ADS2) |
@@ -43,7 +43,7 @@ J1 pin 2 (+5V) -+-> C1 47 uF, C2 100 nF to GND
                 +-> U1 LP2950-N IN (pin 3)
 U1 OUT (pin 1) -> +3V3 -+-> C3 10 uF, C4 100 nF (at the LDO)
                         +-> U2 / U3 VIN (+ C6,C7 / C9,C10 decoupling at each ADC)
-                        +-> J2 / J3 pin 1 (bridge V)
+                        +-> J3 / J4 pin 1 (bridge V)
 ```
 
 * **LP2950-N, TO-92: pin 1 = OUT, pin 2 = GND, pin 3 = IN** (TI data sheet SNVS764Q; verified from the page image). 3.3 V fixed version, 100 mA max, 2.3-30 V input, about 0.4 V dropout at 100 mA. It is stable with ceramic output capacitors (2.2 uF minimum on the 3.3 V version). Load here is about 20 mA (two bridges at 3.3 V / 700 ohm = 4.7 mA each, plus the ADCs), so it dissipates about 35 mW from 5 V.
@@ -60,8 +60,8 @@ One ground net. All sensor connections are a few millimetres from each other; th
 
 ## 5. Connectors and pin maps
 
-* **J1** (loom, 1x4, `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical`): 1=GND, 2=+5V, 3=SDA, 4=SCL.
-* **J2** (HB1 half-bridge #1, 1x3): 1=+3V3, 2=ADS1_SIG, 3=GND. **J3** (HB2): 1=+3V3, 2=ADS2_SIG, 3=GND. Same V/SIG/GND order as the servo-style plug on the main board.
+* **J1** (loom in) and **J2** (loom out), both `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical`: 1=GND, 2=+5V, 3=SDA, 4=SCL. J2 is wired straight to J1's four pins, adding no circuitry: it passes the +5V and the I2C bus on so another board can be daisy-chained. The same rules apply to it (+5V on pin 2, 3.3 V logic, keyed plug). Keep J1 and J2 close and the stub short, since they share SDA/SCL.
+* **J3** (HB1 half-bridge #1, 1x3): 1=+3V3, 2=ADS1_SIG, 3=GND. **J4** (HB2): 1=+3V3, 2=ADS2_SIG, 3=GND. Same V/SIG/GND order as the servo-style plug on the main board.
 * **U2** (ADS122C04 #1): pins used 1=VIN(+3V3), 2=GND, 3=SDA, 4=SCL, 7=A0 (ADS1_A0), 8=A1 (ADS1_A1); RST, DRDY, A2, A3, Ref+, Ref- unconnected. **U3** (ADS122C04 #2) the same with ADS2_A0/A1. Pad numbers follow the module's physical row order (row A: VIN GND SCL SDA DRDY RST; row B: Ref+ A0 A1 A2 A3 Ref-), so numbering looks shuffled; trust the footprint.
 * **ADS #2**: bridge one address jumper on the back of the breakout (the resulting address is unconfirmed; the main board's firmware scans at boot).
 * **R5, R6** (350R fixed): R5 from `+3V3` to `ADS_REF`, R6 from `ADS_REF` to `GND`, shared by both channels.
@@ -74,8 +74,8 @@ The library is the main board's `HastaDAQ.pretty` (via `${KIPRJMOD}/../hastadaq/
 |---|---|---|
 | U2, U3 ADS122C04 | `HastaDAQ:Adafruit_ADS122C04_Breakout` | Adafruit EagleCAD board file. 25.4 x 17.78 mm; two 1x6 headers 12.7 mm apart; four 2.5 mm holes. |
 | U1 LP2950-N | `Package_TO_SOT_THT:TO-92_Inline` | pin 1 OUT, 2 GND, 3 IN. Orient the flat face to the footprint outline. |
-| J1 | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical` | keyed alternative chosen at assembly |
-| J2, J3 | `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical` | |
+| J1, J2 | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical` | keyed alternative chosen at assembly |
+| J3, J4 | `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical` | |
 | L1 | `Inductor_THT:L_Axial_L5.3mm_D2.2mm_P7.62mm_Horizontal_Vishay_IM-1` | placeholder |
 
 ### Parts list (from the schematic)
@@ -93,8 +93,9 @@ The library is the main board's `HastaDAQ.pretty` (via `${KIPRJMOD}/../hastadaq/
 | C9 | 10uF | `Capacitor_THT:C_Rect_L7.2mm_W3.5mm_P5.00mm` |
 | C10 | 100nF | `Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm` |
 | J1 | LOOM from main board (4-wire I2C): GND, +5V, SDA, SCL | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical` |
-| J2 | HB1 half-bridge #1 (on beam): V, SIG, GND | `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical` |
-| J3 | HB2 half-bridge #2 (on beam): V, SIG, GND | `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical` |
+| J2 | LOOM OUT (pass-through, paralleled with J1) | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical` |
+| J3 | HB1 half-bridge #1 (on beam): V, SIG, GND | `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical` |
+| J4 | HB2 half-bridge #2 (on beam): V, SIG, GND | `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical` |
 | R1-R4 | 0R link (input filter positions) | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` |
 | R5, R6 | 350R fixed (completion pair) | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` |
 | U1 | 3.3 V LDO: LP2950-N 3.3 V (TO-92: pin 1 OUT, 2 GND, 3 IN) | `Package_TO_SOT_THT:TO-92_Inline` |
@@ -106,18 +107,18 @@ Input filter: with the 0R links fitted and C5/C8 not fitted there is no filter (
 ## 7. Layout guidance
 
 * **One solid ground plane**; no separate analog ground. Quiet analog and noisy digital are separated here by the board being small and having no switching circuitry at all: the 5 V goes straight to the LDO.
-* Put J1 (loom) on the edge facing the main board and the gauge headers J2/J3 on the opposite edge, so the loom and the gauge cables leave on different sides.
-* Place the LDO U1 and its caps (C1-C4) next to J1. Run `+3V3` from the LDO to both ADCs and to J2/J3 as one short star, with the 10 uF + 100 nF decoupling right at each ADC's VIN header (C6/C7, C9/C10).
-* Keep the bridge runs (V, SIG, GND per head) short, side by side, and the SIG traces from J2/J3 -> filter links -> A0 matched in length between the two channels. Keep the shared completion pair R5/R6 close to both ADC inputs, with short matched leads on `ADS_REF` to each A1 (it feeds both channels, so any difference between the two A1 paths shows as a channel offset).
+* Put J1 (loom in) on the edge facing the main board, J2 (loom out) beside it, and the gauge headers J3/J4 on the opposite edge, so the loom and the gauge cables leave on different sides.
+* Place the LDO U1 and its caps (C1-C4) next to J1. Run `+3V3` from the LDO to both ADCs and to J3/J4 as one short star, with the 10 uF + 100 nF decoupling right at each ADC's VIN header (C6/C7, C9/C10).
+* Keep the bridge runs (V, SIG, GND per head) short, side by side, and the SIG traces from J3/J4 -> filter links -> A0 matched in length between the two channels. Keep the shared completion pair R5/R6 close to both ADC inputs, with short matched leads on `ADS_REF` to each A1 (it feeds both channels, so any difference between the two A1 paths shows as a channel offset).
 * Keep SDA/SCL short and away from the SIG and `ADS_REF` traces.
 * The ADS122C04 breakouts are tall modules plugged in via headers: allow the 25.4 x 17.78 mm footprint plus 2.5 mm mounting holes and keep their top clear of tall parts.
 * Gauge cable: shielded twisted pair, shield to GND **at this board only** (the gauge end is left floating).
-* Silkscreen: pin 1 on every connector; J1 pin names (GND, +5V, SDA, SCL) with "+5V NOT 3V3"; J2/J3 pin names (V, SIG, GND); C1 polarity; "ADS2: bridge address jumper"; the optional filter positions (R1-R4, C5, C8) labelled "0R / 1k" and "DNP / 100nF".
+* Silkscreen: pin 1 on every connector; J1 and J2 pin names (GND, +5V, SDA, SCL) with "+5V NOT 3V3"; J3/J4 pin names (V, SIG, GND); C1 polarity; "ADS2: bridge address jumper"; the optional filter positions (R1-R4, C5, C8) labelled "0R / 1k" and "DNP / 100nF".
 * Mechanical inputs do **not** exist yet (outline, mounting holes, orientation next to the main board): ask the owner.
 
 ## 8. Test points
 
-None are in the schematic. A scope probe can reach `+3V3` at the LDO output cap, the J2/J3 pin 1 pads and the loom header pins. Consider adding a `GND` test point if the owner asks.
+None are in the schematic. A scope probe can reach `+3V3` at the LDO output cap, the J3/J4 pin 1 pads and the loom header pins. Consider adding a `GND` test point if the owner asks.
 
 ## 9. Known unverified items
 

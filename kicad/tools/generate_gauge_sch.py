@@ -38,6 +38,9 @@ text("Net labels connect everything: same name = same net. Companion to the main
 header("LOOM from main board (4-wire I2C): GND, +5V, SDA, SCL", 40, 62,
        [("GND", "GND"), ("5V", "+5V"), ("SDA", "SDA"), ("SCL", "SCL")])
 text("Pin 2 is +5V, NOT 3V3: use a keyed plug, never a Qwiic cable.", 20, 85)
+header("LOOM OUT (pass-through, paralleled with J1): GND, +5V, SDA, SCL", 40, 108,
+       [("GND", "GND"), ("5V", "+5V"), ("SDA", "SDA"), ("SCL", "SCL")])
+text("Second 1x4 header wired straight to the loom: daisy-chains another I2C board (+5V, 3.3 V logic).", 20, 131)
 
 vertical_part("C_Polarized", "C", "47uF (>=10V)", 110, 62, "+5V", "GND", "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm")
 vertical_part("C", "C", "100nF", 140, 62, "+5V", "GND", FP_C_SMALL)
