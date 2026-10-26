@@ -1,8 +1,8 @@
 (export
 	(version "E")
 	(design
-		(source "C:\\git\\HastaArduino\\kicad\\releases\\20261026-1658-rev-a\\hastadaq\\hastadaq.kicad_sch")
-		(date "2026-10-26T16:58:31")
+		(source "C:\\git\\HastaArduino\\kicad\\releases\\20261026-1734-rev-a\\hastadaq\\hastadaq.kicad_sch")
+		(date "2026-10-26T17:34:35")
 		(tool "Eeschema 10.0.7")
 		(sheet
 			(number "1")

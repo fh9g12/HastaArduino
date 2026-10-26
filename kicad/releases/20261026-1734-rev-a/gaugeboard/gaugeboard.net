@@ -1,8 +1,8 @@
 (export
 	(version "E")
 	(design
-		(source "C:\\git\\HastaArduino\\kicad\\releases\\20261026-1658-rev-a\\gaugeboard\\gaugeboard.kicad_sch")
-		(date "2026-10-26T16:58:32")
+		(source "C:\\git\\HastaArduino\\kicad\\releases\\20261026-1734-rev-a\\gaugeboard\\gaugeboard.kicad_sch")
+		(date "2026-10-26T17:34:36")
 		(tool "Eeschema 10.0.7")
 		(sheet
 			(number "1")
