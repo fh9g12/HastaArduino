@@ -230,27 +230,34 @@ block("2N3904", "2N3904 NPN (TO-92, pin 1 E, 2 B, 3 C)", 495, 315,
       right=[(3, "C", "TRIG_OUT"), (1, "E", "GND")],
       ref_prefix="Q", width=15.24, footprint="Package_TO_SOT_THT:TO-92_Inline")
 vertical_part("R", "R", "1.5k pull-up", 535, 315, "TRIG_PU", "TRIG_OUT", FP_R)
-pu_pins = [("3V3", "+3V3"), ("PU", "TRIG_PU"), ("5V", "+5V"), ("PU", "TRIG_PU"),
-           ("12V", "+12V"), ("PU", "TRIG_PU")]
-block("Header2x03_PU_SEL", "TRIG_OUT pull-up sel.", 570, 315,
-      left=[(i + 1, nm, net) for i, (nm, net) in enumerate(pu_pins)], right=[],
-      ref_prefix="J", width=15.24,
-      footprint="Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Vertical")
-text("Jumper a row (3V3 / 5V / 12V) to pull TRIG_OUT up to that rail; remove it if the receiver has its own pull-up.\n"
+# 1x5 in one row, rails separated by a PU pin: a 2-pin shunt only bridges ADJACENT pins, so it can only ever join a
+# rail to TRIG_PU, never two rails together (a 2x3 header let a vertically placed shunt join 3V3-5V or 5V-12V).
+pu_pins = [("3V3", "+3V3"), ("PU", "TRIG_PU"), ("5V", "+5V"), ("PU", "TRIG_PU"), ("12V", "+12V")]
+header("TRIG_OUT pull-up (1x5)", 575, 330, pu_pins)
+text("Shunt pins 1-2 (3V3), 2-3 (5V) or 4-5 (12V) to pull TRIG_OUT up to that rail; fit none if the receiver has its own pull-up.\n"
+     "Pins 2 and 4 are both TRIG_PU. Fit ONE shunt only (two shunts could join rails).\n"
      "Pull-up current: 3.3 V ~2 mA, 5 V ~3 mA, 12 V ~7 mA (enough for a 6.5 mA opto input such as MPS4200).\n"
      "24 V receivers: no jumper, add an external 24 V pull-up in the harness. 3V3 for eSync 2 high-Z ports (3.3 V max).", 430, 345)
 
 # SBUS IN: an RC receiver's SBUS output (pass-through use). Same 3-pin plug order as the servos (GND, V, SIG).
-# V is the servo rail (VSERVO, 8.4 V: check the receiver's maximum supply). The signal goes through 1k to GP1
+# V is +5V (not VSERVO 8.4 V: the Futaba R3008SB is rated 4.8-7.4 V). The signal goes through 1k to GP1
 # (UART0 RX; the SBUS output uses UART1 on GP20/21) with a 10k pull-down: that holds the line at the idle-low
 # level of inverted SBUS when no receiver is plugged in, and with the 1k forms a divider that gives the pin 3.0 V
 # from a 3.3 V receiver or 4.5 V from a 5 V one (RP2350 pins tolerate 5.5 V when powered).
 header("SBUS IN (RC receiver): GND, V, SIG", 395, 150,
-       [("GND", "GND"), ("V", "VSERVO"), ("SIG", "SBUS_IN")])
+       [("GND", "GND"), ("V", "+5V"), ("SIG", "SBUS_IN")])
 vertical_part("R", "R", "1k series", 425, 170, "SBUS_IN", "SBUS_IN_GPIO", r_fp)
-vertical_part("R", "R", "10k pull-down", 445, 170, "SBUS_IN_GPIO", "GND", r_fp)
-text("SBUS IN: RC-receiver pass-through (plug order GND, V, SIG). V = VSERVO 8.4 V --\n"
-     "check the receiver's max supply. SIG -> 1k -> GP1 (UART0 RX), 10k to GND.", 338, 198)
+vertical_part("R", "R", "10k pull-down (DNP at first)", 445, 170, "SBUS_IN_GPIO", "GND", r_fp)
+ref_z2 = next_ref("D")
+z2x, z2y = snap(488), snap(170)
+instance("HastaDAQ:D_Zener", ref_z2, "5.1V zener (BZX55C5V1) SBUS IN clamp", z2x, z2y, ["A", "K"],
+         (z2x - 5, z2y - 5.08), (z2x - 5, z2y - 2.54), "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal")
+stub_label("GND", z2x - 3.81, z2y, "left")
+stub_label("SBUS_IN_GPIO", z2x + 3.81, z2y, "right")
+text("SBUS IN: RC-receiver pass-through (plug order GND, V, SIG). V = +5V (NOT VSERVO: the Futaba R3008SB takes 4.8-7.4 V,\n"
+     "so 8.4 V would overstress it; check any other receiver's range). SIG -> 1k -> GP1 (UART0 RX); 5.1 V zener clamps a\n"
+     "receiver that outputs more than 5.1 V (about 100 pF at 100 kbaud: harmless). 10k pull-down R: leave UNFITTED on the first trial;\n"
+     "RP2350 erratum E9 can hold a pin with a weak pull-down (>~8.2k) near 2 V, so if it is fitted and misbehaves use 4.7k.", 290, 196)
 
 # Test points (through-hole pads) for bring-up, and PWR_FLAGs on nets that are supplied through a passive
 # part (cable connector, diode) so ERC's power-pin check has a source on them.
@@ -282,7 +289,7 @@ text("NOTES\n"
      "   ADS122C04 breakouts on the gauge board and from the IMU breakout.\n"
      "3. SBUS: GP20 (TX) and GP21 (RX) on one net (UART inverted in firmware). One 3x6 servo header (6 plugs of GND, V, SIG;\n"
      "   footprint HastaDAQ:PinHeader_3x06): V = VSERVO (8.4 V), SIG = SBUS (all six in parallel), GND.\n"
-     "4. POWER: 12 V in (no fuse; the bench supply's current limit is the protection) -> +12V rail -> (a) Pololu D42V55F8 = VSERVO 8.4 V (servos), (b) SparkFun BabyBuck 5V = +5V (Orbis,\n"
+     "4. POWER: 12 V in, MAX 20 V (C1 is rated 25 V; silkscreen this at J8) (no fuse; the bench supply's current limit is the protection) -> +12V rail -> (a) Pololu D42V55F8 = VSERVO 8.4 V (servos), (b) SparkFun BabyBuck 5V = +5V (Orbis,\n"
      "   gauge-board loom, Schottky -> Pico VSYS). VSYS max is 5.5 V. USB (VBUS) is left for programming; with USB only, +5V is not live.\n"
      "   BabyBuck EN is left open (its own divider enables it). 5V bulk: module has 2x22uF; 100uF added near the Pico/ports.\n"
      "5. Triggers: TRIG_IN accepts 3.3-24 V (opto), TRIG_OUT is open collector with a jumper-selected pull-up. Pin order: see each symbol.\n"

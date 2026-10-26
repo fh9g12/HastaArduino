@@ -8,7 +8,7 @@ Every component that needs a specific orderable part before the PCBs are laid ou
 
 | Ref | Part | RS | Footprint in schematic | Check |
 |---|---|---|---|---|
-| D2 | Taiwan Semi BZX55C5V1 R0, 5.1 V zener, 500 mW, 6 %, DO-35 | 748-5051 | `D_DO-35_SOD27_P7.62mm_Horizontal` | DO-35 fits |
+| D2, D4 | Taiwan Semi BZX55C5V1 R0, 5.1 V zener, 500 mW, 6 %, DO-35 (D2 soft-stop clamp, D4 SBUS IN clamp) | 748-5051 | `D_DO-35_SOD27_P7.62mm_Horizontal` | DO-35 fits |
 | U4 | onsemi **FOD817A** opto-coupler, 4-pin DIP, CTR 80-160 % | 761-4439 | `DIP-4_W7.62mm` | pin-compatible with PC817 (1 anode, 2 cathode, 3 emitter, 4 collector) |
 | D1 | STMicroelectronics **1N5822** Schottky, 3 A, 40 V, DO-201AD (data sheet from RS: VF 0.525 V max at 3 A) | 687-0877 | `D_DO-201AD_P15.24mm_Horizontal` | body 9.5 mm long x 5.3 mm diameter, lead 1.3 mm diameter: matches the KiCad footprint |
 | D3 | Vishay **BAV17-BAV21** family switching diode, DO-35, I(F) 250 mA (any member works: V(RRM) 25-250 V) | 700-3863 | `D_DO-35_SOD27_P7.62mm_Horizontal` | meets the D3 requirements below; confirm the exact type on the RS page |
@@ -55,7 +55,7 @@ The 0207 footprint covers a 6.3 x 2.3 mm body (it is drawn for 6.3 x 2.5 mm) at 
 | J3-J6 | 2x4 each | encoder ports ENC1-ENC4 |
 | J7 | 3x6 | six servo plugs (GND, V, SIG); custom footprint, same 2.54 mm grid |
 | J8 | 2x4 | main supply cable (12 V, GND, triggers, soft stop) |
-| J9 | 2x3 | TRIG_OUT pull-up select, plus one shunt jumper |
+| J9 | 1x5 | TRIG_OUT pull-up select (3V3, PU, 5V, PU, 12V), plus one shunt jumper |
 | J10 | 1x3 | SBUS IN |
 
 ### Nothing to buy for layout
@@ -92,7 +92,7 @@ For a 24-bit filter in the signal path (C5/C6, only if fitted) a film or C0G par
 | Pololu D42V55F8 (8.4 V, 5 A) | 6.1 mm tall |
 | SparkFun BabyBuck 5V (AP63357) | EN open is supported by the data sheet |
 | 2N3904 (Q1) | TO-92, pin 1 E, 2 B, 3 C |
-| FOD817A (U4), BZX55C5V1 (D2) | RS 761-4439, RS 748-5051 |
+| FOD817A (U4), BZX55C5V1 (D2, D4) | RS 761-4439, RS 748-5051 |
 | 2 x Adafruit ADS122C04 breakouts | 10 k I2C pull-ups on each board |
 | Adafruit ICM20649 + Pi Hut Qwiic breakout 106676 | off-board |
 | Encoders (MT6835 breakouts, RLS Orbis) | off-board |

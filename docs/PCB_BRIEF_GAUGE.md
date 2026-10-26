@@ -53,7 +53,7 @@ U1 VOUT (pin 3) -> +3V3 -+-> C3 10 uF, C4 100 nF (at the LDO)
 * **Ferrite bead**: not on the board. Any ferrite on the 5 V line is fitted on the loom cable (e.g. a clip-on or a bead on the wire), so it is outside the schematic.
 * C1 (47 uF 16 V, RS PRO LHK, 5 x 7 mm) and C3 (10 uF 10 V tantalum, RS PRO CB, case B about 5.0 x 8.0 mm, 2.5 mm lead pitch) are polarised: C1 with + toward `+5V`, C3 with + toward `+3V3` (the tantalum bar marks +). The 100 nF parts (C2, C4, and the DNP filter caps C5/C6) are drawn non-polarised; see the 100 nF open item.
 * I2C: the ADS122C04 breakouts carry the pull-ups (10 k on each of SDA and SCL, confirmed from Adafruit's Eagle schematic; two boards give 5 k in parallel, so no extra pull-ups are needed here). The breakouts also carry their own 10 uF + 100 nF on VIN, so no extra ADC decoupling is fitted on this board. The pull-ups go to each breakout's own VIN (= this board's 3V3), so SDA/SCL here are therefore 3.3 V logic; the main board must not drive them above about 3.6 V (the Pico drives 3.3 V). Do not connect a 5 V-pull-up I2C device onto the loom.
-* The 5 V pin is not 3V3: the loom is deliberately not Qwiic-compatible. Silkscreen J1 "+5V NOT 3V3", keyed plug.
+* The 5 V pin is not 3V3: the loom is deliberately not Qwiic-compatible. Silkscreen J1 "+5V NOT 3V3", keyed plug. A reversed plug is an accepted risk (it would put +5V on SDA and SCL on GND), so mark pin 1 and the pin order clearly on J1 and J2.
 
 ## 4. Net names
 
@@ -64,7 +64,7 @@ One ground net. All sensor connections are a few millimetres from each other; th
 ## 5. Connectors and pin maps
 
 * **J1** (loom in) and **J2** (loom out), both `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical`: 1=GND, 2=+5V, 3=SDA, 4=SCL. J2 is wired straight to J1's four pins, adding no circuitry: it passes the +5V and the I2C bus on so another board can be daisy-chained. The same rules apply to it (+5V on pin 2, 3.3 V logic, keyed plug). Keep J1 and J2 close and the stub short, since they share SDA/SCL.
-* **J3** (HB1 half-bridge #1, 1x3): 1=+3V3, 2=ADS1_SIG, 3=GND. **J4** (HB2): 1=+3V3, 2=ADS2_SIG, 3=GND. Same V/SIG/GND order as the servo-style plug on the main board.
+* **J3** (HB1 half-bridge #1, 1x3): 1=+3V3, 2=ADS1_SIG, 3=GND. **J4** (HB2): 1=+3V3, 2=ADS2_SIG, 3=GND. The order is V, SIG, GND, **different from the main board's servo and SBUS-IN plugs (GND, V, SIG)**, so do not mix the leads up; with SIG in the middle a reversed plug only flips the bridge sign.
 * **U2** (ADS122C04 #1): pins used 1=VIN(+3V3), 2=GND, 3=SDA, 4=SCL, 7=A0 (ADS1_A0), 8=A1 (ADS1_A1); RST, DRDY, A2, A3, Ref+, Ref- unconnected. **U3** (ADS122C04 #2) the same with ADS2_A0/A1. Pad numbers follow the module's physical row order (row A: VIN GND SCL SDA DRDY RST; row B: Ref+ A0 A1 A2 A3 Ref-), so numbering looks shuffled; trust the footprint.
 * **ADS #2**: bridge the **ADDR0** solder jumper on the back of the breakout (Adafruit's Eagle schematic: ADDR0/ADDR1 are pulled to GND by 10 k, the jumpers tie them to VCC; the expected address is 0x41, not yet confirmed on hardware; the main board's firmware scans at boot).
 * **R5, R6** (350R fixed): R5 from `+3V3` to `ADS_REF`, R6 from `ADS_REF` to `GND`, shared by both channels.
@@ -79,7 +79,6 @@ The library is the main board's `HastaDAQ.pretty` (via `${KIPRJMOD}/../hastadaq/
 | U1 MCP1700-3302E/TO | `Package_TO_SOT_THT:TO-92_Inline` | pin 1 GND, 2 VIN, 3 VOUT. Orient the flat face to the footprint outline. |
 | J1, J2 | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical` | plain 0.1 in header; the owner picks the keyed plug later |
 | J3, J4 | `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical` | |
-| L1 | `Inductor_THT:L_Axial_L5.3mm_D2.2mm_P7.62mm_Horizontal_Vishay_IM-1` | placeholder |
 
 ### Parts list (from the schematic)
 
