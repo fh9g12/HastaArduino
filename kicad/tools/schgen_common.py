@@ -244,11 +244,11 @@ def box(x1, y1, x2, y2):
         f'(stroke (width 0) (type dash)) (fill (type none)) (uuid "{u()}"))')
 
 
-def instance(lib_id, ref, value, x, y, pin_numbers, ref_pos, val_pos, footprint="", bom=True):
+def instance(lib_id, ref, value, x, y, pin_numbers, ref_pos, val_pos, footprint="", bom=True, dnp=False):
     pins = " ".join(f'(pin "{q(str(p))}" (uuid "{u()}"))' for p in pin_numbers)
     items.append(
         f'(symbol (lib_id "{lib_id}") (at {n(x)} {n(y)} 0) (unit 1) '
-        f'(exclude_from_sim no) (in_bom {"yes" if bom else "no"}) (on_board {"yes" if bom else "no"}) (dnp no) (uuid "{u()}") '
+        f'(exclude_from_sim no) (in_bom {"yes" if bom else "no"}) (on_board {"yes" if bom else "no"}) (dnp {"yes" if dnp else "no"}) (uuid "{u()}") '
         f'(property "Reference" "{ref}" (at {n(ref_pos[0])} {n(ref_pos[1])} 0) '
         f'(effects (font (size 1.27 1.27)) (justify left bottom))) '
         f'(property "Value" "{q(value)}" (at {n(val_pos[0])} {n(val_pos[1])} 0) '
@@ -294,12 +294,12 @@ def resistor(x, y, value):
     return (x, y - 3.81), (x, y + 3.81)  # pin1 (top), pin2 (bottom)
 
 
-def vertical_part(libname, prefix, value, x, y, top_net, bot_net, footprint):
+def vertical_part(libname, prefix, value, x, y, top_net, bot_net, footprint, dnp=False):
     """Vertical 2-pin part whose pins connect to net labels at the top/bottom."""
     x, y = snap(x), snap(y)
     ref = next_ref(prefix)
     instance(f"HastaDAQ:{libname}", ref, value, x, y, [1, 2],
-             (x + 3.81, y - 1.27), (x + 3.81, y + 2.54), footprint)
+             (x + 3.81, y - 1.27), (x + 3.81, y + 2.54), footprint, dnp=dnp)
     stub_label(top_net, x, y - 3.81, "up")
     stub_label(bot_net, x, y + 3.81, "down")
     return ref

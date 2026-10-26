@@ -31,7 +31,6 @@ sg.init("hastadaq", OUT_DIR, "HastaDAQ", paper="A2")
 
 # ----------------------------------------------------------------------- main
 define_resistor()
-define_fuse()
 define_cap()
 define_cap_polarized()
 define_diode()
@@ -76,8 +75,7 @@ block("PicoPlus2", "Pimoroni Pico Plus 2 (header pins)", 70, 140,
       footprint="Module:RaspberryPi_Pico_Common_THT")
 
 header("IMU via Qwiic breakout (The Pi Hut 106676)", 185, 45,
-       [("GND", "GND"), ("3V3", "+3V3"), ("SDA", "SDA"), ("SCL", "SCL")],
-       footprint="HastaDAQ:Qwiic_Breakout_1x4_Socket")
+       [("GND", "GND"), ("3V3", "+3V3"), ("SDA", "SDA"), ("SCL", "SCL")])
 
 
 # The strain-gauge hardware (2 x ADS122C04, half-bridge headers, completion resistors, its own 3.3 V regulator and
@@ -91,8 +89,9 @@ text("Strain-gauge board: 4-wire I2C loom. Pin 2 is +5V, NOT 3V3 -- use a keyed 
 # encoders: three 2x4 0.1in headers on one SPI bus, each with its own CS.
 # Pins 1..8 in order: GND, CS, SCK, MOSI, MISO, 3V3, 5V, GND. 3V3 powers an MT6835,
 # 5V powers an RLS Orbis (3.3 V logic). Pull-ups keep unselected CS lines high at boot.
-# keyed (polarised) shrouded 0.1in IDC box header: cannot be mated rotated 180 deg
-FP_HDR_2X4 = "Connector_IDC:IDC-Header_2x04_P2.54mm_Vertical"
+# plain 0.1in 2x4 header for now (pin numbering identical to the IDC box header, which can replace it later:
+# a keyed shrouded plug cannot be mated rotated 180 deg)
+FP_HDR_2X4 = "Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical"
 
 
 def enc_header(title, y, cs):
@@ -118,7 +117,7 @@ text("CS pull-ups (10k)", 96, 249)
 # The RM2 WiFi breakout plugs into the Pico Plus 2 SP/CE connector (GP32-GP36) by cable; it is not on this PCB.
 
 
-# power: 12 V in -> fuse -> +12V -> two bucks: 12->8.4 V (VSERVO: servos) and 12->5 V (+5V: Pico, Orbis)
+# power: 12 V in (no fuse: the bench supply's current limit protects) -> +12V -> two bucks: 12->8.4 V (VSERVO: servos) and 12->5 V (+5V: Pico, Orbis)
 # Pololu D42V55F8 module (fixed 8.4 V, 5 A, 8.4-60 V in), 2x6 pads on 2.54 mm, viewed from the top
 # with the pads at the bottom. Rows as read off the module:
 #   far row  : VOUT GND GND VIN VRP PG
@@ -144,18 +143,16 @@ block("D42V55F8", "Pololu D42V55F8 8.4V 5A buck (servo rail)", 140, 300,
       footprint="HastaDAQ:Pololu_D42V55Fx")
 # SparkFun BabyBuck 5V (AP63357, 6-32 V in, ~3 A): 4 pins on 0.1" pitch, order along the header
 # as read off the module: 5V GND VIN EN. EN is LEFT OPEN: SparkFun's own schematic has an on-board divider
-# (93.1k VIN->EN, 22k EN->GND, ~2.3 V at 12 V) that enables the converter, and the AP63357 EN pin limit could
-# not be found, so it is not tied to 12 V. The module has 2x22uF on 5V and 2x4.7uF on VIN.
+# (93.1k VIN->EN, 22k EN->GND, ~2.3 V at 12 V) that enables the converter. AP63357 data sheet (DS41949): EN may be
+# left floating (internal 1.5 uA pull-up) or tied to VIN (35 V abs max), so open is supported. The module has 2x22uF on 5V and 2x4.7uF on VIN.
 block("BabyBuck_5V", "SparkFun BabyBuck 5V (AP63357) (Pico VSYS, Orbis)", 140, 340,
       left=[(3, "VIN", "+12V", "power_in"), (2, "GND", "GND", "power_in"), (4, "EN", None)],
       right=[(1, "VOUT 5V", "+5V", "power_out")],
       ref_prefix="U", width=30.48, footprint="HastaDAQ:SparkFun_BabyBuck_5V")
-vertical_part("Fuse", "F", "Fuse T3.15A 5x20mm time-delay", 250, 300, "+12V_IN", "+12V",
-              "Fuse:Fuseholder_Clip-5x20mm_Keystone_3517_Inline_P23.11x6.76mm_D1.70mm_Horizontal")
-vertical_part("C_Polarized", "C", "100uF input bulk (>=25V)", 285, 300, "+12V", "GND",
+vertical_part("C_Polarized", "C", "100uF 25V input bulk (Panasonic ECA1EM101)", 285, 300, "+12V", "GND",
+              "Capacitor_THT:CP_Radial_D6.3mm_P2.50mm")
+vertical_part("C_Polarized", "C", "470uF 16V servo bulk (Panasonic EEUFR1C471)", 285, 330, "VSERVO", "GND",
               "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm")
-vertical_part("C_Polarized", "C", "470-1000uF servo bulk (>=16V)", 285, 330, "VSERVO", "GND",
-              "Capacitor_THT:CP_Radial_D10.0mm_P5.00mm")
 ref_d = next_ref("D")
 dx, dy = snap(210), snap(340)
 instance("HastaDAQ:D_Schottky", ref_d, "Schottky (e.g. 1N5822, 3A)", dx, dy, ["A", "K"],
@@ -163,8 +160,8 @@ instance("HastaDAQ:D_Schottky", ref_d, "Schottky (e.g. 1N5822, 3A)", dx, dy, ["A
 stub_label("+5V", dx - 3.81, dy, "left")
 stub_label("+5V_VSYS", dx + 3.81, dy, "right")
 # local bulk on +5V near the Pico / encoder ports (the BabyBuck only has 2x22uF ceramic at the converter)
-vertical_part("C_Polarized", "C", "100uF 5V bulk (>=10V)", 250, 345, "+5V", "GND",
-              "Capacitor_THT:CP_Radial_D6.3mm_P2.50mm")
+vertical_part("C_Polarized", "C", "100uF 10V 5V bulk (RS PRO LHK 5x7)", 250, 345, "+5V", "GND",
+              "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm")
 
 # SBUS out: one 3x6 servo header, 6 servo plugs side by side. Servo k = pins 3k-2 (GND), 3k-1 (V), 3k (SIG),
 # the servos' plug order with V in the middle; V = VSERVO, SIG = SBUS (all six in parallel), GND. Footprint is the project's own HastaDAQ:PinHeader_3x06
@@ -183,8 +180,8 @@ block("Header3x06_SBUS", "SBUS servo header 3x6 (6 plugs: GND, V, SIG)", 380, 75
 # ends of a normally-closed loop at the far end: SOFTSTOP- is board GND, SOFTSTOP+ goes through 1k to a
 # Pico GPIO that is pulled up to 3V3. Loop intact = low = run; loop broken (cable pulled, switch open) =
 # high = stop the manoeuvre in firmware.
-pw_pins = [("VSUPPLY", "+12V_IN"), ("VGND", "GND"), ("TRIG_IN", "TRIG_IN"), ("SOFTSTOP+", "SOFTSTOP_CABLE"),
-           ("SOFTSTOP-", "GND"), ("TRIG_OUT", "TRIG_OUT"), ("VGND", "GND"), ("VSUPPLY", "+12V_IN")]
+pw_pins = [("VSUPPLY", "+12V"), ("VGND", "GND"), ("TRIG_IN", "TRIG_IN"), ("SOFTSTOP+", "SOFTSTOP_CABLE"),
+           ("SOFTSTOP-", "GND"), ("TRIG_OUT", "TRIG_OUT"), ("VGND", "GND"), ("VSUPPLY", "+12V")]
 pw_names = "".join(c if c.isalnum() else "p" for c in "_".join(nm for nm, _ in pw_pins))
 block(f"Header2x04_{pw_names}", "Main supply cable (2x4): VSUPPLY, VGND, TRIG, SOFTSTOP", 380, 215,
       left=[(i + 1, name, net) for i, (name, net) in enumerate(pw_pins)], right=[],
@@ -202,7 +199,7 @@ stub_label("GND", zx - 3.81, zy, "left")
 stub_label("SOFTSTOP_IN", zx + 3.81, zy, "right")
 
 # Trigger I/O conditioning for 3.3 V .. 24 V equipment (all through hole).
-# TRIG_IN : cable -> 1k/1W -> PC817 LED (1N4148 antiparallel, 10k pull-down on the cable side);
+# TRIG_IN : cable -> 1k/1W -> FOD817A LED (1N4148 antiparallel, 10k pull-down on the cable side);
 #           opto transistor pulls TRIG_IN_GPIO (GP14) low, 10k pull-up to 3V3. Inverted: active = low.
 # TRIG_OUT: GP15 -> 2.2k -> 2N3904 base (10k base-emitter pull-down); collector = TRIG_OUT cable line. Open collector,
 #           1.5k pull-up from TRIG_PU, which a 2x3 jumper header ties to 3V3, 5V or +12V (or leave
@@ -219,7 +216,7 @@ instance("HastaDAQ:D_Schottky", ref_d2, "1N4148 (LED reverse protect)", d2x, d2y
          (d2x - 5, d2y - 5.08), (d2x - 5, d2y - 2.54), "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal")
 stub_label("GND", d2x - 3.81, d2y, "left")
 stub_label("TRIG_IN_LED", d2x + 3.81, d2y, "right")
-block("PC817", "PC817 opto (TRIG_IN)", 495, 235,
+block("PC817", "FOD817A opto (TRIG_IN)", 495, 235,
       left=[(1, "A", "TRIG_IN_LED"), (2, "K", "GND")],
       right=[(4, "C", "TRIG_IN_GPIO"), (3, "E", "GND")],
       ref_prefix="U", width=20.32, footprint="Package_DIP:DIP-4_W7.62mm")
@@ -256,18 +253,18 @@ text("SBUS IN: RC-receiver pass-through (plug order GND, V, SIG). V = VSERVO 8.4
      "check the receiver's max supply. SIG -> 1k -> GP1 (UART0 RX), 10k to GND.", 338, 198)
 
 # Test points (through-hole pads) for bring-up, and PWR_FLAGs on nets that are supplied through a passive
-# part (cable connector, fuse, diode) so ERC's power-pin check has a source on them.
-FP_TP = "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm"
+# part (cable connector, diode) so ERC's power-pin check has a source on them.
+FP_TP = "TestPoint:TestPoint_Pad_D2.0mm"
 TP_NETS = ["GND", "GND"]
 box(436, 28, 572, 128)
-text("TEST POINTS (2.0 mm through-hole pads): two GND pads for a scope clip (near the supply and near the Pico).\n"
-     "Rails and signals are probed at component leads and header pins (fuse clips, C5/C6/C7, D1, Pico pins 36/39).", 438, 40)
+text("TEST POINTS (plain 2.0 mm pads): two GND pads for a scope clip (near the supply and near the Pico).\n"
+     "Rails and signals are probed at component leads and header pins (C1/C2/C3, D1, Pico pins 36/39).", 438, 40)
 for i, net in enumerate(TP_NETS):
     tx, ty = snap(444 + i * 15), snap(66)
     instance("HastaDAQ:TestPoint", next_ref("TP"), "TP", tx, ty, [1], (tx + 2, ty - 1), (tx + 2, ty + 2), FP_TP)
     stub_label(net, tx, ty - 2.54, "up")
-text("PWR_FLAG: marks nets supplied through the supply connector (+12V_IN, GND), the fuse (+12V) and the Schottky (+5V_VSYS)", 438, 90)
-for i, net in enumerate(["+12V_IN", "+12V", "GND", "+5V_VSYS"]):
+text("PWR_FLAG: marks nets supplied through the supply connector (+12V, GND) and the Schottky (+5V_VSYS)", 438, 90)
+for i, net in enumerate(["+12V", "GND", "+5V_VSYS"]):
     fx, fy = snap(444 + i * 22), snap(104)
     instance("HastaDAQ:PWR_FLAG", next_ref("#FLG"), "PWR_FLAG", fx, fy, [1], (fx + 2, fy - 3), (fx + 2, fy - 1), "", bom=False)
     stub_label(net, fx, fy, "down", 2.54)
@@ -281,17 +278,17 @@ text("NOTES\n"
      "   RM2 WiFi breakout (off-board, cabled to the Pico Plus 2 SP/CE connector): uses GP32-GP36 only, no overlap with I2C (GP4/5) or any other signal.\n"
      "2. Strain gauges: SEPARATE board (kicad/gaugeboard), reached by a 4-wire I2C loom (GND, +5V, SDA, SCL; 0.1in headers, keyed plugs).\n"
      "   That board makes its own clean 3.3 V from +5V and holds both ADS122C04s, the gauge headers and the filtering.\n"
-     "   ADS #2 needs its address jumper bridged (resulting address unconfirmed; firmware scans at boot). I2C pull-ups come from the\n"
+     "   ADS #2 needs its ADDR0 jumper bridged (expected address 0x41, unconfirmed; firmware scans at boot). I2C pull-ups come from the\n"
      "   ADS122C04 breakouts on the gauge board and from the IMU breakout.\n"
      "3. SBUS: GP20 (TX) and GP21 (RX) on one net (UART inverted in firmware). One 3x6 servo header (6 plugs of GND, V, SIG;\n"
      "   footprint HastaDAQ:PinHeader_3x06): V = VSERVO (8.4 V), SIG = SBUS (all six in parallel), GND.\n"
-     "4. POWER: 12 V in -> fuse -> +12V rail -> (a) Pololu D42V55F8 = VSERVO 8.4 V (servos), (b) SparkFun BabyBuck 5V = +5V (Orbis,\n"
+     "4. POWER: 12 V in (no fuse; the bench supply's current limit is the protection) -> +12V rail -> (a) Pololu D42V55F8 = VSERVO 8.4 V (servos), (b) SparkFun BabyBuck 5V = +5V (Orbis,\n"
      "   gauge-board loom, Schottky -> Pico VSYS). VSYS max is 5.5 V. USB (VBUS) is left for programming; with USB only, +5V is not live.\n"
      "   BabyBuck EN is left open (its own divider enables it). 5V bulk: module has 2x22uF; 100uF added near the Pico/ports.\n"
      "5. Triggers: TRIG_IN accepts 3.3-24 V (opto), TRIG_OUT is open collector with a jumper-selected pull-up. Pin order: see each symbol.\n"
      "   Main supply cable (2x4, pins 1-8 row-major): 1,8 VSUPPLY (12 V) | 2,7 VGND | 3 TRIG_IN | 6 TRIG_OUT | 4 SOFTSTOP+ | 5 SOFTSTOP-.\n"
      "   SOFTSTOP+ -> 1k -> GP16 (10k pull-up to 3V3, 5.1 V zener to GND), SOFTSTOP- = GND: loop closed = run, broken = stop.\n"
-     "   Keyed shrouded IDC box headers (cannot be mated rotated) are used for this connector and ENC1-4. Measured system current\n"
+     "   The 2x4 connectors (this one and ENC1-4) are plain 0.1in headers for now; use keyed/shrouded plugs: a rotated plug would put 5V on a CS pin. Measured system current\n"
      "   was <= 1 A at 8.4 V, well inside ~3 A per 0.1in pin.\n"
      "6. Encoders: 4 x 2x4 headers (pins 1-8: GND, CS, SCK, MOSI, MISO, 3V3, 5V, GND) on one SPI1 bus; CS = GP13/GP9/GP8/GP7.\n"
      "   MT6835 uses 3V3 (3.3 V logic); RLS Orbis uses 5V with 3.3 V logic. Check MISO tri-states when CS is high.\n"

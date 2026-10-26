@@ -25,10 +25,10 @@ define_resistor()
 define_cap()
 define_cap_polarized()
 define_pwrflag()
+define_testpoint()
 
 FP_R = "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
-FP_C_CER = "Capacitor_THT:C_Rect_L7.2mm_W3.5mm_P5.00mm"      # 10 uF class radial ceramic / film footprint
-FP_C_SMALL = "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm"     # 100 nF
+FP_C_SMALL = "Capacitor_THT:C_Rect_L4.0mm_W2.5mm_P2.50mm"     # 100 nF Vishay K series, 2.5 mm lead spacing
 
 text("HastaDAQ strain-gauge board", 20, 20, 3.0, bold=True)
 text("Net labels connect everything: same name = same net. Companion to the main board (kicad/hastadaq). "
@@ -42,25 +42,34 @@ header("LOOM OUT (pass-through, paralleled with J1): GND, +5V, SDA, SCL", 40, 10
        [("GND", "GND"), ("5V", "+5V"), ("SDA", "SDA"), ("SCL", "SCL")])
 text("Second 1x4 header wired straight to the loom: daisy-chains another I2C board (+5V, 3.3 V logic).", 20, 131)
 
-vertical_part("C_Polarized", "C", "47uF (>=10V)", 110, 62, "+5V", "GND", "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm")
-vertical_part("C", "C", "100nF", 140, 62, "+5V", "GND", FP_C_SMALL)
-# LP2950-N 3.3 V (TI data sheet SNVS764Q): TO-92 pin 1 = OUT, 2 = GND, 3 = IN; stable with ceramic output caps
-# (2.2 uF min for the 3.3 V version); 100 mA max, 2.3-30 V in, dropout about 0.4 V at 100 mA.
-block("LDO_3V3", "3.3 V LDO: LP2950-N 3.3 V (TO-92: pin 1 OUT, 2 GND, 3 IN)", 200, 62,
-      left=[(3, "IN", "+5V", "power_in"), (2, "GND", "GND", "power_in")],
-      right=[(1, "OUT", "+3V3", "power_out")],
+vertical_part("C_Polarized", "C", "47uF 16V (RS PRO LHK 5x7)", 110, 62, "+5V", "GND", "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm")
+vertical_part("C", "C", "100nF 50V X7R (Vishay K104)", 140, 62, "+5V", "GND", FP_C_SMALL)
+# Microchip MCP1700-3302E/TO (data sheet DS20001826C): TO-92 pin 1 = GND, 2 = VIN, 3 = VOUT; stable with a 1 uF
+# ceramic, tantalum or aluminium output cap; 250 mA max, 2.3-6.0 V in, dropout about 0.2 V at 250 mA. Do not feed it
+# more than 6 V (the loom carries 5 V).
+block("LDO_3V3", "3.3 V LDO: MCP1700-3302E/TO (TO-92: pin 1 GND, 2 VIN, 3 VOUT)", 200, 62,
+      left=[(2, "VIN", "+5V", "power_in"), (1, "GND", "GND", "power_in")],
+      right=[(3, "VOUT", "+3V3", "power_out")],
       ref_prefix="U", width=30.48, footprint="Package_TO_SOT_THT:TO-92_Inline")
-vertical_part("C", "C", "10uF out", 260, 62, "+3V3", "GND", FP_C_CER)
-vertical_part("C", "C", "100nF", 280, 62, "+3V3", "GND", FP_C_SMALL)
+vertical_part("C_Polarized", "C", "10uF 10V tantalum (RS PRO CB, + to 3V3)", 260, 62, "+3V3", "GND", "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm")
+vertical_part("C", "C", "100nF 50V X7R (Vishay K104)", 280, 62, "+3V3", "GND", FP_C_SMALL)
 box(85, 40, 295, 92)
 text("POWER: bulk + decoupling on the loom 5 V (any ferrite bead is part of the loom, not the board), the LDO makes the quiet 3.3 V that powers BOTH ADCs and the bridge excitation", 88, 38)
-text("Load is about 20 mA (bridges 2 x 4.7 mA + ADCs); the LDO dissipates about 35 mW.", 88, 96)
+text("Load is about 20 mA (bridges 2 x 4.7 mA + ADCs); the LDO dissipates about 35 mW (250 mA rating).", 88, 96)
 
 # PWR_FLAGs: nets fed through a passive part (loom header)
 for i, net in enumerate(["+5V", "GND"]):
     fx, fy = snap(310 + i * 22), snap(70)
     instance("HastaDAQ:PWR_FLAG", next_ref("#FLG"), "PWR_FLAG", fx, fy, [1], (fx + 2, fy - 3), (fx + 2, fy - 1), "", bom=False)
     stub_label(net, fx, fy, "down", 2.54)
+
+# Test points: GND for a scope clip and the regulated 3V3 (the one rail worth checking on this board)
+FP_TP = "TestPoint:TestPoint_Pad_D2.0mm"
+text("TEST POINTS: GND (scope clip) and the regulated +3V3", 300, 90)
+for i, net in enumerate(["GND", "+3V3"]):
+    tx, ty = snap(310 + i * 15), snap(110)
+    instance("HastaDAQ:TestPoint", next_ref("TP"), "TP", tx, ty, [1], (tx + 2, ty - 1), (tx + 2, ty + 2), FP_TP)
+    stub_label(net, tx, ty - 2.54, "up")
 
 # ------------------------------------------------------------------ ADCs, filters, gauge headers
 def ads(title, y, a0, a1):
@@ -79,14 +88,10 @@ def channel(n, y):
     # optional input filter: 0R links by default; fit 1k + 100nF (C DNP otherwise) for a ~800 Hz low-pass
     vertical_part("R", "R", "0R link", 175, y, f"ADS{n}_SIG", f"ADS{n}_A0", FP_R)
     vertical_part("R", "R", "0R link", 200, y, "ADS_REF", f"ADS{n}_A1", FP_R)
-    vertical_part("C", "C", "DNP", 225, y, f"ADS{n}_A0", f"ADS{n}_A1", FP_C_SMALL)
+    vertical_part("C", "C", "100nF 50V X7R (DNP)", 225, y, f"ADS{n}_A0", f"ADS{n}_A1", FP_C_SMALL, dnp=True)
     box(165, y - 16, 245, y + 16)
     text(f"ADS{n} input filter (optional: 1k links + 100nF)", 166, y - 18)
-    # supply decoupling at the ADC
-    vertical_part("C", "C", "10uF", 262, y, "+3V3", "GND", FP_C_CER)
-    vertical_part("C", "C", "100nF", 282, y, "+3V3", "GND", FP_C_SMALL)
-    box(254, y - 16, 295, y + 16)
-    text(f"ADS{n} decoupling (at the ADC)", 255, y - 18)
+    # (no extra supply decoupling here: each Adafruit breakout already has 10 uF + 100 nF on VIN)
     # half-bridge gauge head
     header(f"HB{n} half-bridge #{n} (on beam): V, SIG, GND", 340, y,
            [("V", "+3V3"), ("SIG", f"ADS{n}_SIG"), ("GND", "GND")])
@@ -104,10 +109,12 @@ text("NOTES\n"
      "   VREF_SUPPLY is ratiometric: no Ref+/Ref- wiring.\n"
      "2. 3V3 comes ONLY from the on-board LDO (from the loom's 5 V): cable voltage drop and the main board's switching noise do\n"
      "   not reach the bridges or the ADC reference. The ADC logic lines (SDA/SCL) are pulled up by the ADS122C04 breakouts to\n"
-     "   this 3V3 and are 3.3 V logic: the master must not drive them above 3.6 V.\n"
+     "   this 3V3 and are 3.3 V logic: the master must not drive them above 3.6 V. Each breakout also has its own 10uF + 100nF on\n"
+     "   VIN, so no extra ADC decoupling is fitted here.\n"
      "3. Input filters are optional: with the 0R links and no capacitor fitted there is none (original behaviour). Fit 1k in each\n"
-     "   link and 100nF across A0-A1 for about an 800 Hz low-pass.\n"
-     "4. ADS #2: bridge one address jumper on its back (resulting address unconfirmed; the main board's firmware scans at boot).\n"
+     "   link and 100nF across A0-A1 for about an 800 Hz low-pass (the 100nF positions are marked DNP).\n"
+     "4. ADS #2: bridge its ADDR0 solder jumper (ADDR0 is pulled to GND by 10k, so the jumper ties it to VCC: expected address 0x41;\n"
+     "   the main board's firmware scans at boot). The Adafruit breakouts carry 10k pull-ups on SDA/SCL to their VIN.\n"
      "5. Use shielded twisted cable for the gauge wires, shield to GND at this board only.",
      20, 277)
 

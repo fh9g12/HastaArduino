@@ -4,6 +4,21 @@ For an agent (or person) taking the finished **schematic** to a **PCB layout**. 
 
 **There are two boards.** This brief covers the **main board** (`kicad/hastadaq/`). The strain-gauge hardware (two ADS122C04 ADCs, the half-bridge headers, completion resistors, its own 3.3 V regulator and filtering) is a separate, reusable **gauge board** (`kicad/gaugeboard/`, brief in `docs/PCB_BRIEF_GAUGE.md`). The boards sit next to each other and are joined by a 4-wire I2C loom (section 5, J2). Lay them out as two independent PCBs.
 
+## 0. Status and hand-off (2026-10-26)
+
+**State:** both schematics (main `kicad/hastadaq`, gauge `kicad/gaugeboard`) are complete, ERC-clean (0 violations) and committed. **No `.kicad_pcb` exists yet.** Every component has been chosen and its footprint checked against the vendor data sheet (see `docs/PARTS_TO_SELECT.md` for the part and RS stock numbers). What a layout agent still needs from the owner, because it is not in the repository:
+
+1. **Mechanical:** board outlines, mounting holes, which edge each connector sits on, how the two boards sit side by side (main J2 and gauge J1 loom headers face each other), enclosure limits, USB-C and RM2 cable clearance, the Pololu's 6.1 mm height.
+2. **Fabrication:** which fab, copper weight (1 oz suggested), minimum track/space and drill sizes, 2 layers at 1.6 mm suggested.
+
+**Decisions already made by the owner (do not reopen):** through-hole only; no fuse (the bench supply's current limit protects); every connector is a plain 0.1 in pin header (keyed plugs are chosen later; pin numbering equals the keyed IDC box header); test points are plain 2.0 mm pads; the Pico Plus 2, Pololu, BabyBuck and both ADS122C04 breakouts are soldered straight to the board (no sockets); resistors are standard 1/4 W axial parts (R8 is 1 W); strain-gauge hardware lives on its own board with its own 3.3 V regulator; the loom is GND, +5V, SDA, SCL at 2.54 mm pitch.
+
+**Source-of-truth reminder:** the generators (`kicad/tools/generate_hastadaq_sch.py`, `generate_gauge_sch.py`, `schgen_common.py`) wrote the schematics and reassign reference designators on every run; once a `.kicad_pcb` exists, edit the schematics in KiCad and never re-run them.
+
+**Verification facts gathered from data sheets (not just assumed):** BabyBuck (AP63357, Diodes DS41949) EN may be left open (internal pull-up) or tied to VIN (35 V abs max); Adafruit ADS122C04 breakouts carry 10 k I2C pull-ups on SDA/SCL, ADDR pulled to GND by 10 k (default 0x40, ADDR0 jumper expected 0x41); MCP1700 TO-92 pinout is 1 GND, 2 VIN, 3 VOUT (6.0 V max input); RS product pages could not be fetched automatically, so part dimensions come from the linked RS data sheets and the owner's confirmation.
+
+**Not yet verified on hardware:** see section 9.
+
 ## 1. What this board is
 
 HastaDAQ is a bench/wind-tunnel instrument for a model aircraft. One Pimoroni **Pico Plus 2** (RP2350B, USB-C) runs the firmware (`HastaDAQ_v2/`), and talks WiFi through a **Pimoroni RM2 breakout that is cabled to the Pico's SP/CE connector and is NOT on this PCB**. The PCB is a **through-hole carrier** (hand-soldered, no SMD) that plugs together ready-made modules and adds a small amount of discrete circuitry:
@@ -17,12 +32,12 @@ HastaDAQ is a bench/wind-tunnel instrument for a model aircraft. One Pimoroni **
 | Logic power | SparkFun BabyBuck 5V (AP63357) -> `+5V` -> Schottky -> Pico VSYS |
 | Servo bus | One 3x6 header, six servo plugs (SBUS, all signals in parallel) |
 | SBUS in | One 3-pin header (J10) for an RC receiver's SBUS output, for a pass-through mode; powered from `VSERVO` |
-| Encoders | 4 identical keyed IDC 2x4 ports on one SPI bus (MT6835 or RLS Orbis) |
+| Encoders | 4 identical 0.1 in 2x4 header ports on one SPI bus (MT6835 or RLS Orbis); keyed/IDC plugs are chosen later |
 | Triggers | Opto-isolated trigger in (3.3-24 V), open-collector trigger out with a jumper-selected pull-up |
 | Soft stop | Normally-closed loop input (open = stop an excitation) |
 | Bring-up | 2 GND test points (scope clip) |
 
-Owner decisions already made (do not reopen without asking): through-hole only; servos run at 8.4 V straight from the Pololu; keyed IDC box headers instead of board-side reverse-polarity protection; no SBUS pull-down; strain-gauge hardware on its own board with its own 3.3 V regulator; the footprints in `HastaDAQ.pretty` were checked against the real modules by the owner.
+Owner decisions already made (do not reopen without asking): through-hole only; servos run at 8.4 V straight from the Pololu; plain 0.1 in pin headers for every connector (the owner chooses keyed/IDC plugs later, and relies on keying instead of board-side reverse-polarity protection); the Pico, Pololu and BabyBuck are soldered straight to the board (no sockets); test points are plain pads; no fuse (the bench supply current limit protects); no SBUS pull-down; strain-gauge hardware on its own board with its own 3.3 V regulator; the footprints in `HastaDAQ.pretty` were checked against the real modules by the owner.
 
 ## 2. Where everything is
 
@@ -38,6 +53,8 @@ kicad/gaugeboard/                      the strain-gauge board (own project; docs
 kicad/tools/schgen_common.py           shared generator helpers
 kicad/tools/generate_hastadaq_sch.py   bootstrap generator that wrote this schematic
 kicad/tools/generate_gauge_sch.py      bootstrap generator for the gauge board
+wiring/gauge-loom.yml                  WireViz diagram of the 4-wire loom between the boards (render with WireViz + Graphviz)
+docs/PARTS_TO_SELECT.md                chosen parts with RS numbers, dimensions and the remaining open items
 kicad/tools/generate_module_footprints.py   generator for the module footprints
 docs/README.md                         project docs; HastaDAQ_v2/ is the firmware this PCB runs
 ```
@@ -60,7 +77,7 @@ Schematic status: **ERC 0 violations** (pins carry real electrical types, PWR_FL
 ## 3. Power architecture
 
 ```
-J8 (keyed IDC, 12 V in) -> +12V_IN -> F1 fuse (T3.15A 5x20 mm) -> +12V -+-> U2 Pololu D42V55F8 -> VSERVO (8.4 V) -> J7 servo header, J10 SBUS IN, C2 bulk
+J8 (0.1 in 2x4 header, 12 V in, no fuse) -> +12V -+-> U2 Pololu D42V55F8 -> VSERVO (8.4 V) -> J7 servo header, J10 SBUS IN, C2 bulk
                                                                        +-> U3 BabyBuck 5V (EN left open) -> +5V -+-> encoder ports 5V pins, J2 loom pin 2 (gauge board), C3 bulk
                                                                        |                                        +-> D1 Schottky -> +5V_VSYS -> Pico VSYS (pin 39)
                                                                        +-> C1 100 uF input bulk, J9 jumper row (12 V pull-up option)
@@ -76,7 +93,7 @@ Pico 3V3(OUT) (pin 36) -> +3V3 -> IMU header J1, encoder ports 3V3 pins, pull-up
 
 ## 4. Net names
 
-`+12V_IN`, `+12V`, `VSERVO`, `+5V`, `+5V_VSYS`, `+3V3`, `GND`, `SBUS`, `SBUS_IN`, `SBUS_IN_GPIO`, `SDA`, `SCL`, `SPI_SCK`, `SPI_MOSI`, `SPI_MISO`, `ENC1_CS`..`ENC4_CS`, `TRIG_IN`, `TRIG_IN_LED`, `TRIG_IN_GPIO`, `TRIG_OUT`, `TRIG_OUT_BASE`, `TRIG_OUT_GPIO`, `TRIG_PU`, `SOFTSTOP_CABLE`, `SOFTSTOP_IN`.
+`+12V`, `VSERVO`, `+5V`, `+5V_VSYS`, `+3V3`, `GND`, `SBUS`, `SBUS_IN`, `SBUS_IN_GPIO`, `SDA`, `SCL`, `SPI_SCK`, `SPI_MOSI`, `SPI_MISO`, `ENC1_CS`..`ENC4_CS`, `TRIG_IN`, `TRIG_IN_LED`, `TRIG_IN_GPIO`, `TRIG_OUT`, `TRIG_OUT_BASE`, `TRIG_OUT_GPIO`, `TRIG_PU`, `SOFTSTOP_CABLE`, `SOFTSTOP_IN`.
 
 There is **one ground net**. See section 7 for how to treat it.
 
@@ -100,12 +117,12 @@ Do not change a GPIO assignment without telling the owner: it is a firmware chan
 
 (Generated from the netlist on the day of writing. Pin numbers are the footprint pad numbers; 2-row headers number row-major: 1,2 across the first row, 3,4 the next, and so on.)
 
-* **J8** (main supply cable, keyed IDC 2x4): 1=+12V_IN, 2=GND, 3=TRIG_IN, 4=SOFTSTOP_CABLE, 5=GND (SOFTSTOP-), 6=TRIG_OUT, 7=GND, 8=+12V_IN. Laid out so that even a 180-degree rotated plug puts supply on supply and ground on ground; the keyed shroud prevents it anyway. Two supply pins carry the system current.
-* **J3-J6** (ENC1-ENC4, keyed IDC 2x4, identical): 1=GND, 2=ENCn_CS, 3=SPI_SCK, 4=SPI_MOSI, 5=SPI_MISO, 6=+3V3, 7=+5V, 8=GND. MT6835 uses 3V3, RLS Orbis uses the 5V pin (4.5-5.5 V, 3.3 V logic). Keep these leads short.
+* **J8** (main supply cable, 0.1 in 2x4 header): 1=+12V, 2=GND, 3=TRIG_IN, 4=SOFTSTOP_CABLE, 5=GND (SOFTSTOP-), 6=TRIG_OUT, 7=GND, 8=+12V. Laid out so that even a 180-degree rotated plug puts supply on supply and ground on ground; the keyed shroud prevents it anyway. Two supply pins carry the system current.
+* **J3-J6** (ENC1-ENC4, 0.1 in 2x4 headers, identical): 1=GND, 2=ENCn_CS, 3=SPI_SCK, 4=SPI_MOSI, 5=SPI_MISO, 6=+3V3, 7=+5V, 8=GND. MT6835 uses 3V3, RLS Orbis uses the 5V pin (4.5-5.5 V, 3.3 V logic). Keep these leads short.
 * **J7** (SBUS, custom `HastaDAQ:PinHeader_3x06_P2.54mm_Vertical`): six servo plugs side by side; for servo k=1..6 the pins are 3k-2 = GND, 3k-1 = VSERVO, 3k = SBUS (the servo plug order, V in the middle).
 * **J10** (SBUS IN, RC receiver, 1x3): 1=GND, 2=VSERVO, 3=SBUS_IN. Same plug order as the servos (GND, V, SIG). The receiver is powered from the 8.4 V servo rail: **check the receiver's maximum supply voltage** (some are rated lower), and never connect a second supply to the V pin. The signal passes a 1 k series resistor and a 10 k pull-down (which also keeps the line at the idle-low level of inverted SBUS when nothing is plugged in); that divider gives GP1 3.0 V from a 3.3 V receiver or 4.5 V from a 5 V one.
 * **J2** (gauge-board loom, 1x4 header): 1=GND, 2=+5V, 3=SDA, 4=SCL. Pin 2 is **5 V, not 3V3**: it is deliberately not Qwiic-compatible, so use a keyed plug and never connect a Qwiic cable or a bare Qwiic sensor to it. The matching header on the gauge board (J1) has the same order, so the loom is a straight 1:1 cable. Keep it short (boards sit side by side); SDA/SCL swing to the 3V3 set by the breakouts' pull-ups on the gauge board.
-* **J1** (IMU, 1x4): 1=GND, 2=+3V3, 3=SDA, 4=SCL. Use the `Qwiic_Breakout_1x4_Socket` footprint (see section 6). This is the 3V3 version: do not mix it up with J2.
+* **J1** (IMU, 1x4): 1=GND, 2=+3V3, 3=SDA, 4=SCL. Plain 1x4 0.1 in header (the custom `Qwiic_Breakout_1x4_Socket` footprint is still in the library but unused). This is the 3V3 version: do not mix it up with J2.
 * **J9** (TRIG_OUT pull-up select, 2x3): pin pairs (1,2)=+3V3/TRIG_PU, (3,4)=+5V/TRIG_PU, (5,6)=+12V/TRIG_PU: jumper one row, or none. **Label the three rows with their voltage on the silkscreen**: the 12 V row on a 3.3 V-limited receiver would damage it.
 * Test points TP1-TP2 (GND), section 8.
 
@@ -119,12 +136,11 @@ The owner checked these against the physical modules (1:1 print) on 2026-10-23. 
 |---|---|---|
 | U1 Pico Plus 2 | `Module:RaspberryPi_Pico_Common_THT` (stock) | 40 pads, 2.54 mm pitch, rows 17.78 mm apart; board 51 x 21 mm (Pimoroni mechanical diagram). Plus 2 has USB-C at one end; its SP/CE JST (8-pin, GP32-GP36) is reported on the **underside** and its Qw/ST and debug JST connectors on top: leave room below and above the module and keep the USB-C end clear of tall parts. |
 | U2 Pololu | `HastaDAQ:Pololu_D42V55Fx` | Pololu dimension drawing 0J2180 + pinout photo. 25.4 mm square; 12 pads (1.02 mm holes) in a 2x6 grid; three 2.18 mm holes (2.2 mm in from three corners). Columns VOUT GND GND VIN VRP PG(inner)/EN(edge); odd pads inner row, even pads edge row. **6.1 mm tall** above the board (D42V55F8), 1.4 mm below. VRP, PG and EN are unused (EN has a 1 M pull-up to VIN on the module). |
-| U3 BabyBuck | `HastaDAQ:SparkFun_BabyBuck_5V` | SparkFun Eagle file. 15.875 x 13.208 mm; one 1x4 header; pads bottom to top 5V GND VIN EN; no mounting holes. EN is left open. |
-| J1 IMU header | `HastaDAQ:Qwiic_Breakout_1x4_Socket` | Pi Hut 106676 breakout: 18.77 x 14.53 x 1.6 mm, header on the top edge, two Qwiic connectors on the bottom edge. The footprint draws the outline on F.Fab and attaches the supplied STEP lying flat on an assumed **8.5 mm** female socket (`QWIIC_Z` in the generator script). The courtyard covers only the socket row. The breakout may instead be wired by four loose wires. |
-| U4 PC817 | `Package_DIP:DIP-4_W7.62mm` | standard DIP-4 |
+| U3 BabyBuck | `HastaDAQ:SparkFun_BabyBuck_5V` | SparkFun Eagle file. 15.875 x 13.208 mm; one 1x4 header; pads bottom to top 5V GND VIN EN; no mounting holes. EN is left open (data sheet: floating EN auto-starts; the module's own divider sets about 6.2 V start-up). |
+| J1 IMU header | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical` | plain 1x4 header for four wires or a Qwiic breakout (the earlier custom Qwiic footprint with its STEP model is still in `HastaDAQ.pretty` but unused) |
+| U4 FOD817A | `Package_DIP:DIP-4_W7.62mm` | RS 761-4439 (onsemi FOD817A, 4-pin DIP, CTR 80-160 %): pin-compatible with PC817 |
 | Q1 2N3904 | `Package_TO_SOT_THT:TO-92_Inline` | pin 1 E, 2 B, 3 C (Fairchild/onsemi Rev 1.1.0 data sheet). Orient the flat face to the footprint outline. |
-| J3-J6, J8 | `Connector_IDC:IDC-Header_2x04_P2.54mm_Vertical` | keyed shrouded box header; pad numbering identical to a plain 2x4 header |
-| F1 fuse | `Fuse:Fuseholder_Clip-5x20mm_Keystone_3517_Inline_P23.11x6.76mm_D1.70mm_Horizontal` | **placeholder**: pick the real fuse holder before ordering |
+| J3-J6, J8 | `Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical` | plain 0.1 in 2x4 header for now; pad numbering is identical to the keyed IDC box header that may replace it later (the owner chooses the keyed plug type) |
 
 The generators can re-create the module footprints (`py kicad/tools/generate_module_footprints.py`); the 3x6 header footprint is written by the main schematic generator. Edits made by hand in the KiCad footprint editor are fine, but then do not re-run the footprint generator. (The ADS122C04 breakout footprint in the same library is used only by the gauge board.)
 
@@ -132,21 +148,20 @@ The generators can re-create the module footprints (`py kicad/tools/generate_mod
 
 | Ref | Value / description | Footprint |
 |---|---|---|
-| C1 | 100uF input bulk (>=25V) | `Capacitor_THT:CP_Radial_D8.0mm_P3.50mm` |
-| C2 | 470-1000uF servo bulk (>=16V) | `Capacitor_THT:CP_Radial_D10.0mm_P5.00mm` |
-| C3 | 100uF 5V bulk (>=10V) | `Capacitor_THT:CP_Radial_D6.3mm_P2.50mm` |
+| C1 | 100uF 25V input bulk (Panasonic ECA1EM101, 6.3 x 11.2 mm) | `Capacitor_THT:CP_Radial_D6.3mm_P2.50mm` |
+| C2 | 470uF 16V servo bulk (Panasonic EEUFR1C471, 8 x 11.5 mm) | `Capacitor_THT:CP_Radial_D8.0mm_P3.50mm` |
+| C3 | 100uF 10V 5V bulk (RS PRO LHK, 5 x 7 mm) | `Capacitor_THT:CP_Radial_D5.0mm_P2.00mm` |
 | D1 | Schottky (e.g. 1N5822, 3A) | `Diode_THT:D_DO-201AD_P15.24mm_Horizontal` |
 | D2 | 5.1V zener (BZX55C5V1) soft-stop clamp | `Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal` |
 | D3 | 1N4148 (LED reverse protect) | `Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal` |
-| F1 | Fuse T3.15A 5x20mm time-delay | `Fuse:Fuseholder_Clip-5x20mm_Keystone_3517_Inline_P23.11x6.76mm_D1.70mm_Horizontal` |
-| J1 | IMU via Qwiic breakout (The Pi Hut 106676) | `HastaDAQ:Qwiic_Breakout_1x4_Socket` |
+| J1 | IMU via Qwiic breakout (The Pi Hut 106676) | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical` |
 | J2 | Gauge-board loom (1x4): GND, +5V, SDA, SCL | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical` |
-| J3 | ENC1 SPI port: MT6835 (pitch) / Orbis | `Connector_IDC:IDC-Header_2x04_P2.54mm_Vertical` |
-| J4 | ENC2 SPI port: MT6835 / Orbis | `Connector_IDC:IDC-Header_2x04_P2.54mm_Vertical` |
-| J5 | ENC3 SPI port: MT6835 / Orbis | `Connector_IDC:IDC-Header_2x04_P2.54mm_Vertical` |
-| J6 | ENC4 SPI port: generic SPI device | `Connector_IDC:IDC-Header_2x04_P2.54mm_Vertical` |
+| J3 | ENC1 SPI port: MT6835 (pitch) / Orbis | `Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical` |
+| J4 | ENC2 SPI port: MT6835 / Orbis | `Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical` |
+| J5 | ENC3 SPI port: MT6835 / Orbis | `Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical` |
+| J6 | ENC4 SPI port: generic SPI device | `Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical` |
 | J7 | SBUS servo header 3x6 (6 plugs: GND, V, SIG) | `HastaDAQ:PinHeader_3x06_P2.54mm_Vertical` |
-| J8 | Main supply cable (2x4): VSUPPLY, VGND, TRIG, SOFTSTOP | `Connector_IDC:IDC-Header_2x04_P2.54mm_Vertical` |
+| J8 | Main supply cable (2x4): VSUPPLY, VGND, TRIG, SOFTSTOP | `Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical` |
 | J9 | TRIG_OUT pull-up sel. | `Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Vertical` |
 | J10 | SBUS IN (RC receiver): GND, V, SIG | `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical` |
 | Q1 | 2N3904 NPN (TO-92, pin 1 E, 2 B, 3 C) | `Package_TO_SOT_THT:TO-92_Inline` |
@@ -161,12 +176,12 @@ The generators can re-create the module footprints (`py kicad/tools/generate_mod
 | R12 | 1.5k pull-up | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` |
 | R13 | 1k series | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` |
 | R14 | 10k pull-down | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` |
-| TP1 | TP | `TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm` |
-| TP2 | TP | `TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm` |
+| TP1 | TP | `TestPoint:TestPoint_Pad_D2.0mm` |
+| TP2 | TP | `TestPoint:TestPoint_Pad_D2.0mm` |
 | U1 | Pimoroni Pico Plus 2 (header pins) | `Module:RaspberryPi_Pico_Common_THT` |
 | U2 | Pololu D42V55F8 8.4V 5A buck (servo rail) | `HastaDAQ:Pololu_D42V55Fx` |
 | U3 | SparkFun BabyBuck 5V (AP63357) (Pico VSYS, Orbis, gauge board) | `HastaDAQ:SparkFun_BabyBuck_5V` |
-| U4 | PC817 opto (TRIG_IN) | `Package_DIP:DIP-4_W7.62mm` |
+| U4 | FOD817A opto (TRIG_IN) | `Package_DIP:DIP-4_W7.62mm` |
 
 Values marked "(e.g. ...)" are suggestions, not fixed parts. All parts are through-hole. R1-R4 are the four encoder chip-select pull-ups; the netlist lists them as four separate parts with identical values.
 
@@ -174,7 +189,7 @@ Values marked "(e.g. ...)" are suggestions, not fixed parts. All parts are throu
 
 **Ground.** Use **one solid ground plane**, no split planes and no separate analog ground net: split planes degrade the SPI and I2C return paths, and there is no sensitive analog circuit on this board any more (the ADCs, bridge excitation and reference are on the gauge board, which has its own regulator). A 2-layer board (ground pour on the bottom) is enough; 4 layers is optional. Separate noisy from quiet **by placement and routing**:
 
-1. Supply connector J8, fuse, Pololu, the SBUS header J7 and SBUS IN J10 at one end. Run the servo current (`VSERVO` and its return) along the board edge between them, so it never passes under the Pico or the loom/IMU connectors.
+1. Supply connector J8, Pololu, the SBUS header J7 and SBUS IN J10 at one end. Run the servo current (`VSERVO` and its return) along the board edge between them, so it never passes under the Pico or the loom/IMU connectors.
 2. Put the loom header J2 and the IMU header J1 at the Pico end, away from the Pololu and the servo traces: SDA/SCL leave the board here toward the gauge board. Keep the `+5V` pin of J2 fed from the BabyBuck/C3 directly (a short wide trace); the gauge board filters it again, but avoid routing it past the Pololu inductor.
 3. Let the grounds meet near the supply connector. Place the two `GND` test points near the supply and near the Pico.
 4. Orientation: the boards sit side by side, so place J2 on the edge facing the gauge board.
@@ -182,24 +197,24 @@ Values marked "(e.g. ...)" are suggestions, not fixed parts. All parts are throu
 **Other.**
 
 * SPI (`SPI_SCK/MOSI/MISO` and the four CS) and I2C: short, over solid ground, away from the servo rail. The encoder ports are the only external SPI cables.
-* Wide traces/pours for `+12V_IN`, `+12V`, `VSERVO` and their returns (section 3 numbers). Give the Pololu pads (VOUT/GND/VIN duplicated on both rows) copper that uses every pad.
+* Wide traces/pours for `+12V`, `VSERVO` and their returns (section 3 numbers). Give the Pololu pads (VOUT/GND/VIN duplicated on both rows) copper that uses every pad.
 * Keep the opto/trigger/soft-stop parts together near J8 and away from the Pico end.
-* Silkscreen: pin 1 on every connector, function names on J8, J3-J6, J7 (GND, V, SIG per plug), J2 (**"+5V, NOT 3V3"** on pin 2, keyed plug), J9 (voltage per row), the electrolytic polarities (C1, C2, C3), the fuse rating, and "BabyBuck EN open".
+* Silkscreen: pin 1 on every connector, function names on J8, J3-J6, J7 (GND, V, SIG per plug), J2 (**"+5V, NOT 3V3"** on pin 2, keyed plug), J9 (voltage per row), the electrolytic polarities (C1, C2, C3), and "BabyBuck EN open".
 * Mechanical inputs that do **not** exist yet: board outline, mounting holes, connector edges and orientation, and the enclosure. Ask the owner. Allow for the Pico's USB-C overhang, its underside SP/CE JST and the Pololu's 6.1 mm height.
 
 ## 8. Test points
 
-TP1 and TP2 (`TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm`) are two `GND` pads for a scope ground clip: place one near the supply connector and one near the Pico. There are deliberately **no** voltage or signal test points: the owner probes rails and signals at component leads and header pins (the fuse clips for `+12V_IN`/`+12V`; C1, C2 and C3 for `+12V`, `VSERVO` and `+5V`; D1 for `+5V` and `+5V_VSYS`; Pico pins 36 and 39; the pins of the unmated headers). Keep those leads and pads accessible from the top side (do not bury them under a module), and remember that a mated plug covers the pins on J8 and the encoder ports.
+TP1 and TP2 (`TestPoint:TestPoint_Pad_D2.0mm`) are two plain 2.0 mm `GND` pads (SMD-style copper, no hole) for a scope ground clip: place one near the supply connector and one near the Pico. There are deliberately **no** voltage or signal test points: the owner probes rails and signals at component leads and header pins (C1, C2 and C3 for `+12V`, `VSERVO` and `+5V`; D1 for `+5V` and `+5V_VSYS`; Pico pins 36 and 39; the pins of the unmated headers). Keep those leads and pads accessible from the top side (do not bury them under a module), and remember that a mated plug covers the pins on J8 and the encoder ports.
 
 ## 9. Known unverified items (hardware not yet run)
 
 * The firmware (`HastaDAQ_v2`) compiles but has **not run on this board**: Orbis SPI mode (inferred as mode 1), the soft stop, trigger polarity both ways, and a short high level on `TRIG_OUT` at power-up (the open-collector output floats until firmware starts).
-* ADS #2's I2C address is unconfirmed (jumper bridged on the gauge board; the firmware scans at boot).
-* The BabyBuck starting with EN left open is assumed from SparkFun's schematic (on-board divider); no data-sheet EN limit was found.
+* ADS #2's I2C address is expected to be 0x41 with its ADDR0 jumper bridged (Adafruit's schematic: ADDR pins pulled to GND, jumpers tie them to VCC); not yet confirmed on hardware (the firmware scans at boot).
+* BabyBuck EN: resolved from the AP63357 data sheet (DS41949): EN may be left floating (internal 1.5 uA pull-up) or tied to VIN (35 V abs max). With EN open, SparkFun's on-board divider sets start-up at about 6.2 V in and shutdown at about 5.7 V, so a supply sagging below about 5.7 V turns the 5 V rail off.
 * Two SPI devices sharing MISO: both data sheets say high-Z when deselected; not measured.
-* PC817 at a 3.3 V trigger input (about 2 mA through the 1 k) is the weakest case; the 3V3 jumper position on `TRIG_OUT` is for 3.3 V-limited receivers.
+* The FOD817A opto at a 3.3 V trigger input (about 2 mA through the 1 k) is the weakest case; the 3V3 jumper position on `TRIG_OUT` is for 3.3 V-limited receivers.
 * The IMU breakout's vertical position (assumed 8.5 mm socket) is a visual aid only.
-* I2C over the loom: untested. It is short by design (boards side by side), and the only pull-ups are on the breakouts. If the loom is lengthened, check the edges and consider a stronger pull-up.
+* I2C over the loom: untested. It is short by design (boards side by side), and the only pull-ups are on the breakouts (the Adafruit ADS122C04 board has 10 k on each of SDA and SCL, so two of them give 5 k in parallel; the IMU breakout adds its own). If the loom is lengthened, check the edges and consider a stronger pull-up.
 
 Treat the first spin as a **prototype**: keep the jumpers and test points accessible.
 
