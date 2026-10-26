@@ -113,7 +113,24 @@ Input filter: with the 0R links fitted and C5/C6 not fitted there is no filter (
 * The ADS122C04 breakouts are tall modules plugged in via headers: allow the 25.4 x 17.78 mm footprint plus 2.5 mm mounting holes and keep their top clear of tall parts.
 * Gauge cable: shielded twisted pair, shield to GND **at this board only** (the gauge end is left floating).
 * Silkscreen: pin 1 on every connector; J1 and J2 pin names (GND, +5V, SDA, SCL) with "+5V NOT 3V3"; J3/J4 pin names (V, SIG, GND); C1 polarity; "ADS2: bridge address jumper"; the optional filter positions (R1-R4, C5, C6) labelled "0R / 1k" and "DNP / 100nF".
-* Mechanical inputs do **not** exist yet (outline, mounting holes, orientation next to the main board): ask the owner.
+**Mechanical guidelines (same as the main board; owner, 2026-10-26; guidelines, not rules).**
+
+* **Mounting:** four M3 holes, one in each corner (3.2 mm non-plated holes, centres about 4 mm in from each edge, copper and parts kept about 6.5 mm clear for the screw head). M3 is the usual default on general PCBs; M2.5 (2.7 mm holes) is the Raspberry Pi convention and only worth using if the enclosure standoffs are already M2.5. Use M3 on both boards so one set of hardware fits both. Round the corners (about 2-3 mm radius).
+* **Everything on the top face.** All components and every connector go on the top; nothing on the bottom except solder joints, copper and silkscreen, so the board sits flat on standoffs or a plate. Use standoffs taller than the longest solder-side lead (the Pololu's pins stand 1.4 mm proud), and trim the leads flush.
+* **Connectors all face the same way:** vertical 0.1 in headers on the top face, all mated from above, grouped near one end of the board so every cable leaves the same side. (Right-angle headers pointing off an edge are the alternative; that is a footprint swap only, say so if you want it.)
+
+**Gauge board placement (owner's suggestion): left to right.**
+
+```
+   loom in/out     LDO + caps       2 x ADS122C04            half-bridge heads
+   J1, J2 (left)   beside J1/J2     stacked, centre          J3, J4 (right)
+```
+
+* Signal flows left to right: loom and power on the left, the ADCs in the centre stacked vertically, J3 level with U2 and J4 level with U3 on the right edge.
+* **Rotate the ADS breakouts 90 degrees** so each one's analog row (pads 7-12: Ref+, A0, A1, A2, A3, Ref-) faces right toward the gauge headers and its digital row (pads 1-6: VIN, GND, SCL, SDA, DRDY, RST) faces left toward the regulator and loom. The I2C and power runs then stay on the left and the sensitive analog runs are short on the right. Each module then stands 25.4 mm tall and 17.8 mm wide, so the stack is about 61 mm tall with a 10 mm gap.
+* **Put R5/R6 in the gap between the two modules.** That makes the `ADS_REF` leads to the two A1 pins the same length, which is what the layout guidance asks for, and keeps the 0R filter positions R1-R4 and C5/C6 beside each module's A0/A1 pads.
+* LDO U1 and C1-C4 beside J1; TP1 (GND) and TP2 (+3V3) near them where a probe reaches with the cables plugged in.
+* Still not given: the exact board outline and its position next to the main board.
 
 ## 8. Test points
 

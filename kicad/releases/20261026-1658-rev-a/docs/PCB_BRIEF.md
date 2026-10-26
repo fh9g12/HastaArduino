@@ -8,7 +8,7 @@ For an agent (or person) taking the finished **schematic** to a **PCB layout**. 
 
 **State:** both schematics (main `kicad/hastadaq`, gauge `kicad/gaugeboard`) are complete, ERC-clean (0 violations) and committed. **No `.kicad_pcb` exists yet.** Every component has been chosen and its footprint checked against the vendor data sheet (see `docs/PARTS_TO_SELECT.md` for the part and RS stock numbers). What a layout agent still needs from the owner, because it is not in the repository:
 
-1. **Mechanical:** board outlines, mounting holes, which edge each connector sits on, how the two boards sit side by side (main J2 and gauge J1 loom headers face each other), enclosure limits, USB-C and RM2 cable clearance, the Pololu's 6.1 mm height.
+1. **Mechanical:** the owner's placement and mounting guidelines are in section 7 (M3 corner holes, everything on top, all connectors the same way, portrait main board with the USB-C at the top). Still needed: the exact board outlines, enclosure limits, USB-C and RM2 cable clearance, and how the two boards sit side by side (main J2 and gauge J1 loom headers face each other).
 2. **Fabrication (decided 2026-10-26): PCBWay, standard 2-layer service, 10 boards.** 2 copper layers, 1.6 mm FR4, 1 oz copper, no edge connectors (no gold fingers). Design rules: **minimum track and spacing 6/6 mil (0.152 mm)**, minimum drill 0.3 mm (the through-hole parts here use 1.0 mm or larger, so this is never the limit), use wider tracks and more clearance wherever there is room (power: section 3; trigger lines: section 5). Check these against PCBWay's current capabilities page before ordering. PCBWay's cheapest quote tier is up to 100 x 100 mm, so aim to keep each board within that if the modules allow (the Pico Plus 2 alone is 51 x 21 mm). Set these as the board's minimums in Board Setup and the DRC.
 
 **Decisions already made by the owner (do not reopen):** supply input is 12 V nominal, **20 V maximum** (limited by C1's 25 V rating; no TVS, the bench supply's current limit and setpoint are the protection); SBUS IN is powered from `+5V` (the receiver is a Futaba R3008SB, 4.8-7.4 V) with a 5.1 V zener clamp; J9 is a 1x5 shunt-safe header; an unkeyed reversed loom plug is an accepted risk (silkscreen marking only); through-hole only; no fuse (the bench supply's current limit protects); every connector is a plain 0.1 in pin header (keyed plugs are chosen later; pin numbering equals the keyed IDC box header); test points are plain 2.0 mm pads; the Pico Plus 2, Pololu, BabyBuck and both ADS122C04 breakouts are soldered straight to the board (no sockets); resistors are standard 1/4 W axial parts (R8 is 1 W); strain-gauge hardware lives on its own board with its own 3.3 V regulator; the loom is GND, +5V, SDA, SCL at 2.54 mm pitch.
@@ -202,7 +202,32 @@ Values marked "(e.g. ...)" are suggestions, not fixed parts. All parts are throu
 * Wide traces/pours for `+12V`, `VSERVO` and their returns (section 3 numbers). Give the Pololu pads (VOUT/GND/VIN duplicated on both rows) copper that uses every pad.
 * Keep the opto/trigger/soft-stop parts together near J8 and away from the Pico end.
 * Silkscreen: pin 1 on every connector, function names on J8 (with **"MAX 20V IN"** beside the supply pins), J3-J6, J7 (GND, V, SIG per plug), J2 (**"+5V, NOT 3V3"** on pin 2, keyed plug; a reversed plug puts +5V on SDA and SCL on GND, an accepted risk, so also print an arrow or a pin 1 marker beside the header), J9 (voltage at each rail pin), J10 (GND, V=5V, SIG), the electrolytic polarities (C1, C2, C3), and "BabyBuck EN open".
-* Mechanical inputs that do **not** exist yet: board outline, mounting holes, connector edges and orientation, and the enclosure. Ask the owner. Allow for the Pico's USB-C overhang, its underside SP/CE JST and the Pololu's 6.1 mm height.
+**Mechanical guidelines for both boards (owner, 2026-10-26; guidelines, not rules).**
+
+* **Mounting:** four M3 holes, one in each corner (3.2 mm non-plated holes, centres about 4 mm in from each edge, copper and parts kept about 6.5 mm clear for the screw head). M3 is the usual default on general PCBs; M2.5 (2.7 mm holes) is the Raspberry Pi convention and only worth using if the enclosure standoffs are already M2.5. Use M3 on both boards so one set of hardware fits both. Round the corners (about 2-3 mm radius).
+* **Everything on the top face.** All components and every connector go on the top; nothing on the bottom except solder joints, copper and silkscreen, so the board sits flat on standoffs or a plate. Use standoffs taller than the longest solder-side lead (the Pololu's pins stand 1.4 mm proud), and trim the leads flush.
+* **Connectors all face the same way:** vertical 0.1 in headers on the top face, all mated from above, grouped near one end of the board so every cable leaves the same side. (Right-angle headers pointing off an edge are the alternative; that is a footprint swap only, say so if you want it.)
+
+**Main board placement (owner's suggestion): portrait, USB-C pointing off the top edge.**
+
+```
+              USB-C off the top edge
+        +---------------------------------+
+        |  J2 loom   [  Pico Plus 2  ]  BabyBuck (near VSYS)
+        |  J1 IMU    [  51 x 21 mm   ]  Pololu  (alongside the Pico)
+        |  (left edge, near GP4/GP5)       |
+        |                                  |
+        | ENC1-4 (bottom left)  J8 supply (bottom centre/right)
+        |                       J10 + J7 SBUS (bottom right)
+        +---------------------------------+
+```
+
+* **Group by current, not by voltage.** 12 V, 8.4 V and 5 V are all low-voltage; what matters is current and switching noise. Keep the high-current path J8 -> Pololu -> J7 (about 4 A in at 12 V, up to 5 A out at 8.4 V) short and in one region (bottom right, with the Pololu beside the Pico). Keep the logic, the SPI and I2C traces and the encoder connectors on the other side (left), away from the Pololu's inductor and the BabyBuck.
+* **Supply at the bottom rather than the top.** Putting J8 at the top right would split the cables between both ends and place a 12 V connector beside the USB-C. The Pico's pins also point the other way: with USB-C at the top, pin 1 is top left, so the SPI, chip selects and triggers (pins 10-17, 19, 20) are on the **lower left**, the SBUS pins GP20/21 (26, 27) and soft stop GP16 (21) are on the **lower right**, and I2C GP4/GP5 (pins 6, 7) are **upper left**. So: encoders bottom left, J8 and the trigger and soft-stop parts bottom centre, J7 and J10 bottom right, and the loom J2 and IMU J1 on the left edge near the top (the gauge board sits to the left, J2 on the edge facing it).
+* **Exceptions:** GP1 (SBUS IN, pin 2) is at the top left, so J10's signal is the longest signal run; it is slow (100 kbaud), 1 k-limited and clamped, so that is fine, but keep it away from the Pololu and the servo traces. The `+5V` has to reach the Pico VSYS (top right, pin 39), the encoder ports (bottom left) and J2, so put the BabyBuck on the right above the Pololu and route `+5V` as a wide trace or pour (at least 1 mm).
+* The module heights and positions matter more than the exact sketch: the Pololu is 25.4 mm square and 6.1 mm tall, and the Pico Plus 2's SP/CE JST sits on its underside, so keep the board under that part free of parts and copper (a cut-out or keepout) and check it on the 1:1 print.
+* Width target: stay inside 100 x 100 mm (PCBWay's cheapest tier). The four encoder headers, J8, J7 (15.2 mm wide), J10 and J2 do not fit along one 70 mm bottom edge: use the bottom edge and the lower parts of the side edges, or two rows near the bottom.
+* Still not given: the exact board outline and the enclosure. Allow for the Pico's USB-C overhang, its underside SP/CE JST and the Pololu's 6.1 mm height.
 
 ## 8. Test points
 
