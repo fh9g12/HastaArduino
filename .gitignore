@@ -409,3 +409,6 @@ fp-info-cache
 _autosave-*
 *.kicad_sch-bak
 *.lck
+
+# PCB layout snapshots made by kicad/tools/publish.py are kept in git
+!kicad/releases/

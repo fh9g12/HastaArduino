@@ -1,0 +1,4391 @@
+(export
+	(version "E")
+	(design
+		(source "C:\\git\\HastaArduino\\kicad\\releases\\20261026-1658-rev-a\\hastadaq\\hastadaq.kicad_sch")
+		(date "2026-10-26T16:58:31")
+		(tool "Eeschema 10.0.7")
+		(sheet
+			(number "1")
+			(name "/")
+			(tstamps "/")
+			(title_block
+				(title "HastaDAQ")
+				(company "HastaArduino")
+				(rev "A")
+				(date)
+				(source "hastadaq.kicad_sch")
+				(comment
+					(number "1")
+					(value "")
+				)
+				(comment
+					(number "2")
+					(value "")
+				)
+				(comment
+					(number "3")
+					(value "")
+				)
+				(comment
+					(number "4")
+					(value "")
+				)
+				(comment
+					(number "5")
+					(value "")
+				)
+				(comment
+					(number "6")
+					(value "")
+				)
+				(comment
+					(number "7")
+					(value "")
+				)
+				(comment
+					(number "8")
+					(value "")
+				)
+				(comment
+					(number "9")
+					(value "")
+				)
+			)
+		)
+	)
+	(components
+		(comp
+			(ref "C1")
+			(value "100uF 25V input bulk (Panasonic ECA1EM101)")
+			(footprint "Capacitor_THT:CP_Radial_D6.3mm_P2.50mm")
+			(fields
+				(field
+					(name "Footprint") "Capacitor_THT:CP_Radial_D6.3mm_P2.50mm")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "C_Polarized")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "70645d2c-f670-4554-8144-e17c55cecfca")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "C2")
+			(value "470uF 16V servo bulk (Panasonic EEUFR1C471)")
+			(footprint "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm")
+			(fields
+				(field
+					(name "Footprint") "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "C_Polarized")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "d33c6460-b7b3-40e9-a99e-3d3109a9bd4d")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "C3")
+			(value "100uF 10V 5V bulk (RS PRO LHK 5x7)")
+			(footprint "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm")
+			(fields
+				(field
+					(name "Footprint") "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "C_Polarized")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "52712c14-ee91-49f8-b79f-67e8c82dd237")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "D1")
+			(value "Schottky (e.g. 1N5822, 3A)")
+			(footprint "Diode_THT:D_DO-201AD_P15.24mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Diode_THT:D_DO-201AD_P15.24mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "D_Schottky")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "0a418762-dab9-4e1e-b9e9-4abab0ae83d2")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "A")
+						)
+						(pin
+							(num "K")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "D2")
+			(value "5.1V zener (BZX55C5V1) soft-stop clamp")
+			(footprint "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "D_Zener")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "2dfdbc1a-eb5a-41a4-ab65-971c424e5354")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "A")
+						)
+						(pin
+							(num "K")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "D3")
+			(value "1N4148 (LED reverse protect)")
+			(footprint "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "D_Schottky")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "2bf4d669-aae5-448c-bdfe-76cd07895ffe")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "A")
+						)
+						(pin
+							(num "K")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "D4")
+			(value "5.1V zener (BZX55C5V1) SBUS IN clamp")
+			(footprint "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "D_Zener")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "64872c84-9319-4f2e-8481-7675fdf1f0a8")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "A")
+						)
+						(pin
+							(num "K")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "J1")
+			(value "IMU via Qwiic breakout (The Pi Hut 106676)")
+			(footprint "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical")
+			(fields
+				(field
+					(name "Footprint") "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "Header1x04_GNDp3V3pSDApSCL")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "d5a82fd0-3a4c-4976-ac4e-c9ebca9cfd7d")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "J2")
+			(value "GAUGE BOARD LOOM (J_I2C): GND, +5V, SDA, SCL")
+			(footprint "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical")
+			(fields
+				(field
+					(name "Footprint") "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "Header1x04_GNDp5VpSDApSCL")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "5bba2e2f-0d0b-4dad-85f5-52d0a8971d34")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "J3")
+			(value "ENC1 SPI port: MT6835 (pitch) / Orbis")
+			(footprint "Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical")
+			(fields
+				(field
+					(name "Footprint") "Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "Header2x04_GNDpCSpSCKpMOSIpMISOp3V3p5VpGND")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "86519954-db0c-4b28-a1a6-b19576ee7ff3")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "6")
+						)
+						(pin
+							(num "7")
+						)
+						(pin
+							(num "8")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "J4")
+			(value "ENC2 SPI port: MT6835 / Orbis")
+			(footprint "Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical")
+			(fields
+				(field
+					(name "Footprint") "Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "Header2x04_GNDpCSpSCKpMOSIpMISOp3V3p5VpGND")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "4ab11ed3-ab7a-487a-b921-cc2673f569a4")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "6")
+						)
+						(pin
+							(num "7")
+						)
+						(pin
+							(num "8")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "J5")
+			(value "ENC3 SPI port: MT6835 / Orbis")
+			(footprint "Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical")
+			(fields
+				(field
+					(name "Footprint") "Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "Header2x04_GNDpCSpSCKpMOSIpMISOp3V3p5VpGND")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "c417002c-bce2-41db-a9d7-aee07eed61c0")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "6")
+						)
+						(pin
+							(num "7")
+						)
+						(pin
+							(num "8")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "J6")
+			(value "ENC4 SPI port: generic SPI device")
+			(footprint "Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical")
+			(fields
+				(field
+					(name "Footprint") "Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "Header2x04_GNDpCSpSCKpMOSIpMISOp3V3p5VpGND")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "13f74bb5-f1e1-405c-b02c-9bf2df6e5c16")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "6")
+						)
+						(pin
+							(num "7")
+						)
+						(pin
+							(num "8")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "J7")
+			(value "SBUS servo header 3x6 (6 plugs: GND, V, SIG)")
+			(footprint "HastaDAQ:PinHeader_3x06_P2.54mm_Vertical")
+			(fields
+				(field
+					(name "Footprint") "HastaDAQ:PinHeader_3x06_P2.54mm_Vertical")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "Header3x06_SBUS")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "0e9e7329-5b9b-48f2-beb4-93d1b31d6b2a")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "6")
+						)
+						(pin
+							(num "7")
+						)
+						(pin
+							(num "8")
+						)
+						(pin
+							(num "9")
+						)
+						(pin
+							(num "10")
+						)
+						(pin
+							(num "11")
+						)
+						(pin
+							(num "12")
+						)
+						(pin
+							(num "13")
+						)
+						(pin
+							(num "14")
+						)
+						(pin
+							(num "15")
+						)
+						(pin
+							(num "16")
+						)
+						(pin
+							(num "17")
+						)
+						(pin
+							(num "18")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "J8")
+			(value "Main supply cable (2x4): VSUPPLY, VGND, TRIG, SOFTSTOP")
+			(footprint "Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical")
+			(fields
+				(field
+					(name "Footprint") "Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "Header2x04_VSUPPLYpVGNDpTRIGpINpSOFTSTOPppSOFTSTOPppTRIGpOUTpVGNDpVSUPPLY")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "48da494a-1e80-4b8e-9129-fa6c8097fb87")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "6")
+						)
+						(pin
+							(num "7")
+						)
+						(pin
+							(num "8")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "J9")
+			(value "TRIG_OUT pull-up (1x5)")
+			(footprint "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical")
+			(fields
+				(field
+					(name "Footprint") "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "Header1x05_3V3pPUp5VpPUp12V")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "deba1dbe-0db3-4982-84a8-00ac8271c126")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "J10")
+			(value "SBUS IN (RC receiver): GND, V, SIG")
+			(footprint "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical")
+			(fields
+				(field
+					(name "Footprint") "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "Header1x03_GNDpVpSIG")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "aa56c9b1-f312-4c87-bec1-d8f8eabd8821")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "Q1")
+			(value "2N3904 NPN (TO-92, pin 1 E, 2 B, 3 C)")
+			(footprint "Package_TO_SOT_THT:TO-92_Inline")
+			(fields
+				(field
+					(name "Footprint") "Package_TO_SOT_THT:TO-92_Inline")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "2N3904")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "5d17aae1-1eee-454a-93a5-9a830fdaabe4")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "1")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R1")
+			(value "10k")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "R")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "5874fea9-cdc3-440e-81c3-afe1bf663965")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R2")
+			(value "10k")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "R")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "cdcf2ba5-b42c-49ef-a68f-51d05435fd62")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R3")
+			(value "10k")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "R")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "be04dadb-2c2b-4705-94bb-833b83b907b3")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R4")
+			(value "10k")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "R")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "e00f02ae-3ca0-48e9-bfa1-12219b9d0055")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R5")
+			(value "1k (soft-stop series)")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "R")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "8bf9b3aa-7e85-4e89-ba6c-037207c6d9c7")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R6")
+			(value "10k (soft-stop pull-up)")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "R")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "f7e3f917-4bf3-4974-8b75-cfae00c777de")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R7")
+			(value "10k pull-down")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "R")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "7accdb25-4c52-4d7b-8787-fcf63f403c45")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R8")
+			(value "1k 1W")
+			(footprint "Resistor_THT:R_Axial_DIN0411_L9.9mm_D3.6mm_P12.70mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0411_L9.9mm_D3.6mm_P12.70mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "R")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "65b90938-105c-4afc-b80e-f0dbf56935c0")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R9")
+			(value "10k pull-up")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "R")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "47176262-ce24-488c-9333-14f119e11f19")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R10")
+			(value "2.2k (base)")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "R")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "2cf99c16-1f4c-4527-a137-986780d48489")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R11")
+			(value "10k (base-emitter)")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "R")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "b34db925-65f4-43b3-a8ad-03ace2ae90c7")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R12")
+			(value "1.5k pull-up")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "R")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "8a2074a0-41cb-4b93-98a0-e4dece8f7169")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R13")
+			(value "1k series")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "R")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "ba4a79d7-0471-455e-8bae-e15949975ff6")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R14")
+			(value "10k pull-down (DNP at first)")
+			(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+			(fields
+				(field
+					(name "Footprint") "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "R")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "bb42a696-3d72-419d-9d11-beeedfcea1a2")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "TP1")
+			(value "TP")
+			(footprint "TestPoint:TestPoint_Pad_D2.0mm")
+			(fields
+				(field
+					(name "Footprint") "TestPoint:TestPoint_Pad_D2.0mm")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "TestPoint")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "d839afa9-964f-4e69-92be-09a731c7d790")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "TP2")
+			(value "TP")
+			(footprint "TestPoint:TestPoint_Pad_D2.0mm")
+			(fields
+				(field
+					(name "Footprint") "TestPoint:TestPoint_Pad_D2.0mm")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "TestPoint")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "97de166a-e606-430e-b0dd-fb7fea9fbd7d")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "U1")
+			(value "Pimoroni Pico Plus 2 (header pins)")
+			(footprint "Module:RaspberryPi_Pico_Common_THT")
+			(fields
+				(field
+					(name "Footprint") "Module:RaspberryPi_Pico_Common_THT")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "PicoPlus2")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "fa371944-daf5-4339-b8f1-9c0f9c80104f")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "6")
+						)
+						(pin
+							(num "7")
+						)
+						(pin
+							(num "8")
+						)
+						(pin
+							(num "9")
+						)
+						(pin
+							(num "10")
+						)
+						(pin
+							(num "11")
+						)
+						(pin
+							(num "12")
+						)
+						(pin
+							(num "13")
+						)
+						(pin
+							(num "14")
+						)
+						(pin
+							(num "15")
+						)
+						(pin
+							(num "16")
+						)
+						(pin
+							(num "17")
+						)
+						(pin
+							(num "18")
+						)
+						(pin
+							(num "19")
+						)
+						(pin
+							(num "20")
+						)
+						(pin
+							(num "40")
+						)
+						(pin
+							(num "39")
+						)
+						(pin
+							(num "38")
+						)
+						(pin
+							(num "37")
+						)
+						(pin
+							(num "36")
+						)
+						(pin
+							(num "35")
+						)
+						(pin
+							(num "34")
+						)
+						(pin
+							(num "33")
+						)
+						(pin
+							(num "32")
+						)
+						(pin
+							(num "31")
+						)
+						(pin
+							(num "30")
+						)
+						(pin
+							(num "29")
+						)
+						(pin
+							(num "28")
+						)
+						(pin
+							(num "27")
+						)
+						(pin
+							(num "26")
+						)
+						(pin
+							(num "25")
+						)
+						(pin
+							(num "24")
+						)
+						(pin
+							(num "23")
+						)
+						(pin
+							(num "22")
+						)
+						(pin
+							(num "21")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "U2")
+			(value "Pololu D42V55F8 8.4V 5A buck (servo rail)")
+			(footprint "HastaDAQ:Pololu_D42V55Fx")
+			(fields
+				(field
+					(name "Footprint") "HastaDAQ:Pololu_D42V55Fx")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "D42V55F8")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "9716f327-11a4-4d41-84f7-311281dd0ee8")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "7")
+						)
+						(pin
+							(num "9")
+						)
+						(pin
+							(num "11")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "6")
+						)
+						(pin
+							(num "8")
+						)
+						(pin
+							(num "10")
+						)
+						(pin
+							(num "12")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "U3")
+			(value "SparkFun BabyBuck 5V (AP63357) (Pico VSYS, Orbis)")
+			(footprint "HastaDAQ:SparkFun_BabyBuck_5V")
+			(fields
+				(field
+					(name "Footprint") "HastaDAQ:SparkFun_BabyBuck_5V")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "BabyBuck_5V")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "31306b2e-7dcb-414b-854b-b9faf61ddb47")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "1")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "U4")
+			(value "FOD817A opto (TRIG_IN)")
+			(footprint "Package_DIP:DIP-4_W7.62mm")
+			(fields
+				(field
+					(name "Footprint") "Package_DIP:DIP-4_W7.62mm")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "HastaDAQ")
+				(part "PC817")
+				(description "")
+			)
+			(property
+				(name "Sheetname")
+				(value "hastadaq")
+			)
+			(property
+				(name "Sheetfile")
+				(value "hastadaq.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "dc9a510c-b28e-424b-81c9-39ce39ffb5c9")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "3")
+						)
+					)
+				)
+			)
+		)
+	)
+	(groups)
+	(variants)
+	(libparts
+		(libpart
+			(lib "HastaDAQ")
+			(part "2N3904")
+			(fields
+				(field
+					(name "Reference") "U")
+				(field
+					(name "Value") "2N3904")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "E")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "B")
+					(type "passive")
+				)
+				(pin
+					(num "3")
+					(name "C")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "HastaDAQ")
+			(part "BabyBuck_5V")
+			(fields
+				(field
+					(name "Reference") "U")
+				(field
+					(name "Value") "BabyBuck_5V")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "VOUT_5V")
+					(type "power_out")
+				)
+				(pin
+					(num "2")
+					(name "GND")
+					(type "power_in")
+				)
+				(pin
+					(num "3")
+					(name "VIN")
+					(type "power_in")
+				)
+				(pin
+					(num "4")
+					(name "EN")
+					(type "no_connect")
+				)
+			)
+		)
+		(libpart
+			(lib "HastaDAQ")
+			(part "C_Polarized")
+			(fields
+				(field
+					(name "Reference") "C")
+				(field
+					(name "Value") "C")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "+")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "-")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "HastaDAQ")
+			(part "D42V55F8")
+			(fields
+				(field
+					(name "Reference") "U")
+				(field
+					(name "Value") "D42V55F8")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "VOUT")
+					(type "power_out")
+				)
+				(pin
+					(num "2")
+					(name "VOUT")
+					(type "passive")
+				)
+				(pin
+					(num "3")
+					(name "GND")
+					(type "power_in")
+				)
+				(pin
+					(num "4")
+					(name "GND")
+					(type "power_in")
+				)
+				(pin
+					(num "5")
+					(name "GND")
+					(type "power_in")
+				)
+				(pin
+					(num "6")
+					(name "GND")
+					(type "power_in")
+				)
+				(pin
+					(num "7")
+					(name "VIN")
+					(type "power_in")
+				)
+				(pin
+					(num "8")
+					(name "VIN")
+					(type "power_in")
+				)
+				(pin
+					(num "9")
+					(name "VRP")
+					(type "no_connect")
+				)
+				(pin
+					(num "10")
+					(name "VRP")
+					(type "no_connect")
+				)
+				(pin
+					(num "11")
+					(name "PG")
+					(type "no_connect")
+				)
+				(pin
+					(num "12")
+					(name "EN")
+					(type "no_connect")
+				)
+			)
+		)
+		(libpart
+			(lib "HastaDAQ")
+			(part "D_Schottky")
+			(fields
+				(field
+					(name "Reference") "D")
+				(field
+					(name "Value") "D")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "A")
+					(name "A")
+					(type "passive")
+				)
+				(pin
+					(num "K")
+					(name "K")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "HastaDAQ")
+			(part "D_Zener")
+			(fields
+				(field
+					(name "Reference") "D")
+				(field
+					(name "Value") "D")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "A")
+					(name "A")
+					(type "passive")
+				)
+				(pin
+					(num "K")
+					(name "K")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "HastaDAQ")
+			(part "Header1x03_GNDpVpSIG")
+			(fields
+				(field
+					(name "Reference") "U")
+				(field
+					(name "Value") "Header1x03_GNDpVpSIG")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "GND")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "V")
+					(type "passive")
+				)
+				(pin
+					(num "3")
+					(name "SIG")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "HastaDAQ")
+			(part "Header1x04_GNDp3V3pSDApSCL")
+			(fields
+				(field
+					(name "Reference") "U")
+				(field
+					(name "Value") "Header1x04_GNDp3V3pSDApSCL")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "GND")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "3V3")
+					(type "passive")
+				)
+				(pin
+					(num "3")
+					(name "SDA")
+					(type "passive")
+				)
+				(pin
+					(num "4")
+					(name "SCL")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "HastaDAQ")
+			(part "Header1x04_GNDp5VpSDApSCL")
+			(fields
+				(field
+					(name "Reference") "U")
+				(field
+					(name "Value") "Header1x04_GNDp5VpSDApSCL")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "GND")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "5V")
+					(type "passive")
+				)
+				(pin
+					(num "3")
+					(name "SDA")
+					(type "passive")
+				)
+				(pin
+					(num "4")
+					(name "SCL")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "HastaDAQ")
+			(part "Header1x05_3V3pPUp5VpPUp12V")
+			(fields
+				(field
+					(name "Reference") "U")
+				(field
+					(name "Value") "Header1x05_3V3pPUp5VpPUp12V")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "3V3")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "PU")
+					(type "passive")
+				)
+				(pin
+					(num "3")
+					(name "5V")
+					(type "passive")
+				)
+				(pin
+					(num "4")
+					(name "PU")
+					(type "passive")
+				)
+				(pin
+					(num "5")
+					(name "12V")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "HastaDAQ")
+			(part "Header2x04_GNDpCSpSCKpMOSIpMISOp3V3p5VpGND")
+			(fields
+				(field
+					(name "Reference") "U")
+				(field
+					(name "Value") "Header2x04_GNDpCSpSCKpMOSIpMISOp3V3p5VpGND")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "GND")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "CS")
+					(type "passive")
+				)
+				(pin
+					(num "3")
+					(name "SCK")
+					(type "passive")
+				)
+				(pin
+					(num "4")
+					(name "MOSI")
+					(type "passive")
+				)
+				(pin
+					(num "5")
+					(name "MISO")
+					(type "passive")
+				)
+				(pin
+					(num "6")
+					(name "3V3")
+					(type "passive")
+				)
+				(pin
+					(num "7")
+					(name "5V")
+					(type "passive")
+				)
+				(pin
+					(num "8")
+					(name "GND")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "HastaDAQ")
+			(part "Header2x04_VSUPPLYpVGNDpTRIGpINpSOFTSTOPppSOFTSTOPppTRIGpOUTpVGNDpVSUPPLY")
+			(fields
+				(field
+					(name "Reference") "U")
+				(field
+					(name "Value") "Header2x04_VSUPPLYpVGNDpTRIGpINpSOFTSTOPppSOFTSTOPppTRIGpOUTpVGNDpVSUPPLY")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "VSUPPLY")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "VGND")
+					(type "passive")
+				)
+				(pin
+					(num "3")
+					(name "TRIG_IN")
+					(type "passive")
+				)
+				(pin
+					(num "4")
+					(name "SOFTSTOP+")
+					(type "passive")
+				)
+				(pin
+					(num "5")
+					(name "SOFTSTOP-")
+					(type "passive")
+				)
+				(pin
+					(num "6")
+					(name "TRIG_OUT")
+					(type "passive")
+				)
+				(pin
+					(num "7")
+					(name "VGND")
+					(type "passive")
+				)
+				(pin
+					(num "8")
+					(name "VSUPPLY")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "HastaDAQ")
+			(part "Header3x06_SBUS")
+			(fields
+				(field
+					(name "Reference") "U")
+				(field
+					(name "Value") "Header3x06_SBUS")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "S1_GND")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "S1_V")
+					(type "passive")
+				)
+				(pin
+					(num "3")
+					(name "S1_SIG")
+					(type "passive")
+				)
+				(pin
+					(num "4")
+					(name "S2_GND")
+					(type "passive")
+				)
+				(pin
+					(num "5")
+					(name "S2_V")
+					(type "passive")
+				)
+				(pin
+					(num "6")
+					(name "S2_SIG")
+					(type "passive")
+				)
+				(pin
+					(num "7")
+					(name "S3_GND")
+					(type "passive")
+				)
+				(pin
+					(num "8")
+					(name "S3_V")
+					(type "passive")
+				)
+				(pin
+					(num "9")
+					(name "S3_SIG")
+					(type "passive")
+				)
+				(pin
+					(num "10")
+					(name "S4_GND")
+					(type "passive")
+				)
+				(pin
+					(num "11")
+					(name "S4_V")
+					(type "passive")
+				)
+				(pin
+					(num "12")
+					(name "S4_SIG")
+					(type "passive")
+				)
+				(pin
+					(num "13")
+					(name "S5_GND")
+					(type "passive")
+				)
+				(pin
+					(num "14")
+					(name "S5_V")
+					(type "passive")
+				)
+				(pin
+					(num "15")
+					(name "S5_SIG")
+					(type "passive")
+				)
+				(pin
+					(num "16")
+					(name "S6_GND")
+					(type "passive")
+				)
+				(pin
+					(num "17")
+					(name "S6_V")
+					(type "passive")
+				)
+				(pin
+					(num "18")
+					(name "S6_SIG")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "HastaDAQ")
+			(part "PC817")
+			(fields
+				(field
+					(name "Reference") "U")
+				(field
+					(name "Value") "PC817")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "A")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "K")
+					(type "passive")
+				)
+				(pin
+					(num "3")
+					(name "E")
+					(type "passive")
+				)
+				(pin
+					(num "4")
+					(name "C")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "HastaDAQ")
+			(part "PicoPlus2")
+			(fields
+				(field
+					(name "Reference") "U")
+				(field
+					(name "Value") "PicoPlus2")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "GP0_UART0-TX")
+					(type "no_connect")
+				)
+				(pin
+					(num "2")
+					(name "GP1_UART0-RX")
+					(type "bidirectional")
+				)
+				(pin
+					(num "3")
+					(name "GND")
+					(type "power_in")
+				)
+				(pin
+					(num "4")
+					(name "GP2")
+					(type "no_connect")
+				)
+				(pin
+					(num "5")
+					(name "GP3")
+					(type "no_connect")
+				)
+				(pin
+					(num "6")
+					(name "GP4_I2C0-SDA")
+					(type "bidirectional")
+				)
+				(pin
+					(num "7")
+					(name "GP5_I2C0-SCL")
+					(type "bidirectional")
+				)
+				(pin
+					(num "8")
+					(name "GND")
+					(type "power_in")
+				)
+				(pin
+					(num "9")
+					(name "GP6")
+					(type "no_connect")
+				)
+				(pin
+					(num "10")
+					(name "GP7")
+					(type "bidirectional")
+				)
+				(pin
+					(num "11")
+					(name "GP8")
+					(type "bidirectional")
+				)
+				(pin
+					(num "12")
+					(name "GP9")
+					(type "bidirectional")
+				)
+				(pin
+					(num "13")
+					(name "GND")
+					(type "power_in")
+				)
+				(pin
+					(num "14")
+					(name "GP10_SPI1-SCK")
+					(type "bidirectional")
+				)
+				(pin
+					(num "15")
+					(name "GP11_SPI1-TX")
+					(type "bidirectional")
+				)
+				(pin
+					(num "16")
+					(name "GP12_SPI1-RX")
+					(type "bidirectional")
+				)
+				(pin
+					(num "17")
+					(name "GP13_SPI1-CSn")
+					(type "bidirectional")
+				)
+				(pin
+					(num "18")
+					(name "GND")
+					(type "power_in")
+				)
+				(pin
+					(num "19")
+					(name "GP14")
+					(type "bidirectional")
+				)
+				(pin
+					(num "20")
+					(name "GP15")
+					(type "bidirectional")
+				)
+				(pin
+					(num "21")
+					(name "GP16")
+					(type "bidirectional")
+				)
+				(pin
+					(num "22")
+					(name "GP17")
+					(type "no_connect")
+				)
+				(pin
+					(num "23")
+					(name "GND")
+					(type "power_in")
+				)
+				(pin
+					(num "24")
+					(name "GP18")
+					(type "no_connect")
+				)
+				(pin
+					(num "25")
+					(name "GP19")
+					(type "no_connect")
+				)
+				(pin
+					(num "26")
+					(name "GP20_UART1-TX")
+					(type "bidirectional")
+				)
+				(pin
+					(num "27")
+					(name "GP21_UART1-RX")
+					(type "bidirectional")
+				)
+				(pin
+					(num "28")
+					(name "GND")
+					(type "power_in")
+				)
+				(pin
+					(num "29")
+					(name "GP22")
+					(type "no_connect")
+				)
+				(pin
+					(num "30")
+					(name "RUN")
+					(type "no_connect")
+				)
+				(pin
+					(num "31")
+					(name "GP26")
+					(type "no_connect")
+				)
+				(pin
+					(num "32")
+					(name "GP27")
+					(type "no_connect")
+				)
+				(pin
+					(num "33")
+					(name "AGND")
+					(type "power_in")
+				)
+				(pin
+					(num "34")
+					(name "GP28")
+					(type "no_connect")
+				)
+				(pin
+					(num "35")
+					(name "ADC_VREF")
+					(type "no_connect")
+				)
+				(pin
+					(num "36")
+					(name "3V3(OUT)")
+					(type "power_out")
+				)
+				(pin
+					(num "37")
+					(name "3V3_EN")
+					(type "no_connect")
+				)
+				(pin
+					(num "38")
+					(name "GND")
+					(type "power_in")
+				)
+				(pin
+					(num "39")
+					(name "VSYS")
+					(type "power_in")
+				)
+				(pin
+					(num "40")
+					(name "VBUS")
+					(type "no_connect")
+				)
+			)
+		)
+		(libpart
+			(lib "HastaDAQ")
+			(part "R")
+			(fields
+				(field
+					(name "Reference") "R")
+				(field
+					(name "Value") "R")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "HastaDAQ")
+			(part "TestPoint")
+			(fields
+				(field
+					(name "Reference") "TP")
+				(field
+					(name "Value") "TP")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "")
+					(type "passive")
+				)
+			)
+		)
+	)
+	(libraries
+		(library
+			(logical "HastaDAQ")
+			(uri "${KIPRJMOD}/HastaDAQ.kicad_sym")
+		)
+	)
+	(nets
+		(net
+			(code "1")
+			(name "/+3V3")
+			(class "Default")
+			(node
+				(ref "J1")
+				(pin "2")
+				(pinfunction "3V3_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "J3")
+				(pin "6")
+				(pinfunction "3V3_6")
+				(pintype "passive")
+			)
+			(node
+				(ref "J4")
+				(pin "6")
+				(pinfunction "3V3_6")
+				(pintype "passive")
+			)
+			(node
+				(ref "J5")
+				(pin "6")
+				(pinfunction "3V3_6")
+				(pintype "passive")
+			)
+			(node
+				(ref "J6")
+				(pin "6")
+				(pinfunction "3V3_6")
+				(pintype "passive")
+			)
+			(node
+				(ref "J9")
+				(pin "1")
+				(pinfunction "3V3_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "R1")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "R2")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "R3")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "R4")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "R6")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "R9")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "U1")
+				(pin "36")
+				(pinfunction "3V3(OUT)_36")
+				(pintype "power_out")
+			)
+		)
+		(net
+			(code "2")
+			(name "/+5V")
+			(class "Default")
+			(node
+				(ref "C3")
+				(pin "1")
+				(pinfunction "+_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "D1")
+				(pin "A")
+				(pinfunction "A_A")
+				(pintype "passive")
+			)
+			(node
+				(ref "J10")
+				(pin "2")
+				(pinfunction "V_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "J2")
+				(pin "2")
+				(pinfunction "5V_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "J3")
+				(pin "7")
+				(pinfunction "5V_7")
+				(pintype "passive")
+			)
+			(node
+				(ref "J4")
+				(pin "7")
+				(pinfunction "5V_7")
+				(pintype "passive")
+			)
+			(node
+				(ref "J5")
+				(pin "7")
+				(pinfunction "5V_7")
+				(pintype "passive")
+			)
+			(node
+				(ref "J6")
+				(pin "7")
+				(pinfunction "5V_7")
+				(pintype "passive")
+			)
+			(node
+				(ref "J9")
+				(pin "3")
+				(pinfunction "5V_3")
+				(pintype "passive")
+			)
+			(node
+				(ref "U3")
+				(pin "1")
+				(pinfunction "VOUT_5V_1")
+				(pintype "power_out")
+			)
+		)
+		(net
+			(code "3")
+			(name "/+5V_VSYS")
+			(class "Default")
+			(node
+				(ref "D1")
+				(pin "K")
+				(pinfunction "K_K")
+				(pintype "passive")
+			)
+			(node
+				(ref "U1")
+				(pin "39")
+				(pinfunction "VSYS_39")
+				(pintype "power_in")
+			)
+		)
+		(net
+			(code "4")
+			(name "/+12V")
+			(class "Default")
+			(node
+				(ref "C1")
+				(pin "1")
+				(pinfunction "+_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "J8")
+				(pin "1")
+				(pinfunction "VSUPPLY_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "J8")
+				(pin "8")
+				(pinfunction "VSUPPLY_8")
+				(pintype "passive")
+			)
+			(node
+				(ref "J9")
+				(pin "5")
+				(pinfunction "12V_5")
+				(pintype "passive")
+			)
+			(node
+				(ref "U2")
+				(pin "7")
+				(pinfunction "VIN_7")
+				(pintype "power_in")
+			)
+			(node
+				(ref "U2")
+				(pin "8")
+				(pinfunction "VIN_8")
+				(pintype "power_in")
+			)
+			(node
+				(ref "U3")
+				(pin "3")
+				(pinfunction "VIN_3")
+				(pintype "power_in")
+			)
+		)
+		(net
+			(code "5")
+			(name "/ENC1_CS")
+			(class "Default")
+			(node
+				(ref "J3")
+				(pin "2")
+				(pinfunction "CS_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "R1")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "U1")
+				(pin "17")
+				(pinfunction "GP13_SPI1-CSn_17")
+				(pintype "bidirectional")
+			)
+		)
+		(net
+			(code "6")
+			(name "/ENC2_CS")
+			(class "Default")
+			(node
+				(ref "J4")
+				(pin "2")
+				(pinfunction "CS_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "R2")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "U1")
+				(pin "12")
+				(pinfunction "GP9_12")
+				(pintype "bidirectional")
+			)
+		)
+		(net
+			(code "7")
+			(name "/ENC3_CS")
+			(class "Default")
+			(node
+				(ref "J5")
+				(pin "2")
+				(pinfunction "CS_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "R3")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "U1")
+				(pin "11")
+				(pinfunction "GP8_11")
+				(pintype "bidirectional")
+			)
+		)
+		(net
+			(code "8")
+			(name "/ENC4_CS")
+			(class "Default")
+			(node
+				(ref "J6")
+				(pin "2")
+				(pinfunction "CS_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "R4")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "U1")
+				(pin "10")
+				(pinfunction "GP7_10")
+				(pintype "bidirectional")
+			)
+		)
+		(net
+			(code "9")
+			(name "/GND")
+			(class "Default")
+			(node
+				(ref "C1")
+				(pin "2")
+				(pinfunction "-_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "C2")
+				(pin "2")
+				(pinfunction "-_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "C3")
+				(pin "2")
+				(pinfunction "-_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "D2")
+				(pin "A")
+				(pinfunction "A_A")
+				(pintype "passive")
+			)
+			(node
+				(ref "D3")
+				(pin "A")
+				(pinfunction "A_A")
+				(pintype "passive")
+			)
+			(node
+				(ref "D4")
+				(pin "A")
+				(pinfunction "A_A")
+				(pintype "passive")
+			)
+			(node
+				(ref "J1")
+				(pin "1")
+				(pinfunction "GND_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "J10")
+				(pin "1")
+				(pinfunction "GND_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "J2")
+				(pin "1")
+				(pinfunction "GND_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "J3")
+				(pin "1")
+				(pinfunction "GND_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "J3")
+				(pin "8")
+				(pinfunction "GND_8")
+				(pintype "passive")
+			)
+			(node
+				(ref "J4")
+				(pin "1")
+				(pinfunction "GND_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "J4")
+				(pin "8")
+				(pinfunction "GND_8")
+				(pintype "passive")
+			)
+			(node
+				(ref "J5")
+				(pin "1")
+				(pinfunction "GND_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "J5")
+				(pin "8")
+				(pinfunction "GND_8")
+				(pintype "passive")
+			)
+			(node
+				(ref "J6")
+				(pin "1")
+				(pinfunction "GND_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "J6")
+				(pin "8")
+				(pinfunction "GND_8")
+				(pintype "passive")
+			)
+			(node
+				(ref "J7")
+				(pin "1")
+				(pinfunction "S1_GND_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "J7")
+				(pin "10")
+				(pinfunction "S4_GND_10")
+				(pintype "passive")
+			)
+			(node
+				(ref "J7")
+				(pin "13")
+				(pinfunction "S5_GND_13")
+				(pintype "passive")
+			)
+			(node
+				(ref "J7")
+				(pin "16")
+				(pinfunction "S6_GND_16")
+				(pintype "passive")
+			)
+			(node
+				(ref "J7")
+				(pin "4")
+				(pinfunction "S2_GND_4")
+				(pintype "passive")
+			)
+			(node
+				(ref "J7")
+				(pin "7")
+				(pinfunction "S3_GND_7")
+				(pintype "passive")
+			)
+			(node
+				(ref "J8")
+				(pin "2")
+				(pinfunction "VGND_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "J8")
+				(pin "5")
+				(pinfunction "SOFTSTOP-_5")
+				(pintype "passive")
+			)
+			(node
+				(ref "J8")
+				(pin "7")
+				(pinfunction "VGND_7")
+				(pintype "passive")
+			)
+			(node
+				(ref "Q1")
+				(pin "1")
+				(pinfunction "E_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "R11")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "R14")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "R7")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "TP1")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "TP2")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "U1")
+				(pin "13")
+				(pinfunction "GND_13")
+				(pintype "power_in")
+			)
+			(node
+				(ref "U1")
+				(pin "18")
+				(pinfunction "GND_18")
+				(pintype "power_in")
+			)
+			(node
+				(ref "U1")
+				(pin "23")
+				(pinfunction "GND_23")
+				(pintype "power_in")
+			)
+			(node
+				(ref "U1")
+				(pin "28")
+				(pinfunction "GND_28")
+				(pintype "power_in")
+			)
+			(node
+				(ref "U1")
+				(pin "3")
+				(pinfunction "GND_3")
+				(pintype "power_in")
+			)
+			(node
+				(ref "U1")
+				(pin "33")
+				(pinfunction "AGND_33")
+				(pintype "power_in")
+			)
+			(node
+				(ref "U1")
+				(pin "38")
+				(pinfunction "GND_38")
+				(pintype "power_in")
+			)
+			(node
+				(ref "U1")
+				(pin "8")
+				(pinfunction "GND_8")
+				(pintype "power_in")
+			)
+			(node
+				(ref "U2")
+				(pin "3")
+				(pinfunction "GND_3")
+				(pintype "power_in")
+			)
+			(node
+				(ref "U2")
+				(pin "4")
+				(pinfunction "GND_4")
+				(pintype "power_in")
+			)
+			(node
+				(ref "U2")
+				(pin "5")
+				(pinfunction "GND_5")
+				(pintype "power_in")
+			)
+			(node
+				(ref "U2")
+				(pin "6")
+				(pinfunction "GND_6")
+				(pintype "power_in")
+			)
+			(node
+				(ref "U3")
+				(pin "2")
+				(pinfunction "GND_2")
+				(pintype "power_in")
+			)
+			(node
+				(ref "U4")
+				(pin "2")
+				(pinfunction "K_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "U4")
+				(pin "3")
+				(pinfunction "E_3")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "10")
+			(name "/SBUS")
+			(class "Default")
+			(node
+				(ref "J7")
+				(pin "12")
+				(pinfunction "S4_SIG_12")
+				(pintype "passive")
+			)
+			(node
+				(ref "J7")
+				(pin "15")
+				(pinfunction "S5_SIG_15")
+				(pintype "passive")
+			)
+			(node
+				(ref "J7")
+				(pin "18")
+				(pinfunction "S6_SIG_18")
+				(pintype "passive")
+			)
+			(node
+				(ref "J7")
+				(pin "3")
+				(pinfunction "S1_SIG_3")
+				(pintype "passive")
+			)
+			(node
+				(ref "J7")
+				(pin "6")
+				(pinfunction "S2_SIG_6")
+				(pintype "passive")
+			)
+			(node
+				(ref "J7")
+				(pin "9")
+				(pinfunction "S3_SIG_9")
+				(pintype "passive")
+			)
+			(node
+				(ref "U1")
+				(pin "26")
+				(pinfunction "GP20_UART1-TX_26")
+				(pintype "bidirectional")
+			)
+			(node
+				(ref "U1")
+				(pin "27")
+				(pinfunction "GP21_UART1-RX_27")
+				(pintype "bidirectional")
+			)
+		)
+		(net
+			(code "11")
+			(name "/SBUS_IN")
+			(class "Default")
+			(node
+				(ref "J10")
+				(pin "3")
+				(pinfunction "SIG_3")
+				(pintype "passive")
+			)
+			(node
+				(ref "R13")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "12")
+			(name "/SBUS_IN_GPIO")
+			(class "Default")
+			(node
+				(ref "D4")
+				(pin "K")
+				(pinfunction "K_K")
+				(pintype "passive")
+			)
+			(node
+				(ref "R13")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "R14")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "U1")
+				(pin "2")
+				(pinfunction "GP1_UART0-RX_2")
+				(pintype "bidirectional")
+			)
+		)
+		(net
+			(code "13")
+			(name "/SCL")
+			(class "Default")
+			(node
+				(ref "J1")
+				(pin "4")
+				(pinfunction "SCL_4")
+				(pintype "passive")
+			)
+			(node
+				(ref "J2")
+				(pin "4")
+				(pinfunction "SCL_4")
+				(pintype "passive")
+			)
+			(node
+				(ref "U1")
+				(pin "7")
+				(pinfunction "GP5_I2C0-SCL_7")
+				(pintype "bidirectional")
+			)
+		)
+		(net
+			(code "14")
+			(name "/SDA")
+			(class "Default")
+			(node
+				(ref "J1")
+				(pin "3")
+				(pinfunction "SDA_3")
+				(pintype "passive")
+			)
+			(node
+				(ref "J2")
+				(pin "3")
+				(pinfunction "SDA_3")
+				(pintype "passive")
+			)
+			(node
+				(ref "U1")
+				(pin "6")
+				(pinfunction "GP4_I2C0-SDA_6")
+				(pintype "bidirectional")
+			)
+		)
+		(net
+			(code "15")
+			(name "/SOFTSTOP_CABLE")
+			(class "Default")
+			(node
+				(ref "J8")
+				(pin "4")
+				(pinfunction "SOFTSTOP+_4")
+				(pintype "passive")
+			)
+			(node
+				(ref "R5")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "16")
+			(name "/SOFTSTOP_IN")
+			(class "Default")
+			(node
+				(ref "D2")
+				(pin "K")
+				(pinfunction "K_K")
+				(pintype "passive")
+			)
+			(node
+				(ref "R5")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "R6")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "U1")
+				(pin "21")
+				(pinfunction "GP16_21")
+				(pintype "bidirectional")
+			)
+		)
+		(net
+			(code "17")
+			(name "/SPI_MISO")
+			(class "Default")
+			(node
+				(ref "J3")
+				(pin "5")
+				(pinfunction "MISO_5")
+				(pintype "passive")
+			)
+			(node
+				(ref "J4")
+				(pin "5")
+				(pinfunction "MISO_5")
+				(pintype "passive")
+			)
+			(node
+				(ref "J5")
+				(pin "5")
+				(pinfunction "MISO_5")
+				(pintype "passive")
+			)
+			(node
+				(ref "J6")
+				(pin "5")
+				(pinfunction "MISO_5")
+				(pintype "passive")
+			)
+			(node
+				(ref "U1")
+				(pin "16")
+				(pinfunction "GP12_SPI1-RX_16")
+				(pintype "bidirectional")
+			)
+		)
+		(net
+			(code "18")
+			(name "/SPI_MOSI")
+			(class "Default")
+			(node
+				(ref "J3")
+				(pin "4")
+				(pinfunction "MOSI_4")
+				(pintype "passive")
+			)
+			(node
+				(ref "J4")
+				(pin "4")
+				(pinfunction "MOSI_4")
+				(pintype "passive")
+			)
+			(node
+				(ref "J5")
+				(pin "4")
+				(pinfunction "MOSI_4")
+				(pintype "passive")
+			)
+			(node
+				(ref "J6")
+				(pin "4")
+				(pinfunction "MOSI_4")
+				(pintype "passive")
+			)
+			(node
+				(ref "U1")
+				(pin "15")
+				(pinfunction "GP11_SPI1-TX_15")
+				(pintype "bidirectional")
+			)
+		)
+		(net
+			(code "19")
+			(name "/SPI_SCK")
+			(class "Default")
+			(node
+				(ref "J3")
+				(pin "3")
+				(pinfunction "SCK_3")
+				(pintype "passive")
+			)
+			(node
+				(ref "J4")
+				(pin "3")
+				(pinfunction "SCK_3")
+				(pintype "passive")
+			)
+			(node
+				(ref "J5")
+				(pin "3")
+				(pinfunction "SCK_3")
+				(pintype "passive")
+			)
+			(node
+				(ref "J6")
+				(pin "3")
+				(pinfunction "SCK_3")
+				(pintype "passive")
+			)
+			(node
+				(ref "U1")
+				(pin "14")
+				(pinfunction "GP10_SPI1-SCK_14")
+				(pintype "bidirectional")
+			)
+		)
+		(net
+			(code "20")
+			(name "/TRIG_IN")
+			(class "Default")
+			(node
+				(ref "J8")
+				(pin "3")
+				(pinfunction "TRIG_IN_3")
+				(pintype "passive")
+			)
+			(node
+				(ref "R7")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "R8")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "21")
+			(name "/TRIG_IN_GPIO")
+			(class "Default")
+			(node
+				(ref "R9")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "U1")
+				(pin "19")
+				(pinfunction "GP14_19")
+				(pintype "bidirectional")
+			)
+			(node
+				(ref "U4")
+				(pin "4")
+				(pinfunction "C_4")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "22")
+			(name "/TRIG_IN_LED")
+			(class "Default")
+			(node
+				(ref "D3")
+				(pin "K")
+				(pinfunction "K_K")
+				(pintype "passive")
+			)
+			(node
+				(ref "R8")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "U4")
+				(pin "1")
+				(pinfunction "A_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "23")
+			(name "/TRIG_OUT")
+			(class "Default")
+			(node
+				(ref "J8")
+				(pin "6")
+				(pinfunction "TRIG_OUT_6")
+				(pintype "passive")
+			)
+			(node
+				(ref "Q1")
+				(pin "3")
+				(pinfunction "C_3")
+				(pintype "passive")
+			)
+			(node
+				(ref "R12")
+				(pin "2")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "24")
+			(name "/TRIG_OUT_BASE")
+			(class "Default")
+			(node
+				(ref "Q1")
+				(pin "2")
+				(pinfunction "B_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "R10")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "R11")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "25")
+			(name "/TRIG_OUT_GPIO")
+			(class "Default")
+			(node
+				(ref "R10")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
+				(ref "U1")
+				(pin "20")
+				(pinfunction "GP15_20")
+				(pintype "bidirectional")
+			)
+		)
+		(net
+			(code "26")
+			(name "/TRIG_PU")
+			(class "Default")
+			(node
+				(ref "J9")
+				(pin "2")
+				(pinfunction "PU_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "J9")
+				(pin "4")
+				(pinfunction "PU_4")
+				(pintype "passive")
+			)
+			(node
+				(ref "R12")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "27")
+			(name "/VSERVO")
+			(class "Default")
+			(node
+				(ref "C2")
+				(pin "1")
+				(pinfunction "+_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "J7")
+				(pin "11")
+				(pinfunction "S4_V_11")
+				(pintype "passive")
+			)
+			(node
+				(ref "J7")
+				(pin "14")
+				(pinfunction "S5_V_14")
+				(pintype "passive")
+			)
+			(node
+				(ref "J7")
+				(pin "17")
+				(pinfunction "S6_V_17")
+				(pintype "passive")
+			)
+			(node
+				(ref "J7")
+				(pin "2")
+				(pinfunction "S1_V_2")
+				(pintype "passive")
+			)
+			(node
+				(ref "J7")
+				(pin "5")
+				(pinfunction "S2_V_5")
+				(pintype "passive")
+			)
+			(node
+				(ref "J7")
+				(pin "8")
+				(pinfunction "S3_V_8")
+				(pintype "passive")
+			)
+			(node
+				(ref "U2")
+				(pin "1")
+				(pinfunction "VOUT_1")
+				(pintype "power_out")
+			)
+			(node
+				(ref "U2")
+				(pin "2")
+				(pinfunction "VOUT_2")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "28")
+			(name "unconnected-(U1-3V3_EN-Pad37)")
+			(class "Default")
+			(node
+				(ref "U1")
+				(pin "37")
+				(pinfunction "3V3_EN_37")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "29")
+			(name "unconnected-(U1-ADC_VREF-Pad35)")
+			(class "Default")
+			(node
+				(ref "U1")
+				(pin "35")
+				(pinfunction "ADC_VREF_35")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "30")
+			(name "unconnected-(U1-GP0_UART0-TX-Pad1)")
+			(class "Default")
+			(node
+				(ref "U1")
+				(pin "1")
+				(pinfunction "GP0_UART0-TX_1")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "31")
+			(name "unconnected-(U1-GP2-Pad4)")
+			(class "Default")
+			(node
+				(ref "U1")
+				(pin "4")
+				(pinfunction "GP2_4")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "32")
+			(name "unconnected-(U1-GP3-Pad5)")
+			(class "Default")
+			(node
+				(ref "U1")
+				(pin "5")
+				(pinfunction "GP3_5")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "33")
+			(name "unconnected-(U1-GP6-Pad9)")
+			(class "Default")
+			(node
+				(ref "U1")
+				(pin "9")
+				(pinfunction "GP6_9")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "34")
+			(name "unconnected-(U1-GP17-Pad22)")
+			(class "Default")
+			(node
+				(ref "U1")
+				(pin "22")
+				(pinfunction "GP17_22")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "35")
+			(name "unconnected-(U1-GP18-Pad24)")
+			(class "Default")
+			(node
+				(ref "U1")
+				(pin "24")
+				(pinfunction "GP18_24")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "36")
+			(name "unconnected-(U1-GP19-Pad25)")
+			(class "Default")
+			(node
+				(ref "U1")
+				(pin "25")
+				(pinfunction "GP19_25")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "37")
+			(name "unconnected-(U1-GP22-Pad29)")
+			(class "Default")
+			(node
+				(ref "U1")
+				(pin "29")
+				(pinfunction "GP22_29")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "38")
+			(name "unconnected-(U1-GP26-Pad31)")
+			(class "Default")
+			(node
+				(ref "U1")
+				(pin "31")
+				(pinfunction "GP26_31")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "39")
+			(name "unconnected-(U1-GP27-Pad32)")
+			(class "Default")
+			(node
+				(ref "U1")
+				(pin "32")
+				(pinfunction "GP27_32")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "40")
+			(name "unconnected-(U1-GP28-Pad34)")
+			(class "Default")
+			(node
+				(ref "U1")
+				(pin "34")
+				(pinfunction "GP28_34")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "41")
+			(name "unconnected-(U1-RUN-Pad30)")
+			(class "Default")
+			(node
+				(ref "U1")
+				(pin "30")
+				(pinfunction "RUN_30")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "42")
+			(name "unconnected-(U1-VBUS-Pad40)")
+			(class "Default")
+			(node
+				(ref "U1")
+				(pin "40")
+				(pinfunction "VBUS_40")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "43")
+			(name "unconnected-(U2-EN-Pad12)")
+			(class "Default")
+			(node
+				(ref "U2")
+				(pin "12")
+				(pinfunction "EN_12")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "44")
+			(name "unconnected-(U2-PG-Pad11)")
+			(class "Default")
+			(node
+				(ref "U2")
+				(pin "11")
+				(pinfunction "PG_11")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "45")
+			(name "unconnected-(U2-VRP-Pad9)")
+			(class "Default")
+			(node
+				(ref "U2")
+				(pin "9")
+				(pinfunction "VRP_9")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "46")
+			(name "unconnected-(U2-VRP-Pad10)")
+			(class "Default")
+			(node
+				(ref "U2")
+				(pin "10")
+				(pinfunction "VRP_10")
+				(pintype "no_connect")
+			)
+		)
+		(net
+			(code "47")
+			(name "unconnected-(U3-EN-Pad4)")
+			(class "Default")
+			(node
+				(ref "U3")
+				(pin "4")
+				(pinfunction "EN_4")
+				(pintype "no_connect")
+			)
+		)
+	)
+)
