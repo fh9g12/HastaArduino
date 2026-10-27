@@ -3,7 +3,7 @@
     py kicad/tools/generate_gauge_sch.py
 
 A small, reusable board that holds everything about the strain gauges: two Adafruit ADS122C04 breakouts,
-the half-bridge gauge headers, ONE shared pair of 350R completion resistors, its own clean 3.3 V regulator
+the half-bridge gauge headers (2x3, doubled V / SIG / GND rows), ONE shared pair of 350R completion resistors, its own clean 3.3 V regulator
 (from the 5 V on the loom) and optional input filtering. It talks to the main HastaDAQ board over a 4-wire
 I2C loom (GND, +5V, SDA, SCL) on a 0.1in header at each end. The footprint library is shared with the main
 board (../hastadaq/HastaDAQ.pretty).
@@ -29,6 +29,7 @@ define_testpoint()
 
 FP_R = "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 FP_C_SMALL = "Capacitor_THT:C_Rect_L4.0mm_W2.5mm_P2.50mm"     # 100 nF Vishay K series, 2.5 mm lead spacing
+FP_HDR_2X3 = "Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Vertical"   # gauge heads J3, J4
 
 text("HastaDAQ strain-gauge board", 20, 20, 3.0, bold=True)
 text("Net labels connect everything: same name = same net. Companion to the main board (kicad/hastadaq). "
@@ -92,9 +93,13 @@ def channel(n, y):
     box(165, y - 16, 245, y + 16)
     text(f"ADS{n} input filter (optional: 1k links + 100nF)", 166, y - 18)
     # (no extra supply decoupling here: each Adafruit breakout already has 10 uF + 100 nF on VIN)
-    # half-bridge gauge head
-    header(f"HB{n} half-bridge #{n} (on beam): V, SIG, GND", 340, y,
-           [("V", "+3V3"), ("SIG", f"ADS{n}_SIG"), ("GND", "GND")])
+    # half-bridge gauge head: 2x3 header, each row doubled (V V / SIG SIG / GND GND), pins 1..6 odd/even by row.
+    # Two quarter-bridge gauges can be completed into one half bridge in the plug, using the doubled pins.
+    pins = [("V", "+3V3"), ("V", "+3V3"), ("SIG", f"ADS{n}_SIG"), ("SIG", f"ADS{n}_SIG"), ("GND", "GND"), ("GND", "GND")]
+    names = "".join(c if c.isalnum() else "p" for c in "_".join(nm for nm, _ in pins))
+    block(f"Header2x03_{names}", f"HB{n} half-bridge #{n} (on beam), 2x3: V V / SIG SIG / GND GND", 340, y,
+          left=[(i + 1, name, net) for i, (name, net) in enumerate(pins)], right=[],
+          ref_prefix="J", width=15.24, footprint=FP_HDR_2X3)
 
 
 channel(1, 150)
@@ -104,7 +109,8 @@ channel(2, 230)
 completion(372, 190, "ADS_REF", "Shared completion\nresistors (fixed)\n-> A1 of BOTH ADCs")
 
 text("NOTES\n"
-     "1. Each half-bridge head (2 gauges) plugs into a 3-pin header: V (+3V3), SIG (mid-point), GND. The two fixed 350R\n"
+     "1. Each half-bridge head (2 gauges) plugs into a 2x3 header with doubled rows: V V (+3V3) / SIG SIG (mid-point) / GND GND, so\n"
+     "   two quarter-bridge gauges can be completed into a half bridge in the plug. The two fixed 350R\n"
      "   completion resistors are shared; their mid-point (ADS_REF) goes to A1 of both ADCs. Excitation is the ADC's own VIN, so\n"
      "   VREF_SUPPLY is ratiometric: no Ref+/Ref- wiring.\n"
      "2. 3V3 comes ONLY from the on-board LDO (from the loom's 5 V): cable voltage drop and the main board's switching noise do\n"

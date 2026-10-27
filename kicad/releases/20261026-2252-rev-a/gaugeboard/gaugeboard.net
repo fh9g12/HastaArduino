@@ -1,9 +1,9 @@
 (export
 	(version "E")
 	(design
-		(source "C:\\git\\HastaArduino\\kicad\\releases\\20261026-1734-rev-a\\gaugeboard\\gaugeboard.kicad_sch")
-		(date "2026-10-26T17:34:36")
-		(tool "Eeschema 10.0.7")
+		(source "C:\\git\\HastaArduino\\kicad\\releases\\20261026-2252-rev-a\\gaugeboard\\gaugeboard.kicad_sch")
+		(date "2026-10-26T22:52:52")
+		(tool "Eeschema 10.0.6")
 		(sheet
 			(number "1")
 			(name "/")
@@ -85,7 +85,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "cec89cfd-2fc5-45ae-b065-d2d0ecc14843")
+			(tstamps "aa2a913a-75d9-497a-b62c-72629ef3eadf")
 			(units
 				(unit
 					(name "A")
@@ -131,7 +131,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "d4cce733-8ac6-43b8-bda8-59cae8b372c7")
+			(tstamps "466d0955-dc82-4dd2-b09c-3eb1d52992d7")
 			(units
 				(unit
 					(name "A")
@@ -177,7 +177,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "efe76af7-b9ac-4984-a0a8-1c984cf8602d")
+			(tstamps "6a5459dc-b7c6-4781-b964-4bc47e91a933")
 			(units
 				(unit
 					(name "A")
@@ -223,7 +223,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "a076c08f-eb99-4cfd-8265-6154ba9d8460")
+			(tstamps "708c3513-75b9-4278-9b3a-db73500a94bf")
 			(units
 				(unit
 					(name "A")
@@ -272,7 +272,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "1e19cf31-fce3-43c9-af7b-9612a6b5304c")
+			(tstamps "5fc3c437-8096-4fbd-b0fa-a14d2e93aad6")
 			(units
 				(unit
 					(name "A")
@@ -321,7 +321,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "2de7fdc9-3510-4ead-8ba5-ba057f6d4faa")
+			(tstamps "c07ec1f3-1729-40e2-9b6a-b8b883e19f11")
 			(units
 				(unit
 					(name "A")
@@ -367,7 +367,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "b2644344-007f-4368-8d98-b6adce73fcdc")
+			(tstamps "a10a203b-264d-4572-98de-d9e337ef6acd")
 			(units
 				(unit
 					(name "A")
@@ -419,7 +419,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "d8c8f580-5b41-4faf-b5da-7972156c9535")
+			(tstamps "e919448f-764a-4641-bd2f-c935dbdae2aa")
 			(units
 				(unit
 					(name "A")
@@ -442,11 +442,11 @@
 		)
 		(comp
 			(ref "J3")
-			(value "HB1 half-bridge #1 (on beam): V, SIG, GND")
-			(footprint "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical")
+			(value "HB1 half-bridge #1 (on beam), 2x3: V V / SIG SIG / GND GND")
+			(footprint "Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Vertical")
 			(fields
 				(field
-					(name "Footprint") "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical")
+					(name "Footprint") "Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Vertical")
 				(field
 					(name "Datasheet")
 				)
@@ -456,7 +456,7 @@
 			)
 			(libsource
 				(lib "HastaDAQ")
-				(part "Header1x03_VpSIGpGND")
+				(part "Header2x03_VpVpSIGpSIGpGNDpGND")
 				(description "")
 			)
 			(property
@@ -471,7 +471,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "69a8c610-2d82-463b-8c99-c24d5fafa8ee")
+			(tstamps "fc02af79-ee5e-45cd-9167-b3d79653087a")
 			(units
 				(unit
 					(name "A")
@@ -484,6 +484,15 @@
 						)
 						(pin
 							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "6")
 						)
 					)
 				)
@@ -491,11 +500,11 @@
 		)
 		(comp
 			(ref "J4")
-			(value "HB2 half-bridge #2 (on beam): V, SIG, GND")
-			(footprint "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical")
+			(value "HB2 half-bridge #2 (on beam), 2x3: V V / SIG SIG / GND GND")
+			(footprint "Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Vertical")
 			(fields
 				(field
-					(name "Footprint") "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical")
+					(name "Footprint") "Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Vertical")
 				(field
 					(name "Datasheet")
 				)
@@ -505,7 +514,7 @@
 			)
 			(libsource
 				(lib "HastaDAQ")
-				(part "Header1x03_VpSIGpGND")
+				(part "Header2x03_VpVpSIGpSIGpGNDpGND")
 				(description "")
 			)
 			(property
@@ -520,7 +529,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "15330b92-d53e-4e1f-9a27-4259913f0eb4")
+			(tstamps "eda82b42-7534-49b8-8de3-2bd50f4be9a1")
 			(units
 				(unit
 					(name "A")
@@ -533,6 +542,15 @@
 						)
 						(pin
 							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "6")
 						)
 					)
 				)
@@ -569,7 +587,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "e183c4ee-0268-4221-bbbf-e25b9c8f503a")
+			(tstamps "8141124f-0276-440d-a035-afead18e9b3b")
 			(units
 				(unit
 					(name "A")
@@ -615,7 +633,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "b0ecdf94-abc2-4e5a-92d9-9a39c0ed40de")
+			(tstamps "c81eabdf-a9f7-47a1-a20a-6bc9cbf5e6b6")
 			(units
 				(unit
 					(name "A")
@@ -661,7 +679,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "502378de-afaa-4aef-b893-53c5c40df5e1")
+			(tstamps "9f064532-d921-4400-a18a-dd5d82206c45")
 			(units
 				(unit
 					(name "A")
@@ -707,7 +725,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "e97487c5-4f78-493f-8241-a5ad322b8e75")
+			(tstamps "7025a2f8-5520-429e-a874-9ecc603ba32a")
 			(units
 				(unit
 					(name "A")
@@ -753,7 +771,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "44d5e557-3f14-4f5e-8e26-2fb22a00208f")
+			(tstamps "240392d8-e1d8-48bc-b900-de94bd2d0993")
 			(units
 				(unit
 					(name "A")
@@ -799,7 +817,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "1ee3daa2-6d45-4761-87a0-216967e8e2ec")
+			(tstamps "ed1aad8e-ac8f-4de3-8206-528a1d879b5b")
 			(units
 				(unit
 					(name "A")
@@ -845,7 +863,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "77baa7ad-794f-481f-a774-4c18965b0132")
+			(tstamps "d884ea95-4025-49fe-8169-58a3bfa7e035")
 			(units
 				(unit
 					(name "A")
@@ -888,7 +906,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "97793abc-9a28-4268-be2c-066641e3297b")
+			(tstamps "14a3e41b-e0d1-4d47-a89c-0c0a043c57d5")
 			(units
 				(unit
 					(name "A")
@@ -931,7 +949,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "8025eb9a-5a06-4c5a-8786-4ba19fc0b048")
+			(tstamps "8093af4c-a91b-48e8-995b-0d157650dff9")
 			(units
 				(unit
 					(name "A")
@@ -980,7 +998,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "2a4da411-392e-4f69-96c1-3142984cdea2")
+			(tstamps "0845566a-c1a2-4dc7-839d-ff91fa9d2b81")
 			(units
 				(unit
 					(name "A")
@@ -1056,7 +1074,7 @@
 				(names "/")
 				(tstamps "/")
 			)
-			(tstamps "3be974b9-769e-4d5f-8076-e5b39d2273dc")
+			(tstamps "0a7cc13f-1bb6-4d7c-b5ad-8697a0841585")
 			(units
 				(unit
 					(name "A")
@@ -1250,42 +1268,6 @@
 		)
 		(libpart
 			(lib "HastaDAQ")
-			(part "Header1x03_VpSIGpGND")
-			(fields
-				(field
-					(name "Reference") "U")
-				(field
-					(name "Value") "Header1x03_VpSIGpGND")
-				(field
-					(name "Footprint")
-				)
-				(field
-					(name "Datasheet")
-				)
-				(field
-					(name "Description")
-				)
-			)
-			(pins
-				(pin
-					(num "1")
-					(name "V")
-					(type "passive")
-				)
-				(pin
-					(num "2")
-					(name "SIG")
-					(type "passive")
-				)
-				(pin
-					(num "3")
-					(name "GND")
-					(type "passive")
-				)
-			)
-		)
-		(libpart
-			(lib "HastaDAQ")
 			(part "Header1x04_GNDp5VpSDApSCL")
 			(fields
 				(field
@@ -1321,6 +1303,57 @@
 				(pin
 					(num "4")
 					(name "SCL")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "HastaDAQ")
+			(part "Header2x03_VpVpSIGpSIGpGNDpGND")
+			(fields
+				(field
+					(name "Reference") "U")
+				(field
+					(name "Value") "Header2x03_VpVpSIGpSIGpGNDpGND")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "V")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "V")
+					(type "passive")
+				)
+				(pin
+					(num "3")
+					(name "SIG")
+					(type "passive")
+				)
+				(pin
+					(num "4")
+					(name "SIG")
+					(type "passive")
+				)
+				(pin
+					(num "5")
+					(name "GND")
+					(type "passive")
+				)
+				(pin
+					(num "6")
+					(name "GND")
 					(type "passive")
 				)
 			)
@@ -1448,9 +1481,21 @@
 				(pintype "passive")
 			)
 			(node
+				(ref "J3")
+				(pin "2")
+				(pinfunction "V_2")
+				(pintype "passive")
+			)
+			(node
 				(ref "J4")
 				(pin "1")
 				(pinfunction "V_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "J4")
+				(pin "2")
+				(pinfunction "V_2")
 				(pintype "passive")
 			)
 			(node
@@ -1564,8 +1609,14 @@
 			(class "Default")
 			(node
 				(ref "J3")
-				(pin "2")
-				(pinfunction "SIG_2")
+				(pin "3")
+				(pinfunction "SIG_3")
+				(pintype "passive")
+			)
+			(node
+				(ref "J3")
+				(pin "4")
+				(pinfunction "SIG_4")
 				(pintype "passive")
 			)
 			(node
@@ -1622,8 +1673,14 @@
 			(class "Default")
 			(node
 				(ref "J4")
-				(pin "2")
-				(pinfunction "SIG_2")
+				(pin "3")
+				(pinfunction "SIG_3")
+				(pintype "passive")
+			)
+			(node
+				(ref "J4")
+				(pin "4")
+				(pinfunction "SIG_4")
 				(pintype "passive")
 			)
 			(node
@@ -1697,14 +1754,26 @@
 			)
 			(node
 				(ref "J3")
-				(pin "3")
-				(pinfunction "GND_3")
+				(pin "5")
+				(pinfunction "GND_5")
+				(pintype "passive")
+			)
+			(node
+				(ref "J3")
+				(pin "6")
+				(pinfunction "GND_6")
 				(pintype "passive")
 			)
 			(node
 				(ref "J4")
-				(pin "3")
-				(pinfunction "GND_3")
+				(pin "5")
+				(pinfunction "GND_5")
+				(pintype "passive")
+			)
+			(node
+				(ref "J4")
+				(pin "6")
+				(pinfunction "GND_6")
 				(pintype "passive")
 			)
 			(node

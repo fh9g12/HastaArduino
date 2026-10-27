@@ -1,7 +1,7 @@
-# Published schematic snapshot 20261026-1734-rev-a
+# Published schematic snapshot 20261026-2252-rev-a
 
-* Published: 2026-10-26T17:34:37
-* Git commit: `ff49d99`, working tree dirty (uncommitted changes in the working tree)
+* Published: 2026-10-26T22:52:52
+* Git commit: `232b1e6`, working tree dirty (uncommitted changes in the working tree)
 * ERC hastadaq: ** ERC messages: 0  Errors 0  Warnings 0
 * ERC gaugeboard: ** ERC messages: 0  Errors 0  Warnings 0
 

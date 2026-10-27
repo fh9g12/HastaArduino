@@ -1,4 +1,4 @@
-# Start here: PCB layout for release 20261026-1734-rev-a
+# Start here: PCB layout for release 20261026-2252-rev-a
 
 This folder is a self-contained snapshot of two boards. Lay both out **in this folder**, not in the repository's
 working `kicad/hastadaq` or `kicad/gaugeboard`.

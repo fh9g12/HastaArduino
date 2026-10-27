@@ -74,7 +74,7 @@ The 0207 footprint covers a 6.3 x 2.3 mm body (it is drawn for 6.3 x 2.5 mm) at 
 | C1 | RS PRO 47 uF 16 V aluminium electrolytic (LHK series, 5 x 7 mm, 2.0 mm pitch) | 707-5758 | `CP_Radial_D5.0mm_P2.00mm` | polarised: + to `+5V` |
 | C3 | RS PRO 10 uF 10 V solid tantalum (CB series, case B about 5.0 x 8.0 mm, 2.5 mm pitch) | 181-4731 | `CP_Radial_D5.0mm_P2.50mm` | polarised: + (bar) to `+3V3`; now drawn as a polarised capacitor |
 | R1-R6 | standard 1/4 W axial resistors (0 ohm links, and the owner's 350 ohm precision parts for R5/R6) | | `R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` | |
-| J1-J4 | plain 0.1 in pin headers (J1, J2 = 1x4 loom, J3, J4 = 1x3 half-bridge) | | `PinHeader_1x04` / `PinHeader_1x03` | |
+| J1-J4 | plain 0.1 in pin headers (J1, J2 = 1x4 loom, J3, J4 = 2x3 half-bridge with doubled V / SIG / GND rows) | | `PinHeader_1x04` / `PinHeader_2x03` | |
 | U2, U3 | Adafruit ADS122C04 breakouts, soldered straight to the PCB | | `HastaDAQ:Adafruit_ADS122C04_Breakout` | |
 | TP1, TP2 | plain 2.0 mm pads | | `TestPoint_Pad_D2.0mm` | |
 

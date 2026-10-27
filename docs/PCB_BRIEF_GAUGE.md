@@ -2,9 +2,9 @@
 
 For an agent (or person) taking the **gauge-board schematic** to a **PCB layout**. Companion to `docs/PCB_BRIEF.md` (the main board): read that first for the shared conventions (tools, source-of-truth rule, footprint library, workflow); this file only covers what is different. Written 2026-10-25 against schematic rev A.
 
-## 0. Status and hand-off (2026-10-26)
+## 0. Status and hand-off (updated 2026-10-27)
 
-The gauge-board schematic is complete, ERC-clean (0 violations) and committed; **no `.kicad_pcb` exists yet**. All components are chosen (parts and RS numbers in `docs/PARTS_TO_SELECT.md`): MCP1700-3302E/TO LDO (RS 040-3888), 47 uF 16 V RS PRO LHK (RS 707-5758), 10 uF 10 V RS PRO CB tantalum (RS 181-4731), Vishay K-series 100 nF 50 V X7R (RS 181-6552, 2.5 mm lead spacing), standard 1/4 W axial resistors (R5/R6 are the owner's own 350 ohm precision parts), plain 0.1 in pin headers, and ADS122C04 breakouts soldered straight in. A layout agent still needs from the owner: the board outline, mounting holes and connector placement relative to the main board. The fab and design rules are decided (PCBWay, 2 layers, 6/6 mil, 0.3 mm minimum drill, no edge connectors; see `docs/PCB_BRIEF.md` section 0). The loom wiring diagram is `wiring/gauge-loom.yml`. Read `docs/PCB_BRIEF.md` section 0 for the shared decisions and the source-of-truth rule (do not re-run the generator once a PCB exists).
+**The gauge board is laid out, routed and ordered (PCBWay, 2026-10-27).** The PCB and the exact fab files are in `kicad/releases/20261026-2252-rev-a/gaugeboard/` (`gaugeboard.kicad_pcb`, `fab/gaugeboard_gerbers.zip`); section 7 describes the as-built layout and `kicad/README.md` has the workflow, tools and gotchas. The text below is the original brief, kept for the reasoning. The gauge-board schematic is complete, ERC-clean (0 violations). All components are chosen (parts and RS numbers in `docs/PARTS_TO_SELECT.md`): MCP1700-3302E/TO LDO (RS 040-3888), 47 uF 16 V RS PRO LHK (RS 707-5758), 10 uF 10 V RS PRO CB tantalum (RS 181-4731), Vishay K-series 100 nF 50 V X7R (RS 181-6552, 2.5 mm lead spacing), standard 1/4 W axial resistors (R5/R6 are the owner's own 350 ohm precision parts), plain 0.1 in pin headers, and ADS122C04 breakouts soldered straight in. The board outline, mounting holes and connector positions are now settled (section 7); the board's position relative to the main board is not. The fab and design rules are decided (PCBWay, 2 layers, 6/6 mil, 0.3 mm minimum drill, no edge connectors; see `docs/PCB_BRIEF.md` section 0). The loom wiring diagram is `wiring/gauge-loom.yml`. Read `docs/PCB_BRIEF.md` section 0 for the shared decisions and the source-of-truth rule (do not re-run the generator once a PCB exists). Not verified on hardware: see section 9.
 
 ## 1. What this board is
 
@@ -15,7 +15,7 @@ A small, reusable, **through-hole** (hand-soldered) breakout that holds everythi
 | Loom | J1 (in) and J2 (out, wired in parallel: a pass-through to daisy-chain another I2C board), 1x4 headers: 1=GND, 2=+5V, 3=SDA, 4=SCL (same order as J2 on the main board) |
 | Power conditioning | 47 uF C1 + 100 nF C2 on the incoming 5 V (any ferrite bead is part of the loom cable, not on this board), then a 3.3 V LDO (U1, Microchip MCP1700-3302E/TO, TO-92) with 10 uF C3 (tantalum) + 100 nF C4 on its output |
 | ADCs | 2 x Adafruit ADS122C04 breakout (U2, U3), I2C, powered from the on-board 3V3 only |
-| Gauges | J3, J4: 1x3 half-bridge headers, 1=+3V3 (V), 2=ADSn_SIG, 3=GND |
+| Gauges | J3, J4: 2x3 half-bridge headers with doubled rows, pins 1,2=+3V3 (V V), 3,4=ADSn_SIG (SIG SIG), 5,6=GND (GND GND) |
 | Completion | one shared pair of 350R resistors R5, R6; mid-point `ADS_REF` goes to input A1 of both ADCs |
 | Input filter (optional) | per channel: 0R links in series with A0 and A1 (R1/R2 for ADS1, R3/R4 for ADS2) and a DNP 100 nF across A0-A1 (C5 for ADS1, C6 for ADS2) |
 
@@ -26,18 +26,20 @@ Owner decisions already made (do not reopen without asking): through-hole only; 
 ## 2. Where everything is
 
 ```
-kicad/gaugeboard/gaugeboard.kicad_pro      open in KiCad 10
+kicad/gaugeboard/gaugeboard.kicad_pro      open in KiCad 10 (working copy of the project)
 kicad/gaugeboard/gaugeboard.kicad_sch      the schematic (single sheet, A3). Net-label connectivity.
 kicad/gaugeboard/gaugeboard.pdf / .png     pre-rendered copies (re-export after any change)
 kicad/gaugeboard/HastaDAQ.kicad_sym        project symbol library (generic blocks)
 kicad/gaugeboard/fp-lib-table              points at ../hastadaq/HastaDAQ.pretty (shared footprints)
 kicad/tools/generate_gauge_sch.py          bootstrap generator that wrote the schematic
 kicad/tools/schgen_common.py               shared helpers
+kicad/tools/layout/                        layout, routing, silkscreen and fab scripts (see its README)
+kicad/releases/20261026-2252-rev-a/gaugeboard/   the laid-out board (.kicad_pcb) and fab/ output: THE as-built source
 ```
 
 The same **source-of-truth rule** applies as on the main board: the generator reassigns reference designators and UUIDs every run, so **once a `.kicad_pcb` exists, do not re-run it**; edit the schematic in KiCad.
 
-Schematic status: **ERC 0 violations** (real pin types, PWR_FLAGs on `+5V` and `GND`). No board file yet. Netlist/ERC commands are as in the main brief, with `kicad/gaugeboard/gaugeboard.kicad_sch`.
+Schematic status: **ERC 0 violations** (real pin types, PWR_FLAGs on `+5V` and `GND`). The board file exists only in the release folder above (not in `kicad/gaugeboard/`); edit the release's `.kicad_sch` in KiCad if the schematic must change. Netlist/ERC commands are as in the main brief, with `kicad/gaugeboard/gaugeboard.kicad_sch`.
 
 ## 3. Power
 
@@ -46,7 +48,7 @@ J1 pin 2 (+5V) -+-> C1 47 uF, C2 100 nF to GND
                 +-> U1 MCP1700 VIN (pin 2)
 U1 VOUT (pin 3) -> +3V3 -+-> C3 10 uF, C4 100 nF (at the LDO)
                         +-> U2 / U3 VIN (each breakout has its own 10 uF + 100 nF on VIN)
-                        +-> J3 / J4 pin 1 (bridge V)
+                        +-> J3 / J4 pins 1 and 2 (bridge V)
 ```
 
 * **MCP1700-3302E/TO (Microchip, RS 040-3888), TO-92: pin 1 = GND, pin 2 = VIN, pin 3 = VOUT** (data sheet DS20001826C, pin function table; note this is a different pin order from the LP2950 used in the first draft). 3.3 V fixed, 250 mA max, 2.3-6.0 V input (**never feed it more than 6 V**; the loom carries 5 V), about 0.18 V dropout at 250 mA, 1.6 uA quiescent, stable with a 1 uF ceramic, tantalum or aluminium output capacitor. Load here is about 20 mA (two bridges at 3.3 V / 700 ohm = 4.7 mA each, plus the ADCs), so it dissipates about 35 mW from 5 V.
@@ -64,7 +66,7 @@ One ground net. All sensor connections are a few millimetres from each other; th
 ## 5. Connectors and pin maps
 
 * **J1** (loom in) and **J2** (loom out), both `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical`: 1=GND, 2=+5V, 3=SDA, 4=SCL. J2 is wired straight to J1's four pins, adding no circuitry: it passes the +5V and the I2C bus on so another board can be daisy-chained. The same rules apply to it (+5V on pin 2, 3.3 V logic, keyed plug). Keep J1 and J2 close and the stub short, since they share SDA/SCL.
-* **J3** (HB1 half-bridge #1, 1x3): 1=+3V3, 2=ADS1_SIG, 3=GND. **J4** (HB2): 1=+3V3, 2=ADS2_SIG, 3=GND. The order is V, SIG, GND, **different from the main board's servo and SBUS-IN plugs (GND, V, SIG)**, so do not mix the leads up; with SIG in the middle a reversed plug only flips the bridge sign.
+* **J3** (HB1 half-bridge #1, 2x3, odd/even pin numbering, two columns): pins 1,2=+3V3 (V V), 3,4=ADS1_SIG (SIG SIG), 5,6=GND (GND GND). **J4** (HB2): the same with ADS2_SIG. Each row is doubled so that two quarter-bridge gauges (one lead each to V, SIG and GND) can be completed into a half bridge in the plug or on the cable, with no extra terminals; the two pins of a row are the same net on the board. The row order is V, SIG, GND, **different from the main board's servo and SBUS-IN plugs (GND, V, SIG)**, so do not mix the leads up; with SIG in the middle a reversed plug only flips the bridge sign.
 * **U2** (ADS122C04 #1): pins used 1=VIN(+3V3), 2=GND, 3=SDA, 4=SCL, 7=A0 (ADS1_A0), 8=A1 (ADS1_A1); RST, DRDY, A2, A3, Ref+, Ref- unconnected. **U3** (ADS122C04 #2) the same with ADS2_A0/A1. Pad numbers follow the module's physical row order (row A: VIN GND SCL SDA DRDY RST; row B: Ref+ A0 A1 A2 A3 Ref-), so numbering looks shuffled; trust the footprint.
 * **ADS #2**: bridge the **ADDR0** solder jumper on the back of the breakout (Adafruit's Eagle schematic: ADDR0/ADDR1 are pulled to GND by 10 k, the jumpers tie them to VCC; the expected address is 0x41, not yet confirmed on hardware; the main board's firmware scans at boot).
 * **R5, R6** (350R fixed): R5 from `+3V3` to `ADS_REF`, R6 from `ADS_REF` to `GND`, shared by both channels.
@@ -78,7 +80,7 @@ The library is the main board's `HastaDAQ.pretty` (via `${KIPRJMOD}/../hastadaq/
 | U2, U3 ADS122C04 | `HastaDAQ:Adafruit_ADS122C04_Breakout` | Adafruit EagleCAD board file. 25.4 x 17.78 mm; two 1x6 headers 12.7 mm apart; four 2.5 mm holes. |
 | U1 MCP1700-3302E/TO | `Package_TO_SOT_THT:TO-92_Inline` | pin 1 GND, 2 VIN, 3 VOUT. Orient the flat face to the footprint outline. |
 | J1, J2 | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical` | plain 0.1 in header; the owner picks the keyed plug later |
-| J3, J4 | `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical` | |
+| J3, J4 | `Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Vertical` | doubled rows: V V / SIG SIG / GND GND |
 
 ### Parts list (from the schematic)
 
@@ -92,8 +94,8 @@ The library is the main board's `HastaDAQ.pretty` (via `${KIPRJMOD}/../hastadaq/
 | C6 | 100nF, **DNP** (optional filter, ADS2) | `Capacitor_THT:C_Rect_L4.0mm_W2.5mm_P2.50mm` |
 | J1 | LOOM from main board (4-wire I2C): GND, +5V, SDA, SCL | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical` |
 | J2 | LOOM OUT (pass-through, paralleled with J1) | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical` |
-| J3 | HB1 half-bridge #1 (on beam): V, SIG, GND | `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical` |
-| J4 | HB2 half-bridge #2 (on beam): V, SIG, GND | `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical` |
+| J3 | HB1 half-bridge #1 (on beam), 2x3: V V / SIG SIG / GND GND | `Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Vertical` |
+| J4 | HB2 half-bridge #2 (on beam), 2x3: V V / SIG SIG / GND GND | `Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Vertical` |
 | R1-R4 | 0R link (input filter positions) | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` |
 | R5, R6 | 350R fixed (completion pair) | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` |
 | TP1, TP2 | GND and +3V3 test points | `TestPoint:TestPoint_Pad_D2.0mm` (plain pad) |
@@ -106,31 +108,37 @@ Input filter: with the 0R links fitted and C5/C6 not fitted there is no filter (
 ## 7. Layout guidance
 
 * **One solid ground plane**; no separate analog ground. Quiet analog and noisy digital are separated here by the board being small and having no switching circuitry at all: the 5 V goes straight to the LDO.
-* Put J1 (loom in) on the edge facing the main board, J2 (loom out) beside it, and the gauge headers J3/J4 on the opposite edge, so the loom and the gauge cables leave on different sides.
+* Put J1 (loom in) and J2 (loom out) together at one end (top left as built), and the gauge headers J3/J4 on the opposite side (right as built), so the loom and the gauge cables leave on different sides. All headers are vertical (mated from above); there is no "connector edge".
 * Place the LDO U1 and its caps (C1-C4) next to J1. Run `+3V3` from the LDO to both ADCs and to J3/J4 as one short star (the breakouts carry their own decoupling).
 * Keep the bridge runs (V, SIG, GND per head) short, side by side, and the SIG traces from J3/J4 -> filter links -> A0 matched in length between the two channels. Keep the shared completion pair R5/R6 close to both ADC inputs, with short matched leads on `ADS_REF` to each A1 (it feeds both channels, so any difference between the two A1 paths shows as a channel offset).
 * Keep SDA/SCL short and away from the SIG and `ADS_REF` traces.
-* The ADS122C04 breakouts are tall modules plugged in via headers: allow the 25.4 x 17.78 mm footprint plus 2.5 mm mounting holes and keep their top clear of tall parts.
+* The ADS122C04 breakouts are tall modules soldered in on their 12 pin headers: allow the 25.4 x 17.78 mm footprint and keep their top clear of tall parts. Their own four 2.5 mm mounting holes are **not** drilled in the board (removed from U2 and U3 at the owner's request; the library footprint still has them).
 * Gauge cable: shielded twisted pair, shield to GND **at this board only** (the gauge end is left floating).
-* Silkscreen: pin 1 on every connector; J1 and J2 pin names (GND, +5V, SDA, SCL) with "+5V NOT 3V3"; J3/J4 pin names (V, SIG, GND); C1 polarity; "ADS2: bridge address jumper"; the optional filter positions (R1-R4, C5, C6) labelled "0R / 1k" and "DNP / 100nF".
+* Silkscreen: pin 1 on every connector; J1 and J2 pin names (GND, +5V, SDA, SCL) with "+5V NOT 3V3"; J3/J4 pin names (V V / SIG SIG / GND GND, rows doubled); C1 polarity; "ADS2: bridge address jumper"; the optional filter positions (R1-R4, C5, C6) labelled "0R / 1k" and "DNP / 100nF".
 **Mechanical guidelines (same as the main board; owner, 2026-10-26; guidelines, not rules).**
 
 * **Mounting:** four M3 holes, one in each corner (3.2 mm non-plated holes, centres about 4 mm in from each edge, copper and parts kept about 6.5 mm clear for the screw head). M3 is the usual default on general PCBs; M2.5 (2.7 mm holes) is the Raspberry Pi convention and only worth using if the enclosure standoffs are already M2.5. Use M3 on both boards so one set of hardware fits both. Round the corners (about 2-3 mm radius).
 * **Everything on the top face.** All components and every connector go on the top; nothing on the bottom except solder joints, copper and silkscreen, so the board sits flat on standoffs or a plate. Use standoffs taller than the longest solder-side lead (the Pololu's pins stand 1.4 mm proud), and trim the leads flush.
 * **Connectors all face the same way:** vertical 0.1 in headers on the top face, all mated from above, grouped near one end of the board so every cable leaves the same side. (Right-angle headers pointing off an edge are the alternative; that is a footprint swap only, say so if you want it.)
 
-**Gauge board placement (owner's suggestion): left to right.**
+**Gauge board placement: AS BUILT (owner's final layout, ordered 2026-10-27).** The first draft (analog rows of the two modules facing each other, point-symmetric about a centre point with R5/R6 on it) was rearranged by the owner by hand in KiCad. What was built:
 
 ```
-   loom in/out     LDO + caps       2 x ADS122C04            half-bridge heads
-   J1, J2 (left)   beside J1/J2     stacked, centre          J3, J4 (right)
+ top left            ADS U2 (rotated 180: digital row on top)         right
+ J1, J2 (rows)       R2   C5   R1  <- filter parts between the modules   J4 (2x3, upper)
+ C1, C2, U1, C3, C4  ADS U3 (rotated 180: digital row on top)           J3 (2x3, lower)
+ TP2, TP1, R5, R6    R4   C6   R3  <- filter parts below U3
 ```
 
-* Signal flows left to right: loom and power on the left, the ADCs in the centre stacked vertically, J3 level with U2 and J4 level with U3 on the right edge.
-* **Rotate the ADS breakouts 90 degrees** so each one's analog row (pads 7-12: Ref+, A0, A1, A2, A3, Ref-) faces right toward the gauge headers and its digital row (pads 1-6: VIN, GND, SCL, SDA, DRDY, RST) faces left toward the regulator and loom. The I2C and power runs then stay on the left and the sensitive analog runs are short on the right. Each module then stands 25.4 mm tall and 17.8 mm wide, so the stack is about 61 mm tall with a 10 mm gap.
-* **Put R5/R6 in the gap between the two modules.** That makes the `ADS_REF` leads to the two A1 pins the same length, which is what the layout guidance asks for, and keeps the 0R filter positions R1-R4 and C5/C6 beside each module's A0/A1 pads.
-* LDO U1 and C1-C4 beside J1; TP1 (GND) and TP2 (+3V3) near them where a probe reaches with the cables plugged in.
-* Still not given: the exact board outline and its position next to the main board.
+* **Size:** 54.22 x 49.60 mm, 1.6 mm, 3 mm corner radius, four M3 holes (3.2 mm) 46 x 41.5 mm apart, about 4 mm in from each edge. (The 60 mm width limit was met with room to spare.) Logo and "STRAIN GAUGE BREAKOUT" text on the **back** silkscreen.
+* **Left zone:** J1 and J2 as horizontal rows (J1 above J2, pin 1 at the left) at the top, C1 above them, then C2, the LDO U1 (TO-92, rotated), C3, C4, the test points TP2 (+3V3) and TP1 (GND), and the completion pair R5/R6 standing vertically at the bottom.
+* **Modules:** U2 above U3 in one column, **both rotated 180 degrees** (VIN/GND/SCL/SDA row on top, analog row below).
+* **Filter positions:** R2, C5 (DNP) and R1 sit between the modules (channel 1); R4, C6 (DNP) and R3 sit below U3 (channel 2).
+* **Gauge headers:** J4 (channel 2) above J3 (channel 1) on the right edge, both 2x3 with the V V row at the top.
+* **Routing (scripted):** horizontals on F.Cu, verticals on B.Cu with vias at the changes; power 0.5 mm, signals 0.25 mm; ground is a pour on both layers (thermal reliefs; kept 3.25 mm clear round each M3 hole) with 21 stitching vias outside the modules; `+3V3` is a trunk from the LDO to both ADCs and to J3/J4; SDA and SCL are a two-wire bus down the left of the modules.
+* **Matching achieved:** the two `ADS_REF` legs, R5/R6 midpoint to R2.1 and to R4.1, are equal at 12.05 mm each. The A0/A1 links of the two channels are within about 0.4 mm of each other.
+* **Matching NOT achieved:** the two SIG runs differ a lot, SIG1 (R1 to J3) 4.7 mm and SIG2 (R3 to J4) 37.2 mm, because J4 is above J3 while R3 is at the bottom. Accepted by the owner for a DC bridge signal. On a respin, swap the J3/J4 positions or move R3/C6 up near J4.
+* Not given: the enclosure limits and the board's position next to the main board.
 
 ## 8. Test points
 
@@ -144,4 +152,4 @@ TP1 (`GND`, for a scope clip) and TP2 (`+3V3`, the regulated rail that powers th
 
 ## 10. Workflow
 
-Same as the main brief section 10, using `kicad/gaugeboard/gaugeboard.kicad_pro`: new board, update from schematic, two layers, ground pour, DRC, Gerbers. Check that J1 here and J2 on the main board have the same pin order (GND, +5V, SDA, SCL) and sit on facing edges, and that the physical keying of the two plugs matches.
+Done for rev A: the board was built in the release folder (`kicad/releases/20261026-2252-rev-a/gaugeboard/`), DRC clean, and fab files exported with `kicad/tools/layout/export_fab.py`. For a respin, publish a new release, lay out there and re-export. Check that J1 here and J2 on the main board have the same pin order (GND, +5V, SDA, SCL) and sit on facing edges, and that the physical keying of the two plugs matches.
