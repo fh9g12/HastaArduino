@@ -5,7 +5,7 @@
 #include <Adafruit_ICM20649.h>
 #include <Adafruit_Sensor.h>
 
-// Owns and caches all of HastaDAQ v2's sensors: the four SPI encoder ports
+// Owns and caches all of HastaDAQ v2's sensors: the five encoder ports (3 SPI + 2 SSI RM08)
 // (EncoderPorts.h -- ENC1 is the pitch encoder the control loop uses), both
 // ADS122C04 ADCs, and the ICM20649 IMU. update() refreshes
 // every cached value from whatever's newly ready -- never blocks waiting

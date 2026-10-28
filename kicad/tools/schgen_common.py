@@ -173,6 +173,7 @@ def define_pwrflag():
         f'{pin_expr(1, "pwr", 0, 0, 90, 0, "power_out")}) (embedded_fonts no))')
 
 
+# Diode pin NUMBERS follow KiCad's Diode_THT footprints: pad 1 = cathode (K), pad 2 = anode (A); the pin NAMES stay A / K.
 def define_zener():
     lib_symbols.append(
         '(symbol "D_Zener" (pin_numbers (hide yes)) (pin_names (offset 0)) '
@@ -185,8 +186,8 @@ def define_zener():
         '(polyline (pts (xy 0.762 1.27) (xy 1.27 1.27) (xy 1.27 -1.27) (xy 1.778 -1.27)) '
         '(stroke (width 0.254) (type default)) (fill (type none)))) '
         '(symbol "D_Zener_1_1" '
-        f'{pin_expr("A", "A", -3.81, 0, 0, 2.54)} '
-        f'{pin_expr("K", "K", 3.81, 0, 180, 2.54)}) (embedded_fonts no))')
+        f'{pin_expr("2", "A", -3.81, 0, 0, 2.54)} '
+        f'{pin_expr("1", "K", 3.81, 0, 180, 2.54)}) (embedded_fonts no))')
 
 
 def define_diode():
@@ -201,8 +202,8 @@ def define_diode():
         '(polyline (pts (xy 1.27 1.27) (xy 1.27 -1.27)) '
         '(stroke (width 0.254) (type default)) (fill (type none)))) '
         '(symbol "D_Schottky_1_1" '
-        f'{pin_expr("A", "A", -3.81, 0, 0, 2.54)} '
-        f'{pin_expr("K", "K", 3.81, 0, 180, 2.54)}) (embedded_fonts no))')
+        f'{pin_expr("2", "A", -3.81, 0, 0, 2.54)} '
+        f'{pin_expr("1", "K", 3.81, 0, 180, 2.54)}) (embedded_fonts no))')
 
 
 # ----------------------------------------------------------------- primitives

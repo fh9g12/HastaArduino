@@ -2,6 +2,9 @@
 the board edge or each other. Footprint positions are never changed.
 
   python.exe tidy_silk.py in.kicad_pcb out.kicad_pcb [text_size_mm]
+
+Works on both sides of the board: a part on the bottom side gets its label on the bottom silkscreen, checked only
+against that side's silkscreen (pads count on both sides, being through-hole).
 """
 import sys
 import pcbnew
@@ -14,6 +17,11 @@ board = pcbnew.LoadBoard(src)
 SILK_CLR = FromMM(0.12)
 PAD_CLR = FromMM(0.2)
 EDGE_CLR = FromMM(0.7)
+SILK = {"F": pcbnew.F_SilkS, "B": pcbnew.B_SilkS}
+
+
+def side(fp):
+    return "B" if fp.GetLayer() == pcbnew.B_Cu else "F"
 
 
 def inflated(box, amount):
@@ -29,26 +37,25 @@ def thin_edges(box, t):
             BOX2I(VECTOR2I(x, y), VECTOR2I(0, h)), BOX2I(VECTOR2I(x + w, y), VECTOR2I(0, h))]
 
 
-obstacles = []   # inflated boxes that text must not overlap
+obstacles = {"F": [], "B": []}   # inflated boxes that text on that side must not overlap
 for fp in board.GetFootprints():
     for pad in fp.Pads():
         big = pad.GetDrillSize().x > FromMM(2.0) or pad.GetAttribute() == pcbnew.PAD_ATTRIB_NPTH
-        obstacles.append(inflated(pad.GetBoundingBox(), FromMM(0.8) if big else PAD_CLR))
+        box = inflated(pad.GetBoundingBox(), FromMM(0.8) if big else PAD_CLR)
+        obstacles["F"].append(box)
+        obstacles["B"].append(box)
     for item in fp.GraphicalItems():
-        if item.GetLayer() != pcbnew.F_SilkS:
-            continue
-        if hasattr(item, "GetShape") and item.GetShape() == pcbnew.SHAPE_T_RECT:
-            obstacles += [inflated(e, SILK_CLR + FromMM(0.1)) for e in thin_edges(item.GetBoundingBox(), 0)]
-        else:
-            obstacles.append(inflated(item.GetBoundingBox(), SILK_CLR))
-board_edges = []
-outline = None
+        for s, layer in SILK.items():
+            if item.GetLayer() != layer:
+                continue
+            if hasattr(item, "GetShape") and item.GetShape() == pcbnew.SHAPE_T_RECT:
+                obstacles[s] += [inflated(e, SILK_CLR + FromMM(0.1)) for e in thin_edges(item.GetBoundingBox(), 0)]
+            else:
+                obstacles[s].append(inflated(item.GetBoundingBox(), SILK_CLR))
 for d in board.GetDrawings():
-    if d.GetLayer() == pcbnew.Edge_Cuts:
-        board_edges.append(inflated(d.GetBoundingBox(), EDGE_CLR))
-        outline = d.GetBoundingBox() if outline is None else (outline.Merge(d.GetBoundingBox()) or outline)
-    elif d.GetLayer() == pcbnew.F_SilkS:
-        obstacles.append(inflated(d.GetBoundingBox(), SILK_CLR))
+    for s, layer in SILK.items():
+        if d.GetLayer() == layer:
+            obstacles[s].append(inflated(d.GetBoundingBox(), SILK_CLR))
 outline = board.GetBoardEdgesBoundingBox()
 
 refs = sorted([fp for fp in board.GetFootprints() if fp.Reference().IsVisible()],
@@ -65,7 +72,7 @@ for fp in refs:
     t.SetVertJustify(pcbnew.GR_TEXT_V_ALIGN_CENTER)
     t.SetPosition(VECTOR2I(FromMM(-500), FromMM(-500)))
 
-placed = []
+placed = {"F": [], "B": []}
 
 
 def centred_box(t, cx, cy):
@@ -75,17 +82,17 @@ def centred_box(t, cx, cy):
     return t.GetBoundingBox()
 
 
-def free(box, extra=()):
+def free(box, s, extra=()):
     # inside the board, away from the edge
     inner = inflated(outline, -EDGE_CLR)
     if not (inner.Contains(box.GetPosition()) and
             inner.Contains(VECTOR2I(box.GetRight(), box.GetBottom()))):
         return False
     probe = inflated(box, FromMM(0.05))
-    for o in obstacles:
+    for o in obstacles[s]:
         if probe.Intersects(o):
             return False
-    for p in placed:
+    for p in placed[s]:
         if probe.Intersects(inflated(p, SILK_CLR)):
             return False
     for e in extra:
@@ -94,11 +101,11 @@ def free(box, extra=()):
     return True
 
 
-silk_box = {}
+silk_box = {}      # ref -> silk bounding box on the part's own side (pads if it has no silk outline)
 for fp in board.GetFootprints():
     box = None
     for item in fp.GraphicalItems():
-        if item.GetLayer() == pcbnew.F_SilkS:
+        if item.GetLayer() == SILK[side(fp)]:
             b = item.GetBoundingBox()
             if box is None:
                 box = BOX2I(b.GetPosition(), b.GetSize())
@@ -112,17 +119,23 @@ MAX_GAP = 3.6   # mm from the part's body: a label must stay next to its part
 
 
 def try_place(fp, size, max_gap):
+    s = side(fp)
     t = fp.Reference()
     t.SetTextSize(VECTOR2I(FromMM(size), FromMM(size)))
-    B = BOX2I(silk_box[fp.GetReference()].GetPosition(), silk_box[fp.GetReference()].GetSize())
+    sb = silk_box.get(fp.GetReference())
+    B = BOX2I(sb.GetPosition(), sb.GetSize()) if sb is not None else None
     for pad in fp.Pads():
         if pad.GetAttribute() != pcbnew.PAD_ATTRIB_NPTH:
-            B.Merge(pad.GetBoundingBox())
+            if B is None:
+                b = pad.GetBoundingBox()
+                B = BOX2I(b.GetPosition(), b.GetSize())
+            else:
+                B.Merge(pad.GetBoundingBox())
     cx, cy = B.GetCenter().x, B.GetCenter().y
     probe = centred_box(t, cx, cy)
     w, h = probe.GetWidth(), probe.GetHeight()
     extra = [inflated(silk_box[o.GetReference()], FromMM(0.1)) for o in board.GetFootprints()
-             if o is not fp and o.GetReference() in silk_box]
+             if o is not fp and side(o) == s and o.GetReference() in silk_box]
     cands = []
     if B.GetWidth() > FromMM(15) and B.GetHeight() > FromMM(15):   # a big module: its empty middle is best
         for dy in range(-6, 7):
@@ -133,17 +146,17 @@ def try_place(fp, size, max_gap):
         g = FromMM(0.4) + gi * FromMM(0.4)
         for k in range(0, 60):
             for sgn in ((1, -1) if k else (1,)):
-                s = sgn * k * step
+                sft = sgn * k * step
                 sc = 100 + ToMM(g) * 2 + k * 0.1
-                cands.append((sc, cx + s, B.GetTop() - g - h / 2))            # above
-                cands.append((sc + 0.05, cx + s, B.GetBottom() + g + h / 2))  # below
+                cands.append((sc, cx + sft, B.GetTop() - g - h / 2))            # above
+                cands.append((sc + 0.05, cx + sft, B.GetBottom() + g + h / 2))  # below
                 sc2 = sc + 0.6
-                cands.append((sc2, B.GetLeft() - g - w / 2, cy + s))          # left
-                cands.append((sc2, B.GetRight() + g + w / 2, cy + s))         # right
+                cands.append((sc2, B.GetLeft() - g - w / 2, cy + sft))          # left
+                cands.append((sc2, B.GetRight() + g + w / 2, cy + sft))         # right
     cands.sort(key=lambda c: c[0])
     for _, x, y in cands:
         box = centred_box(t, x, y)
-        if free(box, extra):
+        if free(box, s, extra):
             return box
     return None
 
@@ -153,11 +166,11 @@ for fp in refs:
     if ok is None:
         failed.append(fp.GetReference())
     else:
-        placed.append(ok)
+        placed[side(fp)].append(ok)
 
 pcbnew.SaveBoard(dst, board)
 print("wrote", dst, "| could not place:", failed or "none")
 for fp in sorted(board.GetFootprints(), key=lambda f: f.GetReference()):
     p = fp.Reference().GetPosition()
     if fp.Reference().IsVisible():
-        print("%-4s ref at %6.2f %6.2f" % (fp.GetReference(), ToMM(p.x), ToMM(p.y)))
+        print("%-4s ref at %6.2f %6.2f (%s)" % (fp.GetReference(), ToMM(p.x), ToMM(p.y), side(fp)))

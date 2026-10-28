@@ -3,9 +3,10 @@
 #include <WiFiUdp.h>
 #include "ChannelMixer.h" // for NUM_CHANNELS
 
-// v2 ADDITION: three extra encoder angles (ENC2..ENC4, NaN when a port is not
-// fitted) are APPENDED after servoDeg[], so the first 48 + 4*NUM_CHANNELS
-// bytes are laid out exactly as in v1. A client that knows only v1 sees the
+// v2 ADDITION: four extra encoder angles (ENC2..ENC5, NaN when a port is not
+// fitted; ENC4 and ENC5 are the two SSI ports for RLS RM08 encoders) are
+// APPENDED after servoDeg[], so the first 48 + 4*NUM_CHANNELS bytes are laid
+// out exactly as in v1. (It was three extras / 80 bytes before the SSI ports.) A client that knows only v1 sees the
 // extra floats as extra servo channels (wt.hasta.DaqData rejects the size).
 //
 // Binary sample format shared by DATA? (bounded capture) and the
@@ -13,7 +14,7 @@
 // comment for field-by-field documentation. tUs means different things
 // in each context (elapsed-since-capture-start for DATA?, elapsed-
 // since-boot for UDP) -- see updateCapture()/updateUdpStream() below.
-const uint8_t NUM_EXTRA_ENCODERS = 3; // ENC2, ENC3, ENC4
+const uint8_t NUM_EXTRA_ENCODERS = 4; // ENC2, ENC3, ENC4 (SSI1), ENC5 (SSI2)
 
 struct HastaDaqSample {
     uint32_t tUs;
@@ -25,12 +26,12 @@ struct HastaDaqSample {
     float excitationDeg;
     float controlOutputDeg;
     float servoDeg[NUM_CHANNELS];
-    float encExtraDeg[NUM_EXTRA_ENCODERS]; // ENC2..ENC4, NaN if not fitted
+    float encExtraDeg[NUM_EXTRA_ENCODERS]; // ENC2..ENC5, NaN if not fitted
 };
 static_assert(sizeof(HastaDaqSample) == 4 * (4 + 3 + 3 + 2) + 4 * NUM_CHANNELS + 4 * NUM_EXTRA_ENCODERS,
     "HastaDaqSample must pack with no padding -- DATA?/UDP send it raw over the wire");
 
-const uint16_t MAX_SAMPLES = 3000; // ~240KB at 5 channels + 3 extra encoders -- 15s at 200Hz / 30s at 100Hz
+const uint16_t MAX_SAMPLES = 3000; // ~252KB at 5 channels + 4 extra encoders -- 15s at 200Hz / 30s at 100Hz
 const float MAX_CAPTURE_DURATION_S = 120.0f;
 const float MIN_SAMPLE_HZ = 1.0f;
 const float MAX_SAMPLE_HZ = 200.0f;

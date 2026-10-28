@@ -32,7 +32,8 @@ HastaDAQ is a bench/wind-tunnel instrument for a model aircraft. One Pimoroni **
 | Logic power | SparkFun BabyBuck 5V (AP63357) -> `+5V` -> Schottky -> Pico VSYS |
 | Servo bus | One 3x6 header, six servo plugs (SBUS, all signals in parallel) |
 | SBUS in | One 3-pin header (J10) for an RC receiver's SBUS output, for a pass-through mode; powered from `+5V` (the Futaba R3008SB takes 4.8-7.4 V) |
-| Encoders | 4 identical 0.1 in 2x4 header ports on one SPI bus (MT6835 or RLS Orbis); keyed/IDC plugs are chosen later |
+| Encoders | 3 identical 0.1 in 2x4 header ports on one SPI bus (ENC1, ENC2 = MT6835, ENC3 = RLS Orbis); keyed/IDC plugs are chosen later |
+| SSI encoders | 2 x 1x4 headers (SSI1, SSI2: 3V3, GND, CLK, DATA) for RLS RM08 encoders through an inline LDB02 line-driver board the owner fits near the Pico; one shared clock, one data line each, read by a PIO state machine |
 | Triggers | Opto-isolated trigger in (3.3-24 V), open-collector trigger out with a jumper-selected pull-up |
 | Soft stop | Normally-closed loop input (open = stop an excitation) |
 | Bring-up | 2 GND test points (scope clip) |
@@ -94,7 +95,7 @@ Pico 3V3(OUT) (pin 36) -> +3V3 -> IMU header J1, encoder ports 3V3 pins, pull-up
 
 ## 4. Net names
 
-`+12V`, `VSERVO`, `+5V`, `+5V_VSYS`, `+3V3`, `GND`, `SBUS`, `SBUS_IN`, `SBUS_IN_GPIO`, `SDA`, `SCL`, `SPI_SCK`, `SPI_MOSI`, `SPI_MISO`, `ENC1_CS`..`ENC4_CS`, `TRIG_IN`, `TRIG_IN_LED`, `TRIG_IN_GPIO`, `TRIG_OUT`, `TRIG_OUT_BASE`, `TRIG_OUT_GPIO`, `TRIG_PU`, `SOFTSTOP_CABLE`, `SOFTSTOP_IN`.
+`+12V`, `VSERVO`, `+5V`, `+5V_VSYS`, `+3V3`, `GND`, `SBUS`, `SBUS_IN`, `SBUS_IN_GPIO`, `SDA`, `SCL`, `SPI_SCK`, `SPI_MOSI`, `SPI_MISO`, `ENC1_CS`..`ENC3_CS`, `SSI_CLK`, `SSI1_DATA`, `SSI2_DATA`, `TRIG_IN`, `TRIG_IN_LED`, `TRIG_IN_GPIO`, `TRIG_OUT`, `TRIG_OUT_BASE`, `TRIG_OUT_GPIO`, `TRIG_PU`, `SOFTSTOP_CABLE`, `SOFTSTOP_IN`.
 
 There is **one ground net**. See section 7 for how to treat it.
 
@@ -103,8 +104,10 @@ There is **one ground net**. See section 7 for how to treat it.
 | GPIO (header pin) | Net | Use |
 |---|---|---|
 | GP4 (6) / GP5 (7) | `SDA` / `SCL` | I2C0: the IMU header (J1) and the gauge-board loom (J2). No pull-ups on this board; the ADS122C04 breakouts (gauge board) and the IMU breakout have their own |
-| GP10 (14) / GP11 (15) / GP12 (16) | `SPI_SCK` / `SPI_MOSI` / `SPI_MISO` | SPI1 shared by the four encoder ports |
-| GP13 (17) / GP9 (12) / GP8 (11) / GP7 (10) | `ENC1_CS` / `ENC2_CS` / `ENC3_CS` / `ENC4_CS` | encoder chip-selects, each with a 10 k pull-up to 3V3 |
+| GP10 (14) / GP11 (15) / GP12 (16) | `SPI_SCK` / `SPI_MOSI` / `SPI_MISO` | SPI1 shared by the three SPI encoder ports |
+| GP13 (17) / GP9 (12) / GP8 (11) | `ENC1_CS` / `ENC2_CS` / `ENC3_CS` | encoder chip-selects, each with a 10 k pull-up to 3V3 (GP7 is now unused) |
+| GP17 (22) | `SSI_CLK` | shared SSI clock out to both RM08 headers (J6, J11), driven by a PIO state machine; idles high |
+| GP18 (24) / GP19 (25) | `SSI1_DATA` / `SSI2_DATA` | SSI data in from each RM08 (J6 / J11), each with a 10 k pull-up to 3V3; consecutive pins so one PIO `in pins,2` samples both on the same clock edge |
 | GP14 (19) | `TRIG_IN_GPIO` | trigger in (opto output, 10 k pull-up, inverted) |
 | GP15 (20) | `TRIG_OUT_GPIO` | trigger out (to the NPN base, inverted) |
 | GP1 (2) | `SBUS_IN_GPIO` | SBUS from an RC receiver (J10) through 1 k, with a 5.1 V zener clamp (D4) and a 10 k pull-down (R14, leave unfitted at first, see section 9); UART0 RX. Pass-through firmware is not written yet. |
@@ -119,7 +122,8 @@ Do not change a GPIO assignment without telling the owner: it is a firmware chan
 (Generated from the netlist on the day of writing. Pin numbers are the footprint pad numbers; 2-row headers number row-major: 1,2 across the first row, 3,4 the next, and so on.)
 
 * **J8** (main supply cable, 0.1 in 2x4 header; **supply max 20 V**): 1=+12V, 2=GND, 3=TRIG_IN, 4=SOFTSTOP_CABLE, 5=GND (SOFTSTOP-), 6=TRIG_OUT, 7=GND, 8=+12V. Laid out so that even a 180-degree rotated plug puts supply on supply and ground on ground; the keyed shroud prevents it anyway. Two supply pins carry the system current.
-* **J3-J6** (ENC1-ENC4, 0.1 in 2x4 headers, identical): 1=GND, 2=ENCn_CS, 3=SPI_SCK, 4=SPI_MOSI, 5=SPI_MISO, 6=+3V3, 7=+5V, 8=GND. MT6835 uses 3V3, RLS Orbis uses the 5V pin (4.5-5.5 V, 3.3 V logic). Keep these leads short.
+* **J3-J5** (ENC1-ENC3, 0.1 in 2x4 headers, identical): 1=GND, 2=ENCn_CS, 3=SPI_SCK, 4=SPI_MOSI, 5=SPI_MISO, 6=+3V3, 7=+5V, 8=GND. MT6835 uses 3V3, RLS Orbis uses the 5V pin (4.5-5.5 V, 3.3 V logic). Keep these leads short. Intended use: ENC1 and ENC2 MT6835, ENC3 Orbis.
+* **J6** (SSI1) and **J11** (SSI2), 0.1 in 1x4 headers, identical: 1=+3V3, 2=GND, 3=SSI_CLK, 4=SSIn_DATA (3.3 V single-ended). Each carries one RLS RM08 (SC output, 12-bit) through an inline LDB02 line-driver board that the owner places near the Pico; the board's RS422 side and the RM08's 3.3 V supply are the owner's wiring. The clock net is shared by both headers (one GPIO drives both). An SSI data output is always driven, so the two data lines must not be tied together or to `SPI_MISO`. Each DATA line has a 10 k pull-up (R4 for SSI1, R15 for SSI2) so an unplugged header reads all ones, which the firmware rejects as an invalid frame. Keep the clock and data leads short and away from the servo rail. The 3V3 pin feeds the LDB02 and RM08 (about 26 mA typical per encoder, more for the line driver): well inside the Pico Plus 2's 3V3 regulator.
 * **J7** (SBUS, custom `HastaDAQ:PinHeader_3x06_P2.54mm_Vertical`): six servo plugs side by side; for servo k=1..6 the pins are 3k-2 = GND, 3k-1 = VSERVO, 3k = SBUS (the servo plug order, V in the middle).
 * **J10** (SBUS IN, RC receiver, 1x3): 1=GND, 2=+5V, 3=SBUS_IN. Same plug order as the servos (GND, V, SIG). The receiver is powered from **`+5V`, not the 8.4 V servo rail**: the Futaba R3008SB manual gives 4.8 V to 7.4 V, so `VSERVO` would overstress it (check any other receiver's range, and never connect a second supply to the V pin). The signal passes a 1 k series resistor, a 5.1 V zener D4 to GND (clamps a receiver that outputs more than 5.1 V; its capacitance, about 100 pF, is harmless at SBUS's 100 kbaud) and a 10 k pull-down R14, which holds the line at the idle-low level of inverted SBUS when nothing is plugged in. **Leave R14 unfitted for the first trial and add it only if the idle level needs it**: the RP2350 errata (E9) say a pin with a weak pull-down (above about 8.2 k) can sit near 2 V when its input is enabled, so if R14 is fitted and the pin misbehaves use 4.7 k. The 1 k and 10 k divider gives GP1 3.0 V from a 3.3 V receiver.
 * **J2** (gauge-board loom, 1x4 header): 1=GND, 2=+5V, 3=SDA, 4=SCL. Pin 2 is **5 V, not 3V3**: it is deliberately not Qwiic-compatible, so use a keyed plug and never connect a Qwiic cable or a bare Qwiic sensor to it. The matching header on the gauge board (J1) has the same order, so the loom is a straight 1:1 cable. Keep it short (boards sit side by side); SDA/SCL swing to the 3V3 set by the breakouts' pull-ups on the gauge board.
@@ -141,7 +145,8 @@ The owner checked these against the physical modules (1:1 print) on 2026-10-23. 
 | J1 IMU header | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical` | plain 1x4 header for four wires or a Qwiic breakout (the earlier custom Qwiic footprint with its STEP model is still in `HastaDAQ.pretty` but unused) |
 | U4 FOD817A | `Package_DIP:DIP-4_W7.62mm` | RS 761-4439 (onsemi FOD817A, 4-pin DIP, CTR 80-160 %): pin-compatible with PC817 |
 | Q1 2N3904 | `Package_TO_SOT_THT:TO-92_Inline` | pin 1 E, 2 B, 3 C (Fairchild/onsemi Rev 1.1.0 data sheet). Orient the flat face to the footprint outline. |
-| J3-J6, J8 | `Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical` | plain 0.1 in 2x4 header for now; pad numbering is identical to the keyed IDC box header that may replace it later (the owner chooses the keyed plug type) |
+| J6, J11 SSI1/SSI2 | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical` | plain 1x4 header: 3V3, GND, CLK, DATA |
+| J3-J5, J8 | `Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical` | plain 0.1 in 2x4 header for now; pad numbering is identical to the keyed IDC box header that may replace it later (the owner chooses the keyed plug type) |
 
 The generators can re-create the module footprints (`py kicad/tools/generate_module_footprints.py`); the 3x6 header footprint is written by the main schematic generator. Edits made by hand in the KiCad footprint editor are fine, but then do not re-run the footprint generator. (The ADS122C04 breakout footprint in the same library is used only by the gauge board.)
 
@@ -158,16 +163,18 @@ The generators can re-create the module footprints (`py kicad/tools/generate_mod
 | D4 | 5.1V zener (BZX55C5V1) SBUS IN clamp | `Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal` |
 | J1 | IMU via Qwiic breakout (The Pi Hut 106676) | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical` |
 | J2 | Gauge-board loom (1x4): GND, +5V, SDA, SCL | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical` |
-| J3 | ENC1 SPI port: MT6835 (pitch) / Orbis | `Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical` |
-| J4 | ENC2 SPI port: MT6835 / Orbis | `Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical` |
-| J5 | ENC3 SPI port: MT6835 / Orbis | `Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical` |
-| J6 | ENC4 SPI port: generic SPI device | `Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical` |
+| J3 | ENC1 SPI port: MT6835 (pitch) | `Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical` |
+| J4 | ENC2 SPI port: MT6835 | `Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical` |
+| J5 | ENC3 SPI port: RLS Orbis (or MT6835) | `Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical` |
+| J6 | SSI1: RM08 encoder (3V3, GND, CLK, DATA) | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical` |
 | J7 | SBUS servo header 3x6 (6 plugs: GND, V, SIG) | `HastaDAQ:PinHeader_3x06_P2.54mm_Vertical` |
 | J8 | Main supply cable (2x4): VSUPPLY, VGND, TRIG, SOFTSTOP | `Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical` |
 | J9 | TRIG_OUT pull-up sel. (1x5) | `Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical` |
 | J10 | SBUS IN (RC receiver): GND, V, SIG | `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical` |
+| J11 | SSI2: RM08 encoder (3V3, GND, CLK, DATA) | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical` |
 | Q1 | 2N3904 NPN (TO-92, pin 1 E, 2 B, 3 C) | `Package_TO_SOT_THT:TO-92_Inline` |
-| R1-R4 | 10k (ENCn_CS pull-ups to 3V3) | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` |
+| R1-R3 | 10k (ENCn_CS pull-ups to 3V3) | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` |
+| R4 | 10k (SSI1_DATA pull-up to 3V3; this was the fourth ENC chip-select pull-up before ENC4 was removed) | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` |
 | R5 | 1k (soft-stop series) | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` |
 | R6 | 10k (soft-stop pull-up) | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` |
 | R7 | 10k pull-down | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` |
@@ -178,6 +185,7 @@ The generators can re-create the module footprints (`py kicad/tools/generate_mod
 | R12 | 1.5k pull-up | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` |
 | R13 | 1k series | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` |
 | R14 | 10k pull-down (SBUS IN; leave unfitted on the first trial) | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` |
+| R15 | 10k (SSI2_DATA pull-up to 3V3) | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` |
 | TP1 | TP | `TestPoint:TestPoint_Pad_D2.0mm` |
 | TP2 | TP | `TestPoint:TestPoint_Pad_D2.0mm` |
 | U1 | Pimoroni Pico Plus 2 (header pins) | `Module:RaspberryPi_Pico_Common_THT` |
@@ -185,7 +193,7 @@ The generators can re-create the module footprints (`py kicad/tools/generate_mod
 | U3 | SparkFun BabyBuck 5V (AP63357) (Pico VSYS, Orbis, gauge board) | `HastaDAQ:SparkFun_BabyBuck_5V` |
 | U4 | FOD817A opto (TRIG_IN) | `Package_DIP:DIP-4_W7.62mm` |
 
-Values marked "(e.g. ...)" are suggestions, not fixed parts. All parts are through-hole. R1-R4 are the four encoder chip-select pull-ups; the netlist lists them as four separate parts with identical values.
+Values marked "(e.g. ...)" are suggestions, not fixed parts. All parts are through-hole. R1-R3 are the three encoder chip-select pull-ups, R4 and R15 the two SSI data pull-ups; the netlist lists them as separate parts with identical values.
 
 ## 7. Layout guidance
 
@@ -198,14 +206,16 @@ Values marked "(e.g. ...)" are suggestions, not fixed parts. All parts are throu
 
 **Other.**
 
-* SPI (`SPI_SCK/MOSI/MISO` and the four CS) and I2C: short, over solid ground, away from the servo rail. The encoder ports are the only external SPI cables.
+* SPI (`SPI_SCK/MOSI/MISO` and the three CS), the SSI clock and data (`SSI_CLK`, `SSI1_DATA`, `SSI2_DATA`) and I2C: short, over solid ground, away from the servo rail. The encoder ports are the only external SPI/SSI cables. GP17-GP19 (the SSI pins) are on the **lower right** of the Pico with USB-C at the top, so place the two SSI headers J6 and J11 toward the lower right, not with the SPI encoder headers.
 * Wide traces/pours for `+12V`, `VSERVO` and their returns (section 3 numbers). Give the Pololu pads (VOUT/GND/VIN duplicated on both rows) copper that uses every pad.
 * Keep the opto/trigger/soft-stop parts together near J8 and away from the Pico end.
-* Silkscreen: pin 1 on every connector, function names on J8 (with **"MAX 20V IN"** beside the supply pins), J3-J6, J7 (GND, V, SIG per plug), J2 (**"+5V, NOT 3V3"** on pin 2, keyed plug; a reversed plug puts +5V on SDA and SCL on GND, an accepted risk, so also print an arrow or a pin 1 marker beside the header), J9 (voltage at each rail pin), J10 (GND, V=5V, SIG), the electrolytic polarities (C1, C2, C3), and "BabyBuck EN open".
+* Silkscreen: pin 1 on every connector, function names on J8 (with **"MAX 20V IN"** beside the supply pins), J3-J5, J6 and J11 (3V3, GND, CLK, DATA), J7 (GND, V, SIG per plug), J2 (**"+5V, NOT 3V3"** on pin 2, keyed plug; a reversed plug puts +5V on SDA and SCL on GND, an accepted risk, so also print an arrow or a pin 1 marker beside the header), J9 (voltage at each rail pin), J10 (GND, V=5V, SIG), the electrolytic polarities (C1, C2, C3), and "BabyBuck EN open".
 **Mechanical guidelines for both boards (owner, 2026-10-26; guidelines, not rules).**
 
 * **Mounting:** four M3 holes, one in each corner (3.2 mm non-plated holes, centres about 4 mm in from each edge, copper and parts kept about 6.5 mm clear for the screw head). M3 is the usual default on general PCBs; M2.5 (2.7 mm holes) is the Raspberry Pi convention and only worth using if the enclosure standoffs are already M2.5. Use M3 on both boards so one set of hardware fits both. Round the corners (about 2-3 mm radius).
 * **Everything on the top face.** All components and every connector go on the top; nothing on the bottom except solder joints, copper and silkscreen, so the board sits flat on standoffs or a plate. Use standoffs taller than the longest solder-side lead (the Pololu's pins stand 1.4 mm proud), and trim the leads flush.
+* **One deliberate exception (owner, 2026-10-27): 12 small parts are hidden under the Pico and mounted from the BOTTOM of the board**, soldered on the top face: R1-R7, R9-R11, R15 (the 10 k pull-ups and pull-downs, R5 the 1 k soft-stop series) and D3 (1N4148). Their lead ends and solder joints are under the module, so clip the leads flush and solder them BEFORE fitting the Pico; once the Pico is on they cannot be probed or replaced without desoldering it. They sit only in the front (USB-C end) part of the module footprint: the rear 15 mm has no pad under it, because the Pico Plus 2's SP/CE JST connector is on its underside (exact position not verified; check against the real module before ordering). The protection zeners D2 and D4 and the 1 W resistor R8 stay on top and accessible.
+* **20 mm plug clearance behind the Pico (owner):** nothing is placed in a 20 mm strip behind the Pico's rear edge, so the SP/CE plug can be pushed in and pulled out. It is drawn on the User.Comments layer.
 * **Connectors all face the same way:** vertical 0.1 in headers on the top face, all mated from above, grouped near one end of the board so every cable leaves the same side. (Right-angle headers pointing off an edge are the alternative; that is a footprint swap only, say so if you want it.)
 
 **Main board placement (owner's suggestion): portrait, USB-C pointing off the top edge.**
@@ -217,7 +227,7 @@ Values marked "(e.g. ...)" are suggestions, not fixed parts. All parts are throu
         |  J1 IMU    [  51 x 21 mm   ]  Pololu  (alongside the Pico)
         |  (left edge, near GP4/GP5)       |
         |                                  |
-        | ENC1-4 (bottom left)  J8 supply (bottom centre/right)
+        | ENC1-3 (bottom left)  J8 supply (bottom centre/right)  (SSI J6/J11 near the Pico's lower right pins)
         |                       J10 + J7 SBUS (bottom right)
         +---------------------------------+
 ```
@@ -226,7 +236,7 @@ Values marked "(e.g. ...)" are suggestions, not fixed parts. All parts are throu
 * **Supply at the bottom rather than the top.** Putting J8 at the top right would split the cables between both ends and place a 12 V connector beside the USB-C. The Pico's pins also point the other way: with USB-C at the top, pin 1 is top left, so the SPI, chip selects and triggers (pins 10-17, 19, 20) are on the **lower left**, the SBUS pins GP20/21 (26, 27) and soft stop GP16 (21) are on the **lower right**, and I2C GP4/GP5 (pins 6, 7) are **upper left**. So: encoders bottom left, J8 and the trigger and soft-stop parts bottom centre, J7 and J10 bottom right, and the loom J2 and IMU J1 on the left edge near the top (the gauge board sits to the left, J2 on the edge facing it).
 * **Exceptions:** GP1 (SBUS IN, pin 2) is at the top left, so J10's signal is the longest signal run; it is slow (100 kbaud), 1 k-limited and clamped, so that is fine, but keep it away from the Pololu and the servo traces. The `+5V` has to reach the Pico VSYS (top right, pin 39), the encoder ports (bottom left) and J2, so put the BabyBuck on the right above the Pololu and route `+5V` as a wide trace or pour (at least 1 mm).
 * The module heights and positions matter more than the exact sketch: the Pololu is 25.4 mm square and 6.1 mm tall, and the Pico Plus 2's SP/CE JST sits on its underside, so keep the board under that part free of parts and copper (a cut-out or keepout) and check it on the 1:1 print.
-* Width target: stay inside 100 x 100 mm (PCBWay's cheapest tier). The four encoder headers, J8, J7 (15.2 mm wide), J10 and J2 do not fit along one 70 mm bottom edge: use the bottom edge and the lower parts of the side edges, or two rows near the bottom.
+* Width target: stay inside 100 x 100 mm (PCBWay's cheapest tier). The three encoder headers, the two SSI headers, J8, J7 (15.2 mm wide), J10 and J2 do not fit along one 70 mm bottom edge: use the bottom edge and the lower parts of the side edges, or two rows near the bottom.
 * Still not given: the exact board outline and the enclosure. Allow for the Pico's USB-C overhang, its underside SP/CE JST and the Pololu's 6.1 mm height.
 
 ## 8. Test points

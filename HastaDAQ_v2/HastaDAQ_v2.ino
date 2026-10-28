@@ -2,16 +2,18 @@
 //
 // HastaDAQ v2 -- firmware for the REV A main board (kicad/hastadaq/) plus its
 // strain-gauge board (kicad/gaugeboard/); see docs/README.md.
-// Flight-test SCPI instrument: 5 SBUS control surfaces, up to four SPI
-// encoders (MT6835 / RLS Orbis) with ENC1 as the pitch encoder for
-// closed-loop trim-hold, 2x ADS122C04 half-bridge strain-gauge ADCs, and an
+// Flight-test SCPI instrument: 5 SBUS control surfaces, up to five encoders
+// (three SPI: MT6835 / RLS Orbis; two SSI: RLS RM08) with ENC1 as the pitch
+// encoder for closed-loop trim-hold, 2x ADS122C04 half-bridge strain-gauge ADCs, and an
 // ICM20649 IMU -- all on one Pico Plus 2 (+ RM2 breakout), controlled and
 // logged over WiFi/SCPI.
 //
 // This is a COPY of HastaDAQ/HastaDAQ.ino, kept as its own project so the
 // original board and firmware stay untouched. DIFFERENCES FROM v1:
-//   - Four SPI encoder ports ENC1..ENC4 on one shared SPI1 bus, each an
-//     MT6835, an RLS Orbis, or empty (EncoderPorts.h; ENCCONFIG, ENCODERS?).
+//   - Five encoder ports: ENC1..ENC3 are SPI ports on one shared SPI1 bus, each
+//     an MT6835, an RLS Orbis, or empty; ENC4 and ENC5 are the two SSI ports
+//     for RLS RM08 encoders (one shared clock, one data line each, read by a
+//     PIO state machine: Rm08Ssi.h). See EncoderPorts.h; ENCCONFIG, ENCODERS?.
 //     ENC1 is still the control encoder.
 //   - Soft-stop input (SoftStop.h): a normally-closed loop to GND. Loop open
 //     or cable cut = STOP = the excitation is halted and disarmed (trim and
@@ -20,8 +22,9 @@
 //   - Trigger lines go through an opto input (GP14) and an open-collector
 //     output (GP15), both inverting; TriggerIO does the inversion, so
 //     TRIGCONFIG and the pulse polarity still mean what the CABLE does.
-//   - DATA?/UDP samples gain three appended floats (ENC2..ENC4 angles, NaN
-//     if not fitted): 80 bytes per sample with 5 channels, vs 68.
+//   - DATA?/UDP samples gain four appended floats (ENC2..ENC5 angles, NaN
+//     if not fitted; ENC4/ENC5 are the SSI ports): 84 bytes per sample with
+//     5 channels, vs 68.
 //   - *IDN? reports HastaDAQ-v2.
 //   NOT compiled-for-hardware-tested yet: the Orbis SPI mode, the soft-stop
 //   and the inverted trigger paths need a bench check on the new board.
@@ -142,13 +145,16 @@
 //                     raw HastaDaqSample records (see CaptureManager.h),
 //                     little-endian.
 //   ENCODER? [port] -> encoder angle in degrees, plain number (latest
-//                     cached reading, no capture needed). port is 1-4
-//                     (ENC1..ENC4), default 1; "nan" if that port is empty.
+//                     cached reading, no capture needed). port is 1-5
+//                     (ENC1..ENC5; 4 and 5 are the SSI ports), default 1;
+//                     "nan" if that port is empty.
 //   ENCODERS?      -> JSON: {"ports":[{"port":1,"type":"mt6835","valid":true,
 //                     "deg":..,"warning":false,"fails":0},...]}
-//   ENCCONFIG      -> JSON: {"port":1-4,"type":"none"|"mt6835"|"orbis"|
-//                     "orbis_mt"} -- what is plugged into a port ("orbis_mt"
-//                     = multi-turn part). ENC1 cannot be changed while the
+//   ENCCONFIG      -> JSON: {"port":1-5,"type":"none"|"mt6835"|"orbis"|
+//                     "orbis_mt"|"rm08"} -- what is plugged into a port
+//                     ("orbis_mt" = multi-turn part). Ports 1-3 are SPI and
+//                     take none|mt6835|orbis|orbis_mt; ports 4-5 are SSI and
+//                     take none|rm08. ENC1 cannot be changed while the
 //                     control loop is enabled. The boot default is
 //                     ENC_DEFAULT_TYPES in EncoderPorts.h.
 //   ZERO [port]    -> software-zero that encoder at its current position
@@ -183,8 +189,9 @@
 //
 // ---------------------------------------------------------------------
 // Hardware: REV A boards, see kicad/hastadaq/ + kicad/gaugeboard/ (schematics) and docs/README.md.
-//   - Encoder ports ENC1..ENC4: SPI1 SCK GP10, MOSI GP11, MISO GP12, CS
-//     GP13 / GP9 / GP8 / GP7 (see EncoderPorts.h).
+//   - Encoder ports ENC1..ENC3 (SPI): SPI1 SCK GP10, MOSI GP11, MISO GP12, CS
+//     GP13 / GP9 / GP8 (see EncoderPorts.h). ENC4/ENC5 (SSI, RLS RM08): shared
+//     clock out GP17, data in GP18 / GP19, read by PIO (Rm08Ssi.h).
 //   - SBUS: TX/RX on GPIO20/21 (see ChannelMixer.h).
 //   - I2C0 (GP4/GP5, default Wire pins) goes to the IMU header and to a
 //     4-wire loom (GND, +5V, SDA, SCL) to the separate strain-gauge board,
@@ -285,7 +292,7 @@ HastaDaqSample buildLiveSample(float excitationValue, float controlOutputDeg) {
     s.excitationDeg = excitationValue;
     s.controlOutputDeg = controlOutputDeg;
     for (uint8_t i = 0; i < NUM_CHANNELS; i++) s.servoDeg[i] = channelMixer.lastCommandedDeg(i);
-    for (uint8_t k = 0; k < NUM_EXTRA_ENCODERS; k++) s.encExtraDeg[k] = sensors.encoderDegPort(k + 1); // ENC2..ENC4
+    for (uint8_t k = 0; k < NUM_EXTRA_ENCODERS; k++) s.encExtraDeg[k] = sensors.encoderDegPort(k + 1); // ENC2..ENC5
     return s;
 }
 
@@ -593,13 +600,13 @@ void GetData(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     interface.write(reinterpret_cast<const uint8_t*>(capture.buffer()), (size_t)capture.sampleCount() * sizeof(HastaDaqSample));
 }
 
-// Optional port argument (1-4 = ENC1..ENC4) at parameters[index]; default
+// Optional port argument (1-5 = ENC1..ENC5) at parameters[index]; default
 // ENC1. Returns the 0-based port, or -1 after printing an ERR.
 int parsePortParam(SCPI_P parameters, size_t index, Stream& interface) {
     if ((int)parameters.Size() <= (int)index) return 0;
     int p = String(parameters[index]).toInt();
     if (p < 1 || p > (int)EncoderPorts::NUM_PORTS) {
-        interface.println(F("ERR port must be 1-4 (ENC1..ENC4)"));
+        interface.println(F("ERR port must be 1-5 (ENC1..ENC5)"));
         return -1;
     }
     return p - 1;
@@ -643,12 +650,16 @@ void SetEncConfig(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     }
     int port = doc["port"] | 0;
     if (port < 1 || port > (int)EncoderPorts::NUM_PORTS) {
-        interface.println(F("ERR port must be 1-4 (ENC1..ENC4)"));
+        interface.println(F("ERR port must be 1-5 (ENC1..ENC5)"));
         return;
     }
     EncType type;
     if (!EncoderPorts::typeFromName(String(doc["type"] | ""), type)) {
-        interface.println(F("ERR type must be none|mt6835|orbis|orbis_mt"));
+        interface.println(F("ERR type must be none|mt6835|orbis|orbis_mt|rm08"));
+        return;
+    }
+    if (!EncoderPorts::typeAllowed(port - 1, type)) {
+        interface.println(F("ERR ports 1-3 (SPI) take none|mt6835|orbis|orbis_mt; ports 4-5 (SSI) take none|rm08"));
         return;
     }
     if (port == 1 && ctrlEnabled) {

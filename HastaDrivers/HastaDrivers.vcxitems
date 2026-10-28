@@ -36,6 +36,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)src\ExcitationGenerator.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)src\TriggerIO.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)src\OrbisEncoder.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\Rm08Ssi.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\Rm08Ssi.pio.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)src\SoftStop.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)src\secrets.h" />
   </ItemGroup>

@@ -43,7 +43,7 @@ pico_left = [
     (1, "GP0 UART0-TX", None), (2, "GP1 UART0-RX", "SBUS_IN_GPIO"), (3, "GND", "GND"),
     (4, "GP2", None), (5, "GP3", None),
     (6, "GP4 I2C0-SDA", "SDA"), (7, "GP5 I2C0-SCL", "SCL"), (8, "GND", "GND"),
-    (9, "GP6", None), (10, "GP7", "ENC4_CS"), (11, "GP8", "ENC3_CS"), (12, "GP9", "ENC2_CS"), (13, "GND", "GND"),
+    (9, "GP6", None), (10, "GP7", None), (11, "GP8", "ENC3_CS"), (12, "GP9", "ENC2_CS"), (13, "GND", "GND"),
     (14, "GP10 SPI1-SCK", "SPI_SCK"), (15, "GP11 SPI1-TX", "SPI_MOSI"),
     (16, "GP12 SPI1-RX", "SPI_MISO"), (17, "GP13 SPI1-CSn", "ENC1_CS"), (18, "GND", "GND"),
     (19, "GP14", "TRIG_IN_GPIO"), (20, "GP15", "TRIG_OUT_GPIO"),
@@ -53,7 +53,7 @@ pico_right = [
     (36, "3V3(OUT)", "+3V3"), (35, "ADC_VREF", None), (34, "GP28", None), (33, "AGND", "GND"),
     (32, "GP27", None), (31, "GP26", None), (30, "RUN", None), (29, "GP22", None),
     (28, "GND", "GND"), (27, "GP21 UART1-RX", "SBUS"), (26, "GP20 UART1-TX", "SBUS"),
-    (25, "GP19", None), (24, "GP18", None), (23, "GND", "GND"), (22, "GP17", None), (21, "GP16", "SOFTSTOP_IN"),
+    (25, "GP19", "SSI2_DATA"), (24, "GP18", "SSI1_DATA"), (23, "GND", "GND"), (22, "GP17", "SSI_CLK"), (21, "GP16", "SOFTSTOP_IN"),
 ]
 def _pico_t(t):
     num, name, net = t
@@ -86,8 +86,10 @@ header("GAUGE BOARD LOOM (J_I2C): GND, +5V, SDA, SCL", 185, 115,
 text("Strain-gauge board: 4-wire I2C loom. Pin 2 is +5V, NOT 3V3 -- use a keyed plug,\n"
      "never a Qwiic cable. Pull-ups live on the ADS122C04 breakouts on that board.", 150, 140)
 
-# encoders: three 2x4 0.1in headers on one SPI bus, each with its own CS.
-# Pins 1..8 in order: GND, CS, SCK, MOSI, MISO, 3V3, 5V, GND. 3V3 powers an MT6835,
+# encoders: three 2x4 0.1in SPI headers on one SPI bus, each with its own CS (ENC1-ENC3), plus two 1x4 SSI headers
+# (SSI1, SSI2) for RLS RM08 encoders. The old fourth SPI port was removed: the owner needs two MT6835 + one Orbis
+# on SPI and two RM08 on SSI.
+# SPI header pins 1..8 in order: GND, CS, SCK, MOSI, MISO, 3V3, 5V, GND. 3V3 powers an MT6835,
 # 5V powers an RLS Orbis (3.3 V logic). Pull-ups keep unselected CS lines high at boot.
 # plain 0.1in 2x4 header for now (pin numbering identical to the IDC box header, which can replace it later:
 # a keyed shrouded plug cannot be mated rotated 180 deg)
@@ -103,16 +105,25 @@ def enc_header(title, y, cs):
           ref_prefix="J", width=15.24, footprint=FP_HDR_2X4)
 
 
-enc_header("ENC1 SPI port: MT6835 (pitch) / Orbis", 190, "ENC1_CS")
-enc_header("ENC2 SPI port: MT6835 / Orbis", 222, "ENC2_CS")
-enc_header("ENC3 SPI port: MT6835 / Orbis", 254, "ENC3_CS")
-enc_header("ENC4 SPI port: generic SPI device", 286, "ENC4_CS")
-for k, cs in enumerate(("ENC1_CS", "ENC2_CS", "ENC3_CS", "ENC4_CS")):
+enc_header("ENC1 SPI port: MT6835 (pitch)", 190, "ENC1_CS")
+enc_header("ENC2 SPI port: MT6835", 222, "ENC2_CS")
+enc_header("ENC3 SPI port: RLS Orbis (or MT6835)", 254, "ENC3_CS")
+
+# SSI encoder ports (RLS RM08 through an inline LDB02 line-driver board that the owner places near the Pico; this
+# board only sees the single-ended 3.3 V side). One shared clock (SSI_CLK, GP17, driven by a PIO state machine) and
+# one data line per encoder (SSI1_DATA GP18, SSI2_DATA GP19, consecutive so one PIO IN instruction samples both on the
+# same clock edge). Pin order 3V3, GND, CLK, DATA as requested by the owner. An SSI data line is always driven, so
+# these cannot share the SPI MISO line.
+SSI_PINS = [("3V3", "+3V3"), ("GND", "GND"), ("CLK", "SSI_CLK")]
+header("SSI1: RM08 encoder (3V3, GND, CLK, DATA)", 130, 195, SSI_PINS + [("DATA", "SSI1_DATA")])
+# pull-ups: the first three on the ENC CS lines, the fourth (R4, the old ENC4 slot) on SSI1_DATA, so an unplugged encoder
+# reads all ones (an invalid frame) instead of floating. SSI2_DATA's pull-up (R15) is created at the end of the sheet.
+for k, net in enumerate(("ENC1_CS", "ENC2_CS", "ENC3_CS", "SSI1_DATA")):
     px = snap(100 + k * 12)
     r_top, r_bot = resistor(px, snap(262), "10k")
     stub_label("+3V3", px, r_top[1], "up")
-    stub_label(cs, px, r_bot[1], "down")
-text("CS pull-ups (10k)", 96, 249)
+    stub_label(net, px, r_bot[1], "down")
+text("Pull-ups (10k): ENC CS x3, SSI1 DATA, SSI2 DATA", 96, 238)
 
 # The RM2 WiFi breakout plugs into the Pico Plus 2 SP/CE connector (GP32-GP36) by cable; it is not on this PCB.
 
@@ -155,7 +166,7 @@ vertical_part("C_Polarized", "C", "470uF 16V servo bulk (Panasonic EEUFR1C471)",
               "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm")
 ref_d = next_ref("D")
 dx, dy = snap(210), snap(340)
-instance("HastaDAQ:D_Schottky", ref_d, "Schottky (e.g. 1N5822, 3A)", dx, dy, ["A", "K"],
+instance("HastaDAQ:D_Schottky", ref_d, "Schottky (e.g. 1N5822, 3A)", dx, dy, ["2", "1"],
          (dx - 5, dy - 5.08), (dx - 5, dy - 2.54), "Diode_THT:D_DO-201AD_P15.24mm_Horizontal")
 stub_label("+5V", dx - 3.81, dy, "left")
 stub_label("+5V_VSYS", dx + 3.81, dy, "right")
@@ -193,7 +204,7 @@ vertical_part("R", "R", "10k (soft-stop pull-up)", 385, 260, "+3V3", "SOFTSTOP_I
 # the 5.5 V the RP2350 pin tolerates; the 1k series resistor limits the fault current to ~7 mA.
 ref_z = next_ref("D")
 zx, zy = snap(358), snap(296)
-instance("HastaDAQ:D_Zener", ref_z, "5.1V zener (BZX55C5V1) soft-stop clamp", zx, zy, ["A", "K"],
+instance("HastaDAQ:D_Zener", ref_z, "5.1V zener (BZX55C5V1) soft-stop clamp", zx, zy, ["2", "1"],
          (zx - 5, zy - 5.08), (zx - 5, zy - 2.54), "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal")
 stub_label("GND", zx - 3.81, zy, "left")
 stub_label("SOFTSTOP_IN", zx + 3.81, zy, "right")
@@ -212,7 +223,7 @@ vertical_part("R", "R", "10k pull-down", 435, 235, "TRIG_IN", "GND", FP_R)
 vertical_part("R", "R", "1k 1W", 455, 235, "TRIG_IN", "TRIG_IN_LED", FP_R1W)
 ref_d2 = next_ref("D")
 d2x, d2y = snap(455), snap(260)
-instance("HastaDAQ:D_Schottky", ref_d2, "1N4148 (LED reverse protect)", d2x, d2y, ["A", "K"],
+instance("HastaDAQ:D_Schottky", ref_d2, "1N4148 (LED reverse protect)", d2x, d2y, ["2", "1"],
          (d2x - 5, d2y - 5.08), (d2x - 5, d2y - 2.54), "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal")
 stub_label("GND", d2x - 3.81, d2y, "left")
 stub_label("TRIG_IN_LED", d2x + 3.81, d2y, "right")
@@ -250,7 +261,7 @@ vertical_part("R", "R", "1k series", 425, 170, "SBUS_IN", "SBUS_IN_GPIO", r_fp)
 vertical_part("R", "R", "10k pull-down (DNP at first)", 445, 170, "SBUS_IN_GPIO", "GND", r_fp)
 ref_z2 = next_ref("D")
 z2x, z2y = snap(488), snap(170)
-instance("HastaDAQ:D_Zener", ref_z2, "5.1V zener (BZX55C5V1) SBUS IN clamp", z2x, z2y, ["A", "K"],
+instance("HastaDAQ:D_Zener", ref_z2, "5.1V zener (BZX55C5V1) SBUS IN clamp", z2x, z2y, ["2", "1"],
          (z2x - 5, z2y - 5.08), (z2x - 5, z2y - 2.54), "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal")
 stub_label("GND", z2x - 3.81, z2y, "left")
 stub_label("SBUS_IN_GPIO", z2x + 3.81, z2y, "right")
@@ -258,6 +269,16 @@ text("SBUS IN: RC-receiver pass-through (plug order GND, V, SIG). V = +5V (NOT V
      "so 8.4 V would overstress it; check any other receiver's range). SIG -> 1k -> GP1 (UART0 RX); 5.1 V zener clamps a\n"
      "receiver that outputs more than 5.1 V (about 100 pF at 100 kbaud: harmless). 10k pull-down R: leave UNFITTED on the first trial;\n"
      "RP2350 erratum E9 can hold a pin with a weak pull-down (>~8.2k) near 2 V, so if it is fitted and misbehaves use 4.7k.", 290, 196)
+
+# SSI2 header and its DATA pull-up are created LAST so every existing J/R reference number is unchanged (J11, R15);
+# SSI1 took the old ENC4 header slot (J6) and the old fourth CS pull-up (R4).
+header("SSI2: RM08 encoder (3V3, GND, CLK, DATA)", 130, 225, SSI_PINS + [("DATA", "SSI2_DATA")])
+px = snap(100 + 4 * 12)
+r_top, r_bot = resistor(px, snap(262), "10k")
+stub_label("+3V3", px, r_top[1], "up")
+stub_label("SSI2_DATA", px, r_bot[1], "down")
+text("SSI (RLS RM08 via an inline LDB02 near the Pico; this board has the 3.3 V single-ended side only).\n"
+     "One shared clock SSI_CLK (GP17) drives both encoders; DATA pins GP18 / GP19 are consecutive for one PIO read.", 100, 178)
 
 # Test points (through-hole pads) for bring-up, and PWR_FLAGs on nets that are supplied through a passive
 # part (cable connector, diode) so ERC's power-pin check has a source on them.
@@ -295,12 +316,14 @@ text("NOTES\n"
      "5. Triggers: TRIG_IN accepts 3.3-24 V (opto), TRIG_OUT is open collector with a jumper-selected pull-up. Pin order: see each symbol.\n"
      "   Main supply cable (2x4, pins 1-8 row-major): 1,8 VSUPPLY (12 V) | 2,7 VGND | 3 TRIG_IN | 6 TRIG_OUT | 4 SOFTSTOP+ | 5 SOFTSTOP-.\n"
      "   SOFTSTOP+ -> 1k -> GP16 (10k pull-up to 3V3, 5.1 V zener to GND), SOFTSTOP- = GND: loop closed = run, broken = stop.\n"
-     "   The 2x4 connectors (this one and ENC1-4) are plain 0.1in headers for now; use keyed/shrouded plugs: a rotated plug would put 5V on a CS pin. Measured system current\n"
+     "   The 2x4 connectors (this one and ENC1-3) are plain 0.1in headers for now; use keyed/shrouded plugs: a rotated plug would put 5V on a CS pin. Measured system current\n"
      "   was <= 1 A at 8.4 V, well inside ~3 A per 0.1in pin.\n"
-     "6. Encoders: 4 x 2x4 headers (pins 1-8: GND, CS, SCK, MOSI, MISO, 3V3, 5V, GND) on one SPI1 bus; CS = GP13/GP9/GP8/GP7.\n"
-     "   MT6835 uses 3V3 (3.3 V logic); RLS Orbis uses 5V with 3.3 V logic. Check MISO tri-states when CS is high.\n"
-     "   The four ENC headers are a generic SPI port (SPI1: SCK GP10, MOSI GP11, MISO GP12, own CS each, 3V3 and 5V supply), so any 3.3 V\n"
-     "   SPI device can be plugged in, not just encoders. Each device needs its own CS and an MISO that tri-states when CS is high.",
+     "6. Encoders: 3 x 2x4 SPI headers (pins 1-8: GND, CS, SCK, MOSI, MISO, 3V3, 5V, GND) on one SPI1 bus; CS = GP13/GP9/GP8.\n"
+     "   Intended: ENC1 + ENC2 = MT6835, ENC3 = RLS Orbis. MT6835 uses 3V3 (3.3 V logic); Orbis uses 5V with 3.3 V logic. Check MISO tri-states when CS is high.\n"
+     "   The three ENC headers are a generic SPI port (SPI1: SCK GP10, MOSI GP11, MISO GP12, own CS each, 3V3 and 5V supply), so any 3.3 V\n"
+     "   SPI device can be plugged in, not just encoders. Each device needs its own CS and an MISO that tri-states when CS is high.\n"
+     "7. SSI encoders: two 1x4 headers SSI1 (J6) and SSI2 (J11), pins 1-4 = 3V3, GND, CLK, DATA, for RLS RM08 encoders through an inline LDB02.\n"
+     "   SSI_CLK GP17 (shared), SSI1_DATA GP18, SSI2_DATA GP19, each DATA with a 10k pull-up to 3V3 (unplugged = all ones = invalid frame).",
      20, 405)
 
 sg.write_outputs("${KIPRJMOD}/HastaDAQ.pretty")

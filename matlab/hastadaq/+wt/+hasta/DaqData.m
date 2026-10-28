@@ -29,10 +29,11 @@ classdef DaqData
         Gyro (:,3) double = zeros(0, 3)             % columns x, y, z
         ExcitationDeg (:,1) double = double.empty(0, 1)      % shared waveform
         ControlOutputDeg (:,1) double = double.empty(0, 1)   % PID output, pre-mix
-        % ENC2..ENC4 angles (deg), columns in port order; NaN = that port is
-        % not fitted. Only the HastaDAQ v2 firmware sends these, so it stays
-        % empty (0 x 3) for data from the original firmware.
-        EncoderExtraDeg (:,3) double = zeros(0, 3)
+        % ENC2..ENC5 angles (deg), columns in port order (ENC4 and ENC5 are
+        % the two SSI ports for RLS RM08 encoders); NaN = that port is not
+        % fitted. Only the HastaDAQ v2 firmware sends these, so it stays
+        % empty (0 x 4) for data from the original firmware.
+        EncoderExtraDeg (:,4) double = zeros(0, 4)
 
         % Commanded angle of each servo (deg from centre).
         RUDDER_Angle (:,1) double = double.empty(0, 1)
@@ -50,7 +51,7 @@ classdef DaqData
 
     properties (Constant, Access = private)
         FixedBytes = 48   % t_us + 11 floats before the per-servo angles
-        NumExtraEncoders = 3   % v2 firmware: ENC2..ENC4 floats after the servo angles
+        NumExtraEncoders = 4   % v2 firmware: ENC2..ENC5 floats after the servo angles
     end
 
     methods (Static)
@@ -64,7 +65,7 @@ classdef DaqData
             end
             surfaces = enumeration("wt.hasta.HDCh");
             numChannels = (bytesPerSample - wt.hasta.DaqData.FixedBytes) / 4;
-            % HastaDAQ v2 firmware appends three more floats (ENC2..ENC4)
+            % HastaDAQ v2 firmware appends four more floats (ENC2..ENC5)
             % after the servo angles; the original firmware does not.
             numExtra = 0;
             if numChannels == numel(surfaces) + wt.hasta.DaqData.NumExtraEncoders
@@ -185,7 +186,8 @@ classdef DaqData
             if ~isempty(obj.EncoderExtraDeg)   % v2 firmware only
                 T.Enc2Deg = obj.EncoderExtraDeg(:, 1);
                 T.Enc3Deg = obj.EncoderExtraDeg(:, 2);
-                T.Enc4Deg = obj.EncoderExtraDeg(:, 3);
+                T.Enc4Deg = obj.EncoderExtraDeg(:, 3);   % SSI1 (RM08)
+                T.Enc5Deg = obj.EncoderExtraDeg(:, 4);   % SSI2 (RM08)
             end
         end
     end

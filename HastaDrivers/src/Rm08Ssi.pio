@@ -1,0 +1,32 @@
+; PIO program for Rm08Ssi.h: reads TWO SSI encoders on ONE shared clock, sampling both data lines together.
+;
+; Regenerate Rm08Ssi.pio.h after editing (the arduino-pico core ships pioasm):
+;   <Arduino15>\packages\rp2040\tools\pqt-pioasm\<ver>\pioasm.exe -o c-sdk Rm08Ssi.pio Rm08Ssi.pio.h
+; then check the generated header still has the rm08_ssi_ prefix and the include guard Rm08Ssi.h expects.
+;
+; Pins: side-set pin = SSI clock (idles HIGH); IN pin base = DATA1, DATA2 is the next GPIO, so one `in pins, 2`
+; takes bit0 = DATA1 and bit1 = DATA2 on the same clock edge.
+;
+; Frame: 32 clocks, each sampled as the clock FALLS (clock idle high, sample on the leading falling edge = SPI mode 2,
+; the setting the RM08 + LDB02 already worked with on the ESP32). The first falling edge makes the encoder latch its
+; position; the line's idle level (1) is the first sampled bit. After the 32nd clock the clock stays high for a gap
+; far longer than the encoder's monoflop time (12.5-20.5 us) before the next frame can start.
+;
+; Timing: every instruction below takes 1 + 3 = 4 SM cycles (or 1 + 7 = 8 in the gap), so one clock period is 8 SM
+; cycles: SM clock = 8 x the SSI clock. The gap is 1 + 32 x 8 = 257 cycles (about 64 us at 500 kHz, 32 us at 1 MHz).
+;
+; Autopush is set by the C++ side (shift left, 32-bit threshold): 16 clocks fill one word, so a frame is two words.
+; Each clock contributes a 2-bit pair; word 0 holds clocks 0..15 (clock 0 in bits 31:30), word 1 holds 16..31.
+.program rm08_ssi
+.side_set 1
+
+.wrap_target
+    pull block          side 1          ; idle with the clock high until the CPU pushes a start word
+    set x, 31           side 1          ; 32 clocks
+bitloop:
+    in pins, 2          side 0 [3]      ; clock falls: sample DATA1 (bit0) and DATA2 (bit1)
+    jmp x-- bitloop     side 1 [3]      ; clock rises; loop 32 times in total
+    set y, 31           side 1          ; then hold the clock high for the monoflop gap
+gap:
+    jmp y-- gap         side 1 [7]
+.wrap

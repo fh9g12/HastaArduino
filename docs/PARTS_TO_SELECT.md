@@ -39,7 +39,7 @@ D3 sits antiparallel across the opto LED, so it only carries the LED current whe
 | Ref | Qty | What | Constraints from the schematic | Footprint | fp |
 |---|---|---|---|---|---|
 | R8 | 1 | 1 k, 1 W axial | 1 W (24 V trigger gives about 0.6 W); body about 9.9 x 3.6 mm | `R_Axial_DIN0411_L9.9mm_D3.6mm_P12.70mm_Horizontal` | **fp** |
-| R1-R4, R6, R7, R9, R11, R14 | 9 | 10 k, 1/4 W | standard axial, body about 6.3 x 2.3 mm | `R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` | |
+| R1-R4, R6, R7, R9, R11, R14, R15 | 10 | 10 k, 1/4 W | standard axial, body about 6.3 x 2.3 mm | `R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal` | |
 | R5, R13 | 2 | 1 k, 1/4 W | same | same | |
 | R10 | 1 | 2.2 k, 1/4 W | base resistor | same | |
 | R12 | 1 | 1.5 k, 1/4 W | TRIG_OUT pull-up (about 8 mA at 12 V) | same | |
@@ -52,7 +52,8 @@ The 0207 footprint covers a 6.3 x 2.3 mm body (it is drawn for 6.3 x 2.5 mm) at 
 |---|---|---|
 | J1 | 1x4 | IMU (GND, 3V3, SDA, SCL) |
 | J2 | 1x4 | gauge-board loom (GND, +5V, SDA, SCL) |
-| J3-J6 | 2x4 each | encoder ports ENC1-ENC4 |
+| J3-J5 | 2x4 each | SPI encoder ports ENC1-ENC3 (2 x MT6835, 1 x Orbis) |
+| J6, J11 | 1x4 each | SSI ports SSI1, SSI2 for RLS RM08 encoders: 3V3, GND, CLK, DATA (3.3 V single-ended; the LDB02 line-driver boards are fitted inline by the owner, off the PCB) |
 | J7 | 3x6 | six servo plugs (GND, V, SIG); custom footprint, same 2.54 mm grid |
 | J8 | 2x4 | main supply cable (12 V, GND, triggers, soft stop) |
 | J9 | 1x5 | TRIG_OUT pull-up select (3V3, PU, 5V, PU, 12V), plus one shunt jumper |
