@@ -412,3 +412,7 @@ _autosave-*
 
 # PCB layout snapshots made by kicad/tools/publish.py are kept in git
 !kicad/releases/
+
+# KiCad local history (nested repos) and lock files
+.history/
+*.lck
