@@ -116,8 +116,12 @@ for d in board.GetDrawings():
     if d.GetLayer() == pcbnew.Cmts_User and d.GetClass() == "PCB_SHAPE" and d.GetShape() == pcbnew.SHAPE_T_RECT:
         r = d.GetBoundingBox()
         user_rects.append((ToMM(r.GetLeft()) - OX, ToMM(r.GetTop()) - OY, ToMM(r.GetRight()) - OX, ToMM(r.GetBottom()) - OY))
-for (x0, y0, x1, y1) in user_rects:                             # top layer only: copper under the SP/CE connector
-    router.mark(("rect", x0, y0, x1, y1), HARD, [0])
+# The rectangles mark where no COMPONENT may go (SP/CE connector under the Pico, plug clearance behind it). Copper is
+# fine there unless ROUTE_KEEP_TOP=1 asks for the old, stricter top-layer keep-out.
+KEEP_TOP = os.environ.get("ROUTE_KEEP_TOP", "0") == "1"
+for (x0, y0, x1, y1) in user_rects:
+    if KEEP_TOP:
+        router.mark(("rect", x0, y0, x1, y1), HARD, [0])
 print("top-layer keep-out rectangles:", [tuple(round(v, 1) for v in r) for r in user_rects])
 
 # Rule areas that live inside footprints (the stock Pico footprint has a Pico-W "Antenna Copper Keep Out" on both
@@ -348,7 +352,8 @@ for fp in board.GetFootprints():
         x, y = rel(fp.GetPosition())
         keepout([(x + 3.25 * math.cos(2 * math.pi * k / 32), y + 3.25 * math.sin(2 * math.pi * k / 32)) for k in range(32)], [F, B])
 for (x0, y0, x1, y1) in user_rects:
-    keepout([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], [F])
+    if KEEP_TOP:
+        keepout([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], [F])
 
 vcls = len(router.classes) - 1
 count = 0

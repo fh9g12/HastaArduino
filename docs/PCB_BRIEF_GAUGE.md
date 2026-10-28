@@ -4,7 +4,7 @@ For an agent (or person) taking the **gauge-board schematic** to a **PCB layout*
 
 ## 0. Status and hand-off (updated 2026-10-27)
 
-**The gauge board is laid out, routed and ordered (PCBWay, 2026-10-27).** The PCB and the exact fab files are in `kicad/releases/20261026-2252-rev-a/gaugeboard/` (`gaugeboard.kicad_pcb`, `fab/gaugeboard_gerbers.zip`); section 7 describes the as-built layout and `kicad/README.md` has the workflow, tools and gotchas. The text below is the original brief, kept for the reasoning. The gauge-board schematic is complete, ERC-clean (0 violations). All components are chosen (parts and RS numbers in `docs/PARTS_TO_SELECT.md`): MCP1700-3302E/TO LDO (RS 040-3888), 47 uF 16 V RS PRO LHK (RS 707-5758), 10 uF 10 V RS PRO CB tantalum (RS 181-4731), Vishay K-series 100 nF 50 V X7R (RS 181-6552, 2.5 mm lead spacing), standard 1/4 W axial resistors (R5/R6 are the owner's own 350 ohm precision parts), plain 0.1 in pin headers, and ADS122C04 breakouts soldered straight in. The board outline, mounting holes and connector positions are now settled (section 7); the board's position relative to the main board is not. The fab and design rules are decided (PCBWay, 2 layers, 6/6 mil, 0.3 mm minimum drill, no edge connectors; see `docs/PCB_BRIEF.md` section 0). The loom wiring diagram is `wiring/gauge-loom.yml`. Read `docs/PCB_BRIEF.md` section 0 for the shared decisions and the source-of-truth rule (do not re-run the generator once a PCB exists). Not verified on hardware: see section 9.
+**The gauge board is laid out, routed and ordered (PCBWay, 2026-10-27).** The PCB and the exact fab files are in `kicad/releases/rev-a/gaugeboard/` (`gaugeboard.kicad_pcb`, `fab/gaugeboard_gerbers.zip`); section 7 describes the as-built layout and `kicad/README.md` has the workflow, tools and gotchas. The text below is the original brief, kept for the reasoning. The gauge-board schematic is complete, ERC-clean (0 violations). All components are chosen (parts and RS numbers in `docs/PARTS_TO_SELECT.md`): MCP1700-3302E/TO LDO (RS 040-3888), 47 uF 16 V RS PRO LHK (RS 707-5758), 10 uF 10 V RS PRO CB tantalum (RS 181-4731), Vishay K-series 100 nF 50 V X7R (RS 181-6552, 2.5 mm lead spacing), standard 1/4 W axial resistors (R5/R6 are the owner's own 350 ohm precision parts), plain 0.1 in pin headers, and ADS122C04 breakouts soldered straight in. The board outline, mounting holes and connector positions are now settled (section 7); the board's position relative to the main board is not. The fab and design rules are decided (PCBWay, 2 layers, 6/6 mil, 0.3 mm minimum drill, no edge connectors; see `docs/PCB_BRIEF.md` section 0). The loom wiring diagram is `wiring/gauge-loom.yml`. Read `docs/PCB_BRIEF.md` section 0 for the shared decisions and the source-of-truth rule (do not re-run the generator once a PCB exists). Not verified on hardware: see section 9.
 
 ## 1. What this board is
 
@@ -34,7 +34,7 @@ kicad/gaugeboard/fp-lib-table              points at ../hastadaq/HastaDAQ.pretty
 kicad/tools/generate_gauge_sch.py          bootstrap generator that wrote the schematic
 kicad/tools/schgen_common.py               shared helpers
 kicad/tools/layout/                        layout, routing, silkscreen and fab scripts (see its README)
-kicad/releases/20261026-2252-rev-a/gaugeboard/   the laid-out board (.kicad_pcb) and fab/ output: THE as-built source
+kicad/releases/rev-a/gaugeboard/   the laid-out board (.kicad_pcb) and fab/ output: THE as-built source
 ```
 
 The same **source-of-truth rule** applies as on the main board: the generator reassigns reference designators and UUIDs every run, so **once a `.kicad_pcb` exists, do not re-run it**; edit the schematic in KiCad.
@@ -152,4 +152,4 @@ TP1 (`GND`, for a scope clip) and TP2 (`+3V3`, the regulated rail that powers th
 
 ## 10. Workflow
 
-Done for rev A: the board was built in the release folder (`kicad/releases/20261026-2252-rev-a/gaugeboard/`), DRC clean, and fab files exported with `kicad/tools/layout/export_fab.py`. For a respin, publish a new release, lay out there and re-export. Check that J1 here and J2 on the main board have the same pin order (GND, +5V, SDA, SCL) and sit on facing edges, and that the physical keying of the two plugs matches.
+Done for rev A: the board was built in the release folder (`kicad/releases/rev-a/gaugeboard/`), DRC clean, and fab files exported with `kicad/tools/layout/export_fab.py`. For a respin, publish a new release, lay out there and re-export. Check that J1 here and J2 on the main board have the same pin order (GND, +5V, SDA, SCL) and sit on facing edges, and that the physical keying of the two plugs matches.
