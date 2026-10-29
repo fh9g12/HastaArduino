@@ -1,5 +1,7 @@
 # Parts still to select (REV A, both boards)
 
+> **For buying and ticking off what has been purchased, use [`BOM_rev-a.xlsx`](BOM_rev-a.xlsx)** (one line per purchasable item for both boards, RS stock numbers where known, status dropdown, quantities and cost). This file is the design reasoning; the workbook is the shopping list. Regenerate-protected: `kicad/tools/make_bom_xlsx.py` refuses to overwrite it without `--force`.
+
 Every component that needs a specific orderable part before the PCBs are laid out (the footprint depends on the real part for the ones marked **fp**). Updated 2026-10-26 from the two schematics (`kicad/hastadaq`, `kicad/gaugeboard`). All parts are through-hole. Decisions so far: no fuse (the bench supply's current limit protects), every connector is a plain 0.1 in (2.54 mm) pin header (the owner chooses keyed plugs later), test points are plain copper pads, the Pico, Pololu, BabyBuck and both ADS boards are soldered straight to the PCB (no sockets), and resistors are standard 1/4 W axial parts.
 
 ## A. Main board (`kicad/hastadaq`)
